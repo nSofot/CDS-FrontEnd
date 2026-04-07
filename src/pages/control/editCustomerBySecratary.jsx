@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import mediaUpload from "../../utils/mediaUpload";
@@ -8,6 +8,7 @@ export default function EditMember() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [expanded, setExpanded] = useState("basic"); 
+	const location = useLocation();
 
 	// Example states (replace with your actual ones)
 	const [member, setMember] = useState({});
@@ -67,23 +68,36 @@ export default function EditMember() {
         }
     };
 
+	// ✅ Load from navigate state OR fallback API
 	useEffect(() => {
-	if (location.state) {
-		const data = location.state;
+		if (location.state?.member) {
+		const data = location.state.member;
+
+		setMember(data);
 		setMemberId(data.memberId || "");
 		setTitle(data.title || "");
 		setFirstName(data.firstName || "");
 		setLastName(data.lastName || "");
 		setNameInSinhala(data.nameInSinhala || "");
 		setMemberRole(data.memberRole || "");
-		setAddress(Array.isArray(data.address) ? data.address.join(", ") : data.address || "");
+		setAddress(
+			Array.isArray(data.address)
+			? data.address.join(", ")
+			: data.address || ""
+		);
 		setNotes(data.notes || "");
 		setMobile(data.mobile || "");
 		setPhone(data.phone || "");
 		setEmail(data.email || "");
 		setExistingImages(data.image || []);
 		setDueAmount(data.dueAmount || 0);
-	}
+		} else {
+		// ⚡ fallback if user refreshes page
+		const idFromUrl = window.location.search.split("=")[1];
+		if (idFromUrl) {
+			searchCustomer(idFromUrl);
+		}
+		}
 	}, [location.state]);
 
 

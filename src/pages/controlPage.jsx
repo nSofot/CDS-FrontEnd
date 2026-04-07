@@ -9,6 +9,9 @@ import DashboardPage from "./control/dashboardPage";
 import MembersPage from "./control/membersPage";
 import AddNewMembers from "./control/addCustomerBySecratary";
 import EditMembers from "./control/editCustomerBySecratary";
+import StockPage from "./control/stockPage";
+// import AddNewStock from "./control/addNewStock";
+// import EditStock from "./control/editStock";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -78,9 +81,12 @@ export default function ControlPage() {
 
         {/* OTHER PAGES */}
         <Route path="dashboard" element={<DashboardPage />} />
+
         <Route path="members" element={<MembersPage />} />
-        <Route path="add-member-secretary" element={<AddNewMembers />} />
-        <Route path="edit-member-secretary" element={<EditMembers />} />   
+        <Route path="add-member" element={<AddNewMembers />} />
+        <Route path="edit-member" element={<EditMembers />} />   
+
+        <Route path="stock" element={<StockPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

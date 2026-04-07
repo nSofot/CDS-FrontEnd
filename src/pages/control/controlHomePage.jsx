@@ -96,18 +96,41 @@ export default function ControlHomePage() {
         "internal-auditor",
       ],
     },
+
     {
-      label: "Add New Member",
-      to: "/add-member-secretary",
-      icon: <FaUserClock />,
-      roles: ["admin", "secretary", "assistant-secretary"],
+      label: "Stock",
+      to: "/stock",
+      icon: <FaSackDollar />,
+      roles: [
+        "admin",
+        "president",
+        "secretary",
+        "treasurer",
+        "vice-president",
+        "assistant-secretary",
+        "assistant-treasurer",
+        "activity-coordinator",
+        "committee-member",
+        "internal-auditor",
+      ],
     },
+
     {
-      label: "Edit Member",
-      to: "/edit-member-secretary",
-      icon: <FaUserClock />,
-      roles: ["admin", "secretary", "assistant-secretary"],
+      label: "Vendors",
+      to: "/vendors",
+      icon: <FaMoneyBillTransfer />,
+      roles: [
+        "admin",
+        "president",
+        "secretary",
+        "treasurer",
+        "vice-president",
+        "assistant-secretary",
+        "assistant-treasurer",
+        "activity-coordinator",
+      ],
     },
+
   ];
 
   return (

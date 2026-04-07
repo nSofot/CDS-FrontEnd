@@ -7,8 +7,8 @@ import { FaUser, FaEdit } from "react-icons/fa";
 
 Modal.setAppElement("#root");
 
-export default function MembersPage() {
-  const [customers, setCustomers] = useState([]);
+export default function StockPage() {
+  const [stocks, setStocks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeRecord, setActiveRecord] = useState(null);
@@ -16,44 +16,27 @@ export default function MembersPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const roleMap = {
-    admin: "Admin",
-    member: "Member",
-    president: "President",
-    secretary: "Secretary",
-    treasurer: "Treasurer",
-    "vice-president": "Vice President",
-    "assistant-secretary": "Assistant Secretary",
-    "assistant-treasurer": "Assistant Treasurer",
-  };
-
-  const getRoleLabel = (role) =>
-    roleMap[role?.toLowerCase()] || role;
 
   useEffect(() => {
     window.scrollTo(0, 0);
     setIsLoading(true);
 
     axios
-      .get(import.meta.env.VITE_BACKEND_URL + "/api/member")
+      .get(import.meta.env.VITE_BACKEND_URL + "/api/stock")
       .then((res) => {
         const sorted = res.data.sort((a, b) =>
-          a.memberId.localeCompare(b.memberId)
+          a.stockId.localeCompare(b.stockId)
         );
 
-        setCustomers(sorted);
+        setStocks(sorted);
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching members:", err);
+        console.error("Error fetching stocks:", err);
         setIsLoading(false);
       });
   }, [location]);
 
-  const getImageUrl = (img) =>
-    img?.startsWith("http")
-      ? img
-      : import.meta.env.VITE_BACKEND_URL + img;
 
   return (
     <div className="w-full max-w-6xl mx-auto min-h-screen p-3 flex flex-col gap-4">
@@ -62,18 +45,18 @@ export default function MembersPage() {
         <div className="flex md:flex-row flex-col justify-between gap-2 px-4 py-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
-              🧑‍🤝‍🧑 Members List
+              🧑‍🤝‍🧑 Stocks List
             </h1>
             <p className="text-gray-600 text-sm">
-              View all registered members
+              View all registered stocks
             </p>
           </div>
 
           <button
-            onClick={() => navigate("/add-member")}
+            onClick={() => navigate("/add-stock")}
             className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
           >
-            + Add Member
+            + Add Stock
           </button>
 
           <button
@@ -121,42 +104,26 @@ export default function MembersPage() {
                         className="hover:bg-orange-50 cursor-pointer"
                       >
                         <td className="px-3 py-2">{index + 1}</td>
+
                         <td className="px-3 py-2 text-center">
-                          <img
-                            src={
-                              Array.isArray(item.image) && item.image.length > 0
-                                ? getImageUrl(item.image[0])
-                                : "/userDefault.jpg"
-                            }
-                            className="w-14 h-14 rounded-full object-cover mx-auto"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          {item.memberId}
+                          {item.stockId}
                         </td>
                         <td className="px-3 py-2">
-                          {item.title}{" "}
-                          {item.nameInSinhala
-                            ? item.nameInSinhala
-                            : `${item.firstName} ${item.lastName}`}
+                          {item.stockName}
                         </td>
-                        <td className="px-3 py-2">
-                          {getRoleLabel(item.memberRole)}
-                        </td>
+
                         <td className="px-3 py-2 break-words">
                           {Array.isArray(item.address)
                             ? item.address.filter(Boolean).join(", ")
                             : item.address || "-"}
                         </td>
-                        <td className="px-3 py-2">{item.mobile}</td>
-                        <td className="px-3 py-2 text-right">
-                          {item.dueAmount ? `Rs. ${item.dueAmount}` : "—"}
-                        </td>
+                        <td className="px-3 py-2">{item.stockQuantity}</td>
+
                         <td className="px-3 py-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate("/edit-member", { state: { member: item } });
+                              navigate("/edit-stock", { state: { stock: item } });
                             }}
                             className="text-lg text-blue-600 hover:text-blue-800"
                           >
@@ -171,38 +138,27 @@ export default function MembersPage() {
 
               {/* Mobile Cards */}
               <div className="md:hidden flex flex-col gap-3 p-3">
-                {customers.map((item) => (
+                {stocks.map((item) => (
                   <div
-                    key={item.memberId}
+                    key={item.stockId}
                     onClick={() => {
                       setActiveRecord(item);
                       setIsModalOpen(true);
                     }}
                     className="flex items-center gap-3 p-3 border border-orange-200 rounded-lg shadow-sm hover:bg-orange-50 cursor-pointer"
                   >
-                    <img
-                      src={
-                        Array.isArray(item.image) && item.image.length > 0
-                          ? getImageUrl(item.image[0])
-                          : "/userDefault.jpg"
-                      }
-                      className="w-14 h-14 rounded-full object-cover"
-                    />
 
                     <div className="flex-1">
                       <p className="font-semibold">
-                        {item.title}{" "}
-                        {item.nameInSinhala
-                          ? item.nameInSinhala
-                          : `${item.firstName} ${item.lastName}`}
+                        {item.stockName}
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        {getRoleLabel(item.memberRole)}
+                        {item.stockId}
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        {item.memberId} {item.mobile}
+                        {item.stockQuantity}
                       </p>
 
                       <div className="flex justify-between items-center">
