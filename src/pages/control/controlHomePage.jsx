@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaMoneyCheckAlt,
   FaUserClock,
@@ -14,13 +14,22 @@ import {
 } from "react-icons/fa";
 import { FaSackDollar, FaMoneyBillTransfer } from "react-icons/fa6";
 import { TbReport } from "react-icons/tb";
-import {  NavLink } from "react-router-dom";
-import { Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 /* ───────── MAIN PAGE ───────── */
 
 export default function ControlHomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+
+  /* 🔐 PROTECT PAGE (REDIRECT IF NOT LOGGED IN) */
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user) {
+      navigate("/login");
+    }
+  }, [navigate]);
 
   /* ───── USER & ROLE ───── */
   let memberRoll = "";
@@ -32,53 +41,114 @@ export default function ControlHomePage() {
     memberRoll = "admin";
   }
 
-  const normalizedRole = memberRoll?.toLowerCase().trim();  
+  const normalizedRole = memberRoll?.toLowerCase().trim();
 
   /* ───── MENU CONFIG ───── */
   const menuItems = [
-    { label: "Home", to: "/", icon: <FaHome />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Dashboard", to: "/control", icon: <FaAtom />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Members", to: "/control/members", icon: <FaUsers />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Executive Committee", to: "/control/exco-members", icon: <FaUsersCog />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Pending Member Approvals", to: "/control/pending-members", icon: <FaUserClock />, roles: ["admin","secretary","assistant-secretary"] },
-    { label: "Add New Member", to: "/control/add-member-secretary", icon: <FaUserClock />, roles: ["admin","secretary","assistant-secretary"] },
-    { label: "Edit Member", to: "/control/edit-member-secretary", icon: <FaUserClock />, roles: ["admin","secretary","assistant-secretary"] },
-    { label: "Receipts Entry", to: "/control/receipts-entry", icon: <FaReceipt />, roles: ["admin","treasurer","assistant-treasurer"] },
-    { label: "Vouchers Entry", to: "/control/vouchers-entry", icon: <FaMoneyCheckAlt />, roles: ["admin","treasurer","assistant-treasurer"] },
-    { label: "Fund Transfer", to: "/control/fund-transfer", icon: <FaMoneyBillTransfer />, roles: ["admin","treasurer","assistant-treasurer"] },
-    { label: "Cash Book", to: "/control/cash-book", icon: <FaSackDollar />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Constitution", to: "/control/constitution", icon: <FaAtom />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Meeting Minutes", to: "/control/meeting-minutes", icon: <FaFileAlt />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
-    { label: "Transactions Report", to: "/control/transactions-report", icon: <TbReport />, roles: ["admin","president","secretary","treasurer","vice-president","assistant-secretary","assistant-treasurer","activity-coordinator","committee-member","internal-auditor"] },
+    {
+      label: "Home",
+      to: "/",
+      icon: <FaHome />,
+      roles: [
+        "admin",
+        "president",
+        "secretary",
+        "treasurer",
+        "vice-president",
+        "assistant-secretary",
+        "assistant-treasurer",
+        "activity-coordinator",
+        "committee-member",
+        "internal-auditor",
+      ],
+    },
+    {
+      label: "Dashboard",
+      to: "*",
+      icon: <FaAtom />,
+      roles: [
+        "admin",
+        "president",
+        "secretary",
+        "treasurer",
+        "vice-president",
+        "assistant-secretary",
+        "assistant-treasurer",
+        "activity-coordinator",
+        "committee-member",
+        "internal-auditor",
+      ],
+    },
+    {
+      label: "Members",
+      to: "/members",
+      icon: <FaUsers />,
+      roles: [
+        "admin",
+        "president",
+        "secretary",
+        "treasurer",
+        "vice-president",
+        "assistant-secretary",
+        "assistant-treasurer",
+        "activity-coordinator",
+        "committee-member",
+        "internal-auditor",
+      ],
+    },
+    {
+      label: "Add New Member",
+      to: "/add-member-secretary",
+      icon: <FaUserClock />,
+      roles: ["admin", "secretary", "assistant-secretary"],
+    },
+    {
+      label: "Edit Member",
+      to: "/edit-member-secretary",
+      icon: <FaUserClock />,
+      roles: ["admin", "secretary", "assistant-secretary"],
+    },
   ];
 
   return (
     <div className="flex w-full min-h-screen bg-gray-100">
-
       {/* MOBILE OVERLAY */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
-             onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* SIDEBAR */}
-      <aside className={`fixed md:static z-40 w-64 bg-white shadow-lg transition-transform duration-300
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
-
+      <aside
+        className={`fixed md:static z-40 w-64 bg-white shadow-lg transition-transform duration-300
+        ${
+          sidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0"
+        }`}
+      >
         <div className="p-4 flex justify-between items-center font-bold text-orange-600 border-b">
-          Control Panel
-          <button className="md:hidden" onClick={() => setSidebarOpen(false)}>
+          CDS ERP
+          <button
+            className="md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
             <FaTimes />
           </button>
         </div>
 
         <nav className="flex flex-col p-2 gap-1">
           {menuItems
-            .filter(item =>
-              !normalizedRole ||
-              item.roles.map(r => r.toLowerCase()).includes(normalizedRole)
+            .filter(
+              (item) =>
+                !normalizedRole ||
+                item.roles
+                  .map((r) => r.toLowerCase())
+                  .includes(normalizedRole)
             )
-            .map(item => (
+            .map((item) => (
               <SidebarLink
                 key={item.to}
                 to={item.to}
@@ -88,10 +158,11 @@ export default function ControlHomePage() {
               />
             ))}
 
+          {/* 🚪 LOGOUT */}
           <button
             onClick={() => {
               localStorage.clear();
-              window.location.reload();
+              navigate("/login");
             }}
             className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-red-50"
           >
@@ -103,10 +174,13 @@ export default function ControlHomePage() {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col">
         <header className="sticky top-0 z-20 bg-white px-4 py-3 flex gap-4 shadow-sm">
-          <button className="md:hidden" onClick={() => setSidebarOpen(true)}>
+          <button
+            className="md:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
             <FaBars />
           </button>
-          <h1 className="text-xl font-semibold">🖥️ Control Panel Dashboard</h1>
+          <h1 className="text-xl font-semibold">🖥️ Collective Development Society</h1>
         </header>
 
         <div className="p-6">
@@ -125,11 +199,14 @@ const SidebarLink = ({ to, icon, label, onClick, end }) => (
     onClick={onClick}
     className={({ isActive }) =>
       `flex items-center gap-3 px-4 py-2 rounded-lg transition
-      ${isActive ? "bg-orange-200 font-semibold" : "hover:bg-orange-50"}`
+      ${
+        isActive
+          ? "bg-orange-200 font-semibold"
+          : "hover:bg-orange-50"
+      }`
     }
   >
     <span className="text-orange-500">{icon}</span>
     {label}
   </NavLink>
 );
-

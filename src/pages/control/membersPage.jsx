@@ -3,7 +3,7 @@ import axios from "axios";
 import Modal from "react-modal";
 import { useNavigate, useLocation } from "react-router-dom";
 import LoadingSpinner from "../../components/loadingSpinner";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaEdit } from "react-icons/fa";
 
 Modal.setAppElement("#root");
 
@@ -16,13 +16,19 @@ export default function MembersPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const typeMap = {
-    ordinary: "Ordinary Member",
-    life: "Life Member",
-    associate: "Associate Member",
-    honorary: "Honorary Member",
-    overseas: "Overseas Member",
+  const roleMap = {
+    admin: "Admin",
+    member: "Member",
+    president: "President",
+    secretary: "Secretary",
+    treasurer: "Treasurer",
+    "vice-president": "Vice President",
+    "assistant-secretary": "Assistant Secretary",
+    "assistant-treasurer": "Assistant Treasurer",
   };
+
+  const getRoleLabel = (role) =>
+    roleMap[role?.toLowerCase()] || role;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -31,11 +37,7 @@ export default function MembersPage() {
     axios
       .get(import.meta.env.VITE_BACKEND_URL + "/api/member")
       .then((res) => {
-        const filtered = res.data.filter(
-          (member) => member.memberRole !== "guest"
-        );
-
-        const sorted = filtered.sort((a, b) =>
+        const sorted = res.data.sort((a, b) =>
           a.memberId.localeCompare(b.memberId)
         );
 
@@ -68,7 +70,7 @@ export default function MembersPage() {
           </div>
 
           <button
-            onClick={() => navigate("/control")}
+            onClick={() => navigate("/")}
             className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
           >
             ← Go Back
@@ -97,6 +99,7 @@ export default function MembersPage() {
                       <th className="px-3 py-2 text-left">M/Type</th>
                       <th className="px-3 py-2 text-left">Address</th>
                       <th className="px-3 py-2 text-left">Mobile</th>
+                      <th className="px-3 py-2 text-right">Due Amount</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-orange-200">
@@ -124,10 +127,13 @@ export default function MembersPage() {
                           {item.memberId}
                         </td>
                         <td className="px-3 py-2">
-                          {item.title} {item.firstName} {item.lastName}
+                          {item.title}{" "}
+                          {item.nameInSinhala
+                            ? item.nameInSinhala
+                            : `${item.firstName} ${item.lastName}`}
                         </td>
                         <td className="px-3 py-2">
-                          {typeMap[item.memberType?.toLowerCase()]}
+                          {getRoleLabel(item.memberRole)}
                         </td>
                         <td className="px-3 py-2 break-words">
                           {Array.isArray(item.address)
@@ -135,6 +141,9 @@ export default function MembersPage() {
                             : item.address || "-"}
                         </td>
                         <td className="px-3 py-2">{item.mobile}</td>
+                        <td className="px-3 py-2 text-right">
+                          {item.dueAmount ? `Rs. ${item.dueAmount}` : "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -162,16 +171,22 @@ export default function MembersPage() {
                     />
 
                     <div className="flex-1">
-                      <p className="font-semibold">
+                      {/* <p className="font-semibold">
                         {item.title} {item.firstName} {item.lastName}
+                      </p> */}
+                        <p className="font-semibold">
+                          {item.title}{" "}
+                          {item.nameInSinhala
+                            ? item.nameInSinhala
+                            : `${item.firstName} ${item.lastName}`}
+                        </p>                      
+                      <p className="text-sm text-gray-600">
+                        {getRoleLabel(item.memberRole)}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {typeMap[item.memberType?.toLowerCase()]}
+                        {item.memberId} {item.mobile}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        {item.memberId}
-                      </p>
-                      <p className="text-sm text-gray-600">{item.mobile}</p>
+                      <p className="text-sm text-gray-600">{item.dueAmount ? `Rs. ${item.dueAmount}` : "—"}</p>
                     </div>
                   </div>
                 ))}
@@ -219,11 +234,13 @@ export default function MembersPage() {
                     "Name",
                     `${activeRecord.title || ""} ${activeRecord.firstName || ""} ${activeRecord.lastName || ""}`,
                   ],
+                  ["Name in Sinhala", activeRecord.nameInSinhala],
+                  ["Address", Array.isArray(activeRecord.address) ? activeRecord.address.filter(Boolean).join(", ") : activeRecord.address],
                   ["Mobile", activeRecord.mobile],
                   ["Email", activeRecord.email],
-                  ["Member Type", activeRecord.memberType],
-                  ["Role", activeRecord.memberRole],
+                  ["Role", getRoleLabel(activeRecord.memberRole)],
                   ["Status", activeRecord.isActive ? "Active" : "Inactive"],
+                  ["Due Amount", activeRecord.dueAmount ? `Rs. ${activeRecord.dueAmount}` : "None"],
                 ].map(([label, value]) => (
                   <tr key={label} className="border-b">
                     <td className="py-2 font-medium text-orange-600">
