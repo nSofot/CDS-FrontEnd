@@ -127,14 +127,14 @@ export default function VendorListPage() {
                     onClick={() =>
                       navigate(`/edit-vendor`, { state: { vendor: v } })
                     }
-                    className="text-lg px-2 py-1 text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white transition"
+                    className="text-lg px-2 py-1 text-blue-600 hover:bg-blue-600 hover:text-white transition"
                   >
                     <FaEdit />
                   </button>
 
                   <button
                     onClick={() => handleDelete(v._id)}
-                    className="text-lg px-2 py-1 text-red-600 border border-red-600 rounded hover:bg-red-600 hover:text-white transition"
+                    className="text-lg px-2 py-1 text-red-600 hover:bg-red-600 hover:text-white transition"
                   >
                     <FaTrash />
                   </button>

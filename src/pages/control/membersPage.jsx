@@ -3,7 +3,7 @@ import axios from "axios";
 import Modal from "react-modal";
 import { useNavigate, useLocation } from "react-router-dom";
 import LoadingSpinner from "../../components/loadingSpinner";
-import { FaUser, FaEdit } from "react-icons/fa";
+import { FaUser, FaEdit, FaTrash } from "react-icons/fa";
 
 Modal.setAppElement("#root");
 
@@ -55,6 +55,24 @@ export default function MembersPage() {
       ? img
       : import.meta.env.VITE_BACKEND_URL + img;
 
+  const deleteMember = (memberId) => {
+    if (window.confirm("Are you sure you want to delete this member?")) {
+      axios
+        .delete(`${import.meta.env.VITE_BACKEND_URL}/api/member/${memberId}`)
+        .then(() => {
+          setCustomers((prev) =>
+            prev.filter((member) => member.memberId !== memberId)
+          );
+          alert("Member deleted successfully.");
+        })
+        .catch((err) => {
+          console.error("Error deleting member:", err);
+          alert("Failed to delete member. Please try again.");
+        });
+    }
+  };
+
+  
   return (
     <div className="w-full max-w-6xl mx-auto min-h-screen p-3 flex flex-col gap-4">
       {/* Header */}
@@ -162,6 +180,15 @@ export default function MembersPage() {
                           >
                             <FaEdit />
                           </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteMember(item.memberId);
+                            }}
+                            className="text-red-600 hover:text-red-800 ml-2"
+                          >
+                            <FaTrash />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -220,6 +247,15 @@ export default function MembersPage() {
                             className="text-lg text-blue-600 hover:text-blue-800"
                           >
                             <FaEdit />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // prevent card click
+                              deleteMember(item.memberId);
+                            }}
+                            className="text-red-600 hover:text-red-800 ml-2"
+                          >
+                            <FaTrash />
                           </button>
                         </div>
                       </div>
