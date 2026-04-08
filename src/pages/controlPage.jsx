@@ -10,8 +10,11 @@ import MembersPage from "./control/membersPage";
 import AddNewMembers from "./control/addCustomerBySecratary";
 import EditMembers from "./control/editCustomerBySecratary";
 import StockPage from "./control/stockPage";
-// import AddNewStock from "./control/addNewStock";
-// import EditStock from "./control/editStock";
+import AddStockPage from "./control/addStockPage";
+import EditStockPage from "./control/editStockPage";
+import VendorListPage from "./control/vendorPage";
+import AddVendorPage from "./control/addVendorPage";
+import EditVendorPage from "./control/editVendorPage";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -87,6 +90,12 @@ export default function ControlPage() {
         <Route path="edit-member" element={<EditMembers />} />   
 
         <Route path="stock" element={<StockPage />} />
+        <Route path="add-stock" element={<AddStockPage />} />
+        <Route path="edit-stock" element={<EditStockPage />} />
+
+        <Route path="vendors" element={<VendorListPage />} />
+        <Route path="add-vendor" element={<AddVendorPage />} />
+        <Route path="edit-vendor" element={<EditVendorPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

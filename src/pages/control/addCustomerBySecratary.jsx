@@ -64,7 +64,7 @@ export default function AddCustomerBySecratary() {
 			});
 
 			toast.success("Member added successfully!");
-			navigate(-1);
+			navigate("/members", { replace: true });
 
 		} catch (err) {
 			toast.error(err?.response?.data?.message || "Something went wrong");
@@ -94,7 +94,7 @@ export default function AddCustomerBySecratary() {
 						{isAdding ? "Adding..." : "Add Member"}
 					</button>
 
-					<Link to="/" className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-2 rounded-md text-sm font-medium shadow">
+					<Link to="/members" className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-2 rounded-md text-sm font-medium shadow">
 						Cancel
 					</Link>
 				</div>

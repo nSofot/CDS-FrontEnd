@@ -259,7 +259,7 @@ export default function EditMember() {
 			);
 
 			toast.success("Member updated successfully");
-			navigate("/");
+			navigate("/members", { replace: true });
 		} catch (error) {
 			console.error(error);
 			toast.error(error?.response?.data?.message || "Update failed");
@@ -295,7 +295,7 @@ export default function EditMember() {
 					</button>
 
 					<Link
-					to="/"
+					to="/members"
 					className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-medium shadow text-center"
 					>
 					Cancel

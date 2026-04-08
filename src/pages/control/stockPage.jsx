@@ -83,20 +83,18 @@ export default function StockPage() {
                   <thead className="bg-orange-100">
                     <tr>
                       <th className="px-3 py-2 text-left">#</th>
-                      <th className="px-3 py-2 text-center">Image</th>
                       <th className="px-3 py-2 text-center">ID</th>
                       <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-left">M/Type</th>
-                      <th className="px-3 py-2 text-left">Address</th>
-                      <th className="px-3 py-2 text-left">Mobile</th>
-                      <th className="px-3 py-2 text-right">Due Amount</th>
+                      <th className="px-3 py-2 text-left">Quantity</th>
+                      <th className="px-3 py-2 text-left">UOM</th>
+                      <th className="px-3 py-2 text-left">Price</th>
                       <th className="px-3 py-2 text-left">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-orange-200">
-                    {customers.map((item, index) => (
+                    {stocks.map((item, index) => (
                       <tr
-                        key={item.memberId}
+                        key={item.stockId}
                         onClick={() => {
                           setActiveRecord(item);
                           setIsModalOpen(true);
@@ -111,13 +109,11 @@ export default function StockPage() {
                         <td className="px-3 py-2">
                           {item.stockName}
                         </td>
-
-                        <td className="px-3 py-2 break-words">
-                          {Array.isArray(item.address)
-                            ? item.address.filter(Boolean).join(", ")
-                            : item.address || "-"}
-                        </td>
                         <td className="px-3 py-2">{item.stockQuantity}</td>
+                        <td className="px-3 py-2">{item.stockUOM}</td>
+                        <td className="px-3 py-2">
+                          {item.price ? `Rs. ${item.stockPrice}` : "—"}
+                        </td>
 
                         <td className="px-3 py-2">
                           <button
@@ -154,18 +150,15 @@ export default function StockPage() {
                       </p>
 
                       <p className="text-sm text-gray-600">
-                        {item.stockId}
+                        {item.stockQuantity} {item.stockUOM}
                       </p>
 
-                      <p className="text-sm text-gray-600">
-                        {item.stockQuantity}
-                      </p>
+
 
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-gray-600">
-                          {item.dueAmount ? `Rs. ${item.dueAmount}` : "—"}
+                          {item.stockPrice ? `Rs. ${item.stockPrice}` : "—"}
                         </p>
-
                         {/* ✅ FIXED HERE */}
                         <div>
                           <button
@@ -199,40 +192,22 @@ export default function StockPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold text-orange-600">
-                Member Details
+                Stock Details
               </h2>
               <button onClick={() => setIsModalOpen(false)}>✖</button>
-            </div>
-
-            <div className="flex justify-center">
-              {Array.isArray(activeRecord.image) &&
-              activeRecord.image.length > 0 ? (
-                <img
-                  src={getImageUrl(activeRecord.image[0])}
-                  className="w-28 h-28 rounded-full object-cover border-4 border-orange-300"
-                />
-              ) : (
-                <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center">
-                  <FaUser size={40} />
-                </div>
-              )}
             </div>
 
             <table className="w-full text-sm">
               <tbody>
                 {[
-                  ["Member ID", activeRecord.memberId],
-                  [
-                    "Name",
-                    `${activeRecord.title || ""} ${activeRecord.firstName || ""} ${activeRecord.lastName || ""}`,
-                  ],
-                  ["Name in Sinhala", activeRecord.nameInSinhala],
-                  ["Address", Array.isArray(activeRecord.address) ? activeRecord.address.filter(Boolean).join(", ") : activeRecord.address],
-                  ["Mobile", activeRecord.mobile],
-                  ["Email", activeRecord.email],
-                  ["Role", getRoleLabel(activeRecord.memberRole)],
-                  ["Status", activeRecord.isActive ? "Active" : "Inactive"],
-                  ["Due Amount", activeRecord.dueAmount ? `Rs. ${activeRecord.dueAmount}` : "None"],
+                  ["Stock ID", activeRecord.stockId],
+                  ["Stock Name", activeRecord.stockName],
+                  ["Stock Description", activeRecord.stockDescription],                  
+                  ["Stock Quantity", activeRecord.stockQuantity],
+                  ["Stock UOM", activeRecord.stockUOM],
+                  ["Stock Cost", activeRecord.stockCost ? `Rs. ${activeRecord.stockCost}` : "—"],
+                  ["Stock Price", activeRecord.stockPrice ? `Rs. ${activeRecord.stockPrice}` : "—"],
+
                 ].map(([label, value]) => (
                   <tr key={label} className="border-b">
                     <td className="py-2 font-medium text-orange-600">
