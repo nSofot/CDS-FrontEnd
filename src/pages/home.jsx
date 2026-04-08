@@ -1,10 +1,10 @@
 import { Routes, Route, Outlet } from "react-router-dom";
 import Header from "../components/header";
-import ConstitutionPage from "./client/constitutionPage";
-import Gallery from "./client/galleryPage";
-import About from "./client/about";
-import Contact from "./client/contact";
-import Home from "./client/homePage";
+// import ConstitutionPage from "./client/constitutionPage";
+// import Gallery from "./client/galleryPage";
+// import About from "./client/about";
+// import Contact from "./client/contact";
+// import Home from "./client/homePage";
 import MemberProfilePage from "./client/memberProfile";
 import NotFoundPage from "./notFoundPage";
 // import MainLayout from "../layout/MainLayout";

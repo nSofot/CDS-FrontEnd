@@ -59,7 +59,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[url('/LandingImageNew.jpg')] bg-cover bg-center flex justify-center items-center px-4">
+    // <div className="min-h-screen w-full bg-[url('/LandingImageNew.jpg')] bg-cover bg-center flex justify-center items-center px-4">
+    <div className="min-h-screen w-full bg-center flex justify-center items-center px-4">
       {/* Login Form */}
       <div className="w-full max-w-sm bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-6 sm:p-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-purple-700 mb-6 text-center">
@@ -123,14 +124,11 @@ export default function LoginPage() {
         <div className="flex justify-between items-center text-sm text-blue-700 mt-6">
           <Link to="/forget" className="hover:underline">
             Forgot Password?
-          </Link>
-          <Link to="/register" className="hover:underline">
-            Register as new member?
-          </Link>          
+          </Link>         
         </div>
         <div>
           <p className="mt-8 text-sm text-gray-600 text-center">
-            © 2025 Tholangamuwa Central College - Colombo Group. All rights reserved.
+            © 2026 Collective Development Society.
           </p>
           <p className="mt-2 text-sm text-gray-600 text-center">
             Powered by nSoft Technologies.
@@ -140,3 +138,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

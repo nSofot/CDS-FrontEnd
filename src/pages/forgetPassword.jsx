@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,14 @@ export default function ForgetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const navigate = useNavigate();
+
+  /* 🔐 REDIRECT IF ALREADY LOGGED IN */
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   // ================= SEND OTP =================
   async function sendOtp() {
@@ -87,155 +95,156 @@ export default function ForgetPasswordPage() {
     setOtp("");
     setNewPassword("");
     setConfirmPassword("");
-    await sendOtp(); // 🔑 actually resend OTP
+    await sendOtp();
   }
 
   return (
-    <div className="min-h-screen w-full bg-[url('/LandingImageNew.jpg')] bg-cover bg-center flex items-center justify-center p-4">
-      <div className="flex flex-col md:flex-row items-center gap-8 max-w-5xl w-full">
-        <div className="w-full max-w-sm p-6 md:p-10 backdrop-blur-md bg-white/40 rounded-2xl shadow-xl">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 p-4">
+      <div className="w-full max-w-sm p-6 md:p-10 bg-white rounded-2xl shadow-xl">
 
-          <h2 className="text-2xl md:text-3xl font-bold text-purple-700 mb-6 text-center">
-            {otpSent ? "Reset Password" : "Forgot Password"}
-          </h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-purple-700 mb-6 text-center">
+          {otpSent ? "Reset Password" : "Forgot Password"}
+        </h2>
 
-          {!otpSent ? (
-            <>
-              {/* MOBILE */}
-              <input
-                type="text"
-                placeholder="Enter your mobile number"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                className="w-full h-12 px-4 mb-4 rounded-lg border border-purple-200 bg-white"
-              />
+        {!otpSent ? (
+          <>
+            {/* MOBILE */}
+            <input
+              type="text"
+              placeholder="Enter your mobile number"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              className="w-full h-12 px-4 mb-4 rounded-lg border"
+            />
 
-              {/* EMAIL */}
-              <input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-12 px-4 mb-6 rounded-lg border border-purple-200 bg-white"
-              />
+            {/* EMAIL */}
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full h-12 px-4 mb-6 rounded-lg border"
+            />
 
-              {/* SEND OTP BUTTON */}
-              <button
-                disabled={sendingOtp}
-                onClick={async () => {
-                  setSendingOtp(true);
-                  try {
-                    await sendOtp();
-                  } finally {
-                    setSendingOtp(false);
-                  }
-                }}
-                className={`w-full h-12 rounded-lg font-semibold text-white transition-all duration-200
-                  ${
-                    sendingOtp
-                      ? "bg-purple-400 cursor-not-allowed opacity-70"
-                      : "bg-purple-600 hover:bg-purple-700 active:scale-[0.98]"
-                  }`}
-              >
-                {sendingOtp ? "Sending OTP..." : "Send OTP"}
-              </button>
-            </>
-          ) : (
-            <>
-              {/* READONLY MOBILE */}
-              <input
-                type="text"
-                readOnly
-                value={mobile}
-                className="w-full h-12 px-4 mb-4 rounded-lg border border-purple-200 bg-gray-100"
-              />
+            {/* SEND OTP */}
+            <button
+              disabled={sendingOtp}
+              onClick={async () => {
+                setSendingOtp(true);
+                try {
+                  await sendOtp();
+                } finally {
+                  setSendingOtp(false);
+                }
+              }}
+              className={`w-full h-12 rounded-lg text-white font-semibold
+              ${
+                sendingOtp
+                  ? "bg-purple-400 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-700"
+              }`}
+            >
+              {sendingOtp ? "Sending OTP..." : "Send OTP"}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* MOBILE */}
+            <input
+              type="text"
+              readOnly
+              value={mobile}
+              className="w-full h-12 px-4 mb-4 rounded-lg border bg-gray-100"
+            />
 
-              {/* READONLY EMAIL */}
-              <input
-                type="email"
-                readOnly
-                value={email}
-                className="w-full h-12 px-4 mb-4 rounded-lg border border-purple-200 bg-gray-100"
-              />
+            {/* EMAIL */}
+            <input
+              type="email"
+              readOnly
+              value={email}
+              className="w-full h-12 px-4 mb-4 rounded-lg border bg-gray-100"
+            />
 
-              {/* OTP */}
-              <input
-                type="text"
-                placeholder="Enter OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className="w-full h-12 px-4 mb-4 rounded-lg border border-purple-200 bg-white"
-              />
+            {/* OTP */}
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full h-12 px-4 mb-4 rounded-lg border"
+            />
 
-              {/* NEW PASSWORD */}
-              <input
-                type="password"
-                placeholder="New Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full h-12 px-4 mb-4 rounded-lg border border-purple-200 bg-white"
-              />
+            {/* NEW PASSWORD */}
+            <input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full h-12 px-4 mb-4 rounded-lg border"
+            />
 
-              {/* CONFIRM PASSWORD */}
-              <input
-                type="password"
-                placeholder="Confirm New Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full h-12 px-4 mb-6 rounded-lg border border-purple-200 bg-white"
-              />
+            {/* CONFIRM PASSWORD */}
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full h-12 px-4 mb-6 rounded-lg border"
+            />
 
-              {/* RESET PASSWORD */}
-              <button
-                disabled={verifyingOtp}
-                onClick={async () => {
-                  setVerifyingOtp(true);
-                  try {
-                    await verifyOtp();
-                  } finally {
-                    setVerifyingOtp(false);
-                  }
-                }}
-                className={`w-full h-12 rounded-lg font-semibold text-white transition-all duration-200 mb-3
-                  ${
-                    verifyingOtp
-                      ? "bg-purple-400 cursor-not-allowed opacity-70"
-                      : "bg-purple-600 hover:bg-purple-700 active:scale-[0.98]"
-                  }`}
-              >
-                {verifyingOtp ? "Resetting Password..." : "Reset Password"}
-              </button>
+            {/* RESET */}
+            <button
+              disabled={verifyingOtp}
+              onClick={async () => {
+                setVerifyingOtp(true);
+                try {
+                  await verifyOtp();
+                } finally {
+                  setVerifyingOtp(false);
+                }
+              }}
+              className={`w-full h-12 rounded-lg text-white font-semibold mb-3
+              ${
+                verifyingOtp
+                  ? "bg-purple-400 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-700"
+              }`}
+            >
+              {verifyingOtp ? "Resetting..." : "Reset Password"}
+            </button>
 
-              {/* RESEND OTP */}
-              <button
-                disabled={sendingOtp}
-                onClick={async () => {
-                  setSendingOtp(true);
-                  try {
-                    await handleResend();
-                  } finally {
-                    setSendingOtp(false);
-                  }
-                }}
-                className={`w-full h-12 rounded-lg font-semibold transition-all duration-200
-                  ${
-                    sendingOtp
-                      ? "border border-purple-400 text-purple-400 cursor-not-allowed opacity-70"
-                      : "border border-purple-600 text-purple-700 hover:bg-purple-700 hover:text-white active:scale-[0.98]"
-                  }`}
-              >
-                {sendingOtp ? "Resending OTP..." : "Resend OTP"}
-              </button>
-            </>
-          )}
-          <div>
-            <p className="mt-8 text-sm text-gray-600 text-center">
-              © 2025 Tholangamuwa Central College - Colombo Group. All rights reserved.
-            </p>
-            <p className="mt-2 text-sm text-gray-600 text-center">
-              Powered by nSoft Technologies.
-            </p>   
-          </div>
+            {/* RESEND */}
+            <button
+              disabled={sendingOtp}
+              onClick={async () => {
+                setSendingOtp(true);
+                try {
+                  await handleResend();
+                } finally {
+                  setSendingOtp(false);
+                }
+              }}
+              className="w-full h-12 rounded-lg border border-purple-600 text-purple-700 hover:bg-purple-700 hover:text-white"
+            >
+              {sendingOtp ? "Resending..." : "Resend OTP"}
+            </button>
+          </>
+        )}
+
+        {/* FOOTER */}
+        <p className="mt-6 text-sm text-gray-500 text-center">
+          © 2026 Collective Development Society
+        </p>
+          <p className="mt-2 text-sm text-gray-600 text-center">
+            Powered by nSoft Technologies.
+          </p>         
+        <div className="mt-4 text-center">
+          <a
+            href="/login"
+            className="text-purple-600 hover:underline font-medium"
+          >
+            Back to Login
+          </a>
         </div>
       </div>
     </div>

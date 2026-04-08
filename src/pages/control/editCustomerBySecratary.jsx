@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import mediaUpload from "../../utils/mediaUpload";
@@ -8,6 +8,7 @@ export default function EditMember() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [expanded, setExpanded] = useState("basic"); 
+	const location = useLocation();
 
 	// Example states (replace with your actual ones)
 	const [member, setMember] = useState({});
@@ -15,19 +16,16 @@ export default function EditMember() {
 	const [title, setTitle] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
-	const [memberType, setMemberType] = useState("");
+	const [nameInSinhala, setNameInSinhala] = useState("");
 	const [memberRole, setMemberRole] = useState("");	
 	const [address, setAddress] = useState("");
 	const [mobile, setMobile] = useState("");
 	const [phone, setPhone] = useState("");
 	const [email, setEmail] = useState("");
-	const currentYear = new Date().getFullYear();
-	const [periodInSchoolFrom, setPeriodInSchoolFrom] = useState(currentYear);
-	const [periodInSchoolTo, setPeriodInSchoolTo] = useState(currentYear);
-	const [invitedBy, setInvitedBy] = useState("");
 	const [notes, setNotes] = useState("");
 	const [existingImages, setExistingImages] = useState([]);
 	const [image, setImage] = useState([]);
+	const [dueAmount, setDueAmount] = useState(0);
 
 	const navigate = useNavigate();
 
@@ -53,17 +51,15 @@ export default function EditMember() {
 				setTitle(res.data.title || "");
 				setFirstName(res.data.firstName || "");
 				setLastName(res.data.lastName || "");
-				setMemberType(res.data.memberType || "");
+				setNameInSinhala(res.data.nameInSinhala || "");
 				setMemberRole(res.data.memberRole || "");
 				setAddress(Array.isArray(res.data.address) ? res.data.address.join(", ") : res.data.address || "");
 				setNotes(res.data.notes || "");
 				setMobile(res.data.mobile || "");
 				setPhone(res.data.phone || "");
 				setEmail(res.data.email || "");
-				setPeriodInSchoolFrom(res.data.periodInSchoolFrom || "");
-				setPeriodInSchoolTo(res.data.periodInSchoolTo || "");
-				setInvitedBy(res.data.invitedBy || "");
 				setExistingImages(res.data.image || "");
+				setDueAmount(res.data.dueAmount || 0);
             }           
         } catch (err) {
             toast.error(err.response?.data?.message || "Invalid Member ID");
@@ -72,25 +68,36 @@ export default function EditMember() {
         }
     };
 
+	// ✅ Load from navigate state OR fallback API
 	useEffect(() => {
-	if (location.state) {
-		const data = location.state;
+		if (location.state?.member) {
+		const data = location.state.member;
+
+		setMember(data);
 		setMemberId(data.memberId || "");
 		setTitle(data.title || "");
 		setFirstName(data.firstName || "");
 		setLastName(data.lastName || "");
-		setMemberType(data.memberType || "");
+		setNameInSinhala(data.nameInSinhala || "");
 		setMemberRole(data.memberRole || "");
-		setAddress(Array.isArray(data.address) ? data.address.join(", ") : data.address || "");
+		setAddress(
+			Array.isArray(data.address)
+			? data.address.join(", ")
+			: data.address || ""
+		);
 		setNotes(data.notes || "");
 		setMobile(data.mobile || "");
 		setPhone(data.phone || "");
 		setEmail(data.email || "");
-		setPeriodInSchoolFrom(data.periodInSchoolFrom || "");
-		setPeriodInSchoolTo(data.periodInSchoolTo || "");
-		setInvitedBy(data.invitedBy || "");
 		setExistingImages(data.image || []);
-	}
+		setDueAmount(data.dueAmount || 0);
+		} else {
+		// ⚡ fallback if user refreshes page
+		const idFromUrl = window.location.search.split("=")[1];
+		if (idFromUrl) {
+			searchCustomer(idFromUrl);
+		}
+		}
 	}, [location.state]);
 
 
@@ -99,22 +106,21 @@ export default function EditMember() {
 		setIsUpdating(true);
 
 		// Validate basic fields
-		if (!firstName || !lastName || !mobile || !memberType || !memberRole || !periodInSchoolFrom || !periodInSchoolTo) {
+		if (!firstName || !lastName || !mobile || !memberRole) {
 			toast.error("Please fill in all required fields");
 			setIsUpdating(false);
 			return;
 		}
 
 		// validate member role
-		const validRoles = ['member', 
+		const validRoles = ['admin',
+							'member', 
 							'president', 
 							'secretary', 
 							'treasurer', 
 							'vice-president', 
 							'assistant-secretary', 
 							'assistant-treasurer', 
-							'activity-coordinator', 
-							'committee-member',
 							'internal-auditor'
 							];
 		if (!validRoles.includes(memberRole)) {
@@ -122,21 +128,23 @@ export default function EditMember() {
 			setIsUpdating(false);
 			return;
 		}
-		if (memberRole === 'member' ||
+		if (memberRole === 'admin' || 
+			memberRole === 'member' ||
 			memberRole === 'president' ||
 			memberRole === 'secretary' ||
 			memberRole === 'treasurer' ||
 			memberRole === 'vice-president' ||
 			memberRole === 'assistant-secretary' ||
 			memberRole === 'assistant-treasurer' ||
-			memberRole === 'activity-coordinator' ||
-			memberRole === 'committee-member' ||
 			memberRole === 'internal-auditor'	
 		) {
 			const response = await axios.get(
 				`${import.meta.env.VITE_BACKEND_URL}/api/member/`
 
 			);
+			const adminCount = response.data.filter(
+				(cust) => cust.memberRole === 'admin' && cust.memberId !== memberId
+				).length;
 			const presidentCount = response.data.filter(
 				(cust) => cust.memberRole === 'president' && cust.memberId !== memberId
 				).length;
@@ -155,16 +163,15 @@ export default function EditMember() {
 			const assistantTreasurerCount = response.data.filter(
 				(cust) => cust.memberRole === 'assistant-treasurer' && cust.memberId !== memberId
 				).length;
-			const activityCoordinatorCount = response.data.filter(
-				(cust) => cust.memberRole === 'activity-coordinator' && cust.memberId !== memberId
-				).length;
-			const committeeMemberCount = response.data.filter(
-				(cust) => cust.memberRole === 'committee-member' && cust.memberId !== memberId
-				).length;
 			const internalAuditorCount = response.data.filter(
 				(cust) => cust.memberRole === 'internal-auditor' && cust.memberId !== memberId
 				).length;
 
+			if (memberRole === 'admin' && adminCount >= 1) {
+				toast.error("Please ensure only one Admin exists. Please delete the existing Admin first.");
+				setIsUpdating(false);
+				return;
+			}
 			if (memberRole === 'president' && presidentCount >= 1) {
 				toast.error("Please ensure only one President exists. Please delete the existing President first.");
 				setIsUpdating(false);
@@ -225,14 +232,11 @@ export default function EditMember() {
 				title,
 				firstName,
 				lastName,
-				memberType,
+				nameInSinhala,
 				memberRole,
 				address: address
 					? address.split(",").map(n => n.trim()).filter(Boolean)  // remove empty strings
-					: undefined,
-				periodInSchoolFrom,
-				periodInSchoolTo,	
-				invitedBy,				
+					: undefined,			
 				notes: notes || undefined,
 				image: [...existingImages, ...uploadedNewImages].length > 0
 					? [...existingImages, ...uploadedNewImages]
@@ -240,6 +244,7 @@ export default function EditMember() {
 				mobile: mobile || undefined,
 				phone: phone || undefined,
 				email: email?.trim() || undefined,
+				dueAmount: dueAmount || 0,
 			};
 
 			await axios.put(
@@ -254,7 +259,7 @@ export default function EditMember() {
 			);
 
 			toast.success("Member updated successfully");
-			navigate(-1);
+			navigate("/members", { replace: true });
 		} catch (error) {
 			console.error(error);
 			toast.error(error?.response?.data?.message || "Update failed");
@@ -290,7 +295,7 @@ export default function EditMember() {
 					</button>
 
 					<Link
-					to="/control"
+					to="/members"
 					className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-medium shadow text-center"
 					>
 					Cancel
@@ -373,6 +378,20 @@ export default function EditMember() {
 							</div>
 						</div>
 
+						{/* Name in Sinhala */}
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Name in Sinhala
+							</label>
+							<input
+								type="text"
+								value={nameInSinhala}
+								onChange={(e) => setNameInSinhala(e.target.value)}
+								className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+								placeholder="e.g. සුනිල් ගුණවර්ධන"
+							/>
+						</div>	
+
 						{/* Address */}
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-1">
@@ -424,65 +443,9 @@ export default function EditMember() {
 							</div>
 						</div>
 
-						<div className="flex flex-col sm:flex-row justify-between gap-3">
-							<div className="w-full sm:w-[20%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Period In School
-								</label>
-								<input
-									type="number"
-									min="1900"
-									max={new Date().getFullYear()}
-									value={periodInSchoolFrom}
-									onChange={(e) => setPeriodInSchoolFrom(Number(e.target.value))}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg"
-								/>
-							</div>		
-							<div className="w-full sm:w-[20%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Up To
-								</label>
-								<input
-									type="number"
-									min="1900"
-									max={new Date().getFullYear()}
-									value={periodInSchoolTo}
-									onChange={(e) => setPeriodInSchoolTo(Number(e.target.value))}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg"
-								/>
-
-							</div>		
-							<div className="w-full sm:w-[50%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Invitee
-								</label>
-								<input
-									type="text"
-									value={invitedBy}
-									onChange={(e) => setInvitedBy(e.target.value)}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-								/>
-							</div>																		
-						</div>
 
 						{/* Member Type ,  Member Role */}
 						<div className="flex flex-col sm:flex-row justify-between gap-3">
-							<div className="w-full sm:w-[45%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Member Type
-								</label>
-								<select
-									value={memberType}
-									onChange={(e) => setMemberType(e.target.value)}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-								>
-									<option value="ordinary">Ordinary Member</option>
-									<option value="life">Life Member</option>
-									<option value="associate">Associate Member</option>
-									<option value="honorary">Honorary Member</option>
-									<option value="overseas">Overseas Member</option>
-								</select>
-							</div>
 
 							<div className="w-full sm:w-[50%]">
 								<label className="block text-sm font-medium text-gray-700 mb-1">
@@ -493,6 +456,7 @@ export default function EditMember() {
 									onChange={(e) => setMemberRole(e.target.value)}
 									className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
 								>
+									<option value="admin">Admin</option>
 									<option value="member">Member</option>
 									<option value="president">President</option>
 									<option value="secretary">Secretary</option>
@@ -500,10 +464,21 @@ export default function EditMember() {
 									<option value="vice-president">Vice President</option>
 									<option value="assistant-secretary">Assistant Secretary</option>
 									<option value="assistant-treasurer">Assistant Treasurer</option>
-									<option value="activity-coordinator">Activity Coordinator</option>
-									<option value="committee-member">Committee Member</option>
 									<option value="internal-auditor">Internal Auditor</option>
 								</select>
+							</div>
+							
+							<div className="w-full sm:w-[50%]">
+								<label className="block text-sm font-medium text-gray-700 mb-1">
+									Due Amount
+								</label>
+								<input
+									type="number"
+									value={dueAmount}
+									onChange={(e) => setDueAmount(e.target.value)}
+									className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+									placeholder="e.g. 1500"
+								/>
 							</div>
 						</div>	
 					</div>
