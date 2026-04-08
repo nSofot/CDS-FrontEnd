@@ -7,9 +7,8 @@ import { Toaster } from 'react-hot-toast'
 // Pages
 import AdminPage from './pages/adminpage'
 import ControlPage from './pages/controlPage'
-import HomePage from './pages/home'
+// import HomePage from './pages/home'
 import LoginPage from './pages/login'
-import RegisterPage from './pages/register'
 import ForgetPasswordPage from './pages/forgetPassword'
 
 // Components
@@ -23,11 +22,10 @@ export default function App() {
         <Routes>
           
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
             <Route path="/forget" element={<ForgetPasswordPage />} />
             <Route path="/admin/*" element={<AdminPage />} />
-            <Route path="/control/*" element={<ControlPage />} />
-            <Route path="*" element={<HomePage />} />
+            <Route path="*" element={<ControlPage />} />
+            {/* <Route path="*" element={<HomePage />} /> */}
        
         </Routes>
       </BrowserRouter>

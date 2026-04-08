@@ -11,18 +11,15 @@ export default function AddCustomerBySecratary() {
 	const [title, setTitle] = useState("Mr.");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
+	const [nameInSinhala, setNameInSinhala] = useState("");
 	const [address, setAddress] = useState("");
-	const [memberType, setMemberType] = useState("ordinary");
 	const [memberRole, setMemberRole] = useState("member");
 	const [notes, setNotes] = useState("");
 	const [image, setImage] = useState([]);     // empty by default
 	const [mobile, setMobile] = useState("");
 	const [phone, setPhone] = useState("");
 	const [email, setEmail] = useState("");
-	const currentYear = new Date().getFullYear();
-	const [periodInSchoolFrom, setPeriodInSchoolFrom] = useState(currentYear);
-	const [periodInSchoolTo, setPeriodInSchoolTo] = useState(currentYear);
-	const [invitedBy, setInvitedBy] = useState("");
+	const [dueAmount, setDueAmount] = useState(0);
 	const [isAdding, setIsAdding] = useState(false);
 
 	const handleAddProduct = async () => {
@@ -30,8 +27,8 @@ export default function AddCustomerBySecratary() {
 		if (!token) return toast.error("Please log in first.");
 
 		// Required validation
-		if (!firstName || !lastName || !mobile || !memberType || !memberRole) {
-			toast.error("Please fill in first name, last name, mobile number, member type and member role");
+		if (!firstName || !lastName || !mobile || !memberRole) {
+			toast.error("Please fill in first name, last name, mobile number and member role");
 			setIsAdding(false);
 			return;
 		}
@@ -51,16 +48,14 @@ export default function AddCustomerBySecratary() {
 				title,
 				firstName,
 				lastName,
-				memberType,
+				nameInSinhala,
 				memberRole,
 				address: address ? address.split(",").map(n => n.trim()).filter(Boolean) : [], 
 				notes: notes || "",
 				image: image.length > 0 ? await Promise.all(image.map(img => mediaUpload(img))) : [],
 				mobile,
 				phone: phone || null,
-				periodInSchoolFrom,
-				periodInSchoolTo,
-				invitedBy: invitedBy || null,
+				dueAmount: dueAmount || 0,
 			};
 			if (email) newMember.email = email.trim();  // only include if non-empty
 
@@ -69,7 +64,7 @@ export default function AddCustomerBySecratary() {
 			});
 
 			toast.success("Member added successfully!");
-			navigate(-1);
+			navigate("/members", { replace: true });
 
 		} catch (err) {
 			toast.error(err?.response?.data?.message || "Something went wrong");
@@ -84,7 +79,7 @@ export default function AddCustomerBySecratary() {
 			{/* Header */}
 			<div className="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
 				<div>
-					<h1 className="text-lg md:text-xl font-semibold text-gray-800">👤➕ Add New Member By Secretary</h1>
+					<h1 className="text-lg md:text-xl font-semibold text-gray-800">👤➕ Add New Members</h1>
 					<p className="text-sm text-gray-500">Fill the member details to add it</p>
 				</div>
 
@@ -99,7 +94,7 @@ export default function AddCustomerBySecratary() {
 						{isAdding ? "Adding..." : "Add Member"}
 					</button>
 
-					<Link to="/control" className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-2 rounded-md text-sm font-medium shadow">
+					<Link to="/members" className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-2 rounded-md text-sm font-medium shadow">
 						Cancel
 					</Link>
 				</div>
@@ -144,6 +139,20 @@ export default function AddCustomerBySecratary() {
 								<label className="text-sm font-medium">Last Name</label>
 								<input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg text-sm" />
 							</div>
+						</div>
+
+						{/* Name in Sinhala */}
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Name in Sinhala
+							</label>
+							<input
+								type="text"
+								value={nameInSinhala}
+								onChange={(e) => setNameInSinhala(e.target.value)}
+								className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+								placeholder="e.g. සුනිල් ගුණවර්ධන"
+							/>
 						</div>
 
 						{/* Address */}
@@ -191,59 +200,8 @@ export default function AddCustomerBySecratary() {
 							</div>
 						</div>
 
-						<div className="flex flex-col sm:flex-row justify-between gap-3">
-							<div className="w-full sm:w-[20%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Period In School
-								</label>
-								<input
-									type="number"
-									min="1900"
-									max={new Date().getFullYear()}
-									value={periodInSchoolFrom}
-									onChange={(e) => setPeriodInSchoolFrom(Number(e.target.value))}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg"
-								/>
-
-							</div>		
-							<div className="w-full sm:w-[20%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Up To
-								</label>
-								<input
-									type="number"
-									min="1900"
-									max={new Date().getFullYear()}
-									value={periodInSchoolTo}
-									onChange={(e) => setPeriodInSchoolTo(Number(e.target.value))}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg"
-								/>
-
-							</div>		
-							<div className="w-full sm:w-[50%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Invitee
-								</label>
-								<input
-									type="text"
-									value={invitedBy}
-									onChange={(e) => setInvitedBy(e.target.value)}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-								/>
-							</div>																		
-						</div>
 						{/* Member Type & Role */}
 						<div className="w-full flex flex-col sm:flex-row gap-3">
-							<div className="w-full sm:w-1/2">
-								<label className="text-sm font-medium">Member Type</label>
-								<select value={memberType} onChange={(e) => setMemberType(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg text-sm">
-									<option value="ordinary">Ordinary</option>
-									<option value="life">Life</option>
-									<option value="associate">Associate</option>
-									<option value="honorary">Honorary</option>
-									<option value="overseas">Overseas</option>
-								</select>
-							</div>
 
 							<div className="w-full sm:w-1/2">
 								<label className="text-sm font-medium">Member Role</label>
