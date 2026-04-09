@@ -15,6 +15,7 @@ import EditStockPage from "./control/editStockPage";
 import VendorListPage from "./control/vendorPage";
 import AddVendorPage from "./control/addVendorPage";
 import EditVendorPage from "./control/editVendorPage";
+import GRNsPage from "./control/grnsPage";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -96,6 +97,8 @@ export default function ControlPage() {
         <Route path="vendors" element={<VendorListPage />} />
         <Route path="add-vendor" element={<AddVendorPage />} />
         <Route path="edit-vendor" element={<EditVendorPage />} />
+
+        <Route path="grns" element={<GRNsPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

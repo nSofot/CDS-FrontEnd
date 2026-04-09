@@ -120,13 +120,13 @@ export default function StockPage() {
                 <table className="min-w-full divide-y divide-orange-200 table-fixed">
                   <thead className="bg-orange-100">
                     <tr>
-                      <th className="px-3 py-2">#</th>
-                      <th className="px-3 py-2">ID</th>
-                      <th className="px-3 py-2">Name</th>
-                      <th className="px-3 py-2">Qty</th>
-                      <th className="px-3 py-2">UOM</th>
-                      <th className="px-3 py-2">Price</th>
-                      <th className="px-3 py-2">Actions</th>
+                      <th className="px-3 py-2 text-center">#</th>
+                      <th className="px-3 py-2 text-left">ID</th>
+                      <th className="px-3 py-2 text-left">Name</th>
+                      <th className="px-3 py-2 text-left">Qty</th>
+                      <th className="px-3 py-2 text-left">UOM</th>
+                      <th className="px-3 py-2 text-right">Price</th>
+                      <th className="px-3 py-2 text-right">Actions</th>
                     </tr>
                   </thead>
 
@@ -140,20 +140,20 @@ export default function StockPage() {
                         }}
                         className="hover:bg-orange-50 cursor-pointer"
                       >
-                        <td className="px-3 py-2">{index + 1}</td>
-                        <td className="px-3 py-2">{item.stockId}</td>
-                        <td className="px-3 py-2">{item.stockName}</td>
-                        <td className="px-3 py-2">{item.stockQuantity}</td>
-                        <td className="px-3 py-2">{item.stockUOM}</td>
+                        <td className="px-3 py-2 text-center">{index + 1}</td>
+                        <td className="px-3 py-2 text-left">{item.stockId}</td>
+                        <td className="px-3 py-2 text-left">{item.stockName}</td>
+                        <td className="px-3 py-2 text-left">{item.stockQuantity}</td>
+                        <td className="px-3 py-2 text-left">{item.stockUOM}</td>
 
                         {/* ✅ FIXED PRICE */}
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right">
                           {item.stockPrice
                             ? `Rs. ${item.stockPrice}`
                             : "—"}
                         </td>
 
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -255,8 +255,10 @@ export default function StockPage() {
                 {[
                   ["ID", activeRecord.stockId],
                   ["Name", activeRecord.stockName],
+                  ["Description", activeRecord.stockDescription],
                   ["Qty", activeRecord.stockQuantity],
                   ["UOM", activeRecord.stockUOM],
+                  ["Cost", activeRecord.stockCost],
                   ["Price", activeRecord.stockPrice],
                 ].map(([label, value]) => (
                   <tr key={label}>
