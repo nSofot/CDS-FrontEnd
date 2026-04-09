@@ -131,6 +131,21 @@ export default function ControlHomePage() {
       ],
     },
 
+    {
+      label: "GRNs & Purchases",
+      to: "/grns",
+      icon: <FaReceipt />,
+      roles: [
+        "admin",
+        "president",
+        "secretary",
+        "treasurer",
+        "vice-president",
+        "assistant-secretary",
+        "assistant-treasurer",
+        "activity-coordinator",
+      ],
+    },
   ];
 
   return (
