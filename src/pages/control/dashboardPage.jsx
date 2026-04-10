@@ -4,18 +4,22 @@ import LoadingSpinner from "../../components/loadingSpinner";
 import { FaUsersCog, FaUserClock, FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { FaSackDollar } from "react-icons/fa6";
 import { m } from "framer-motion";
+import { t } from "i18next";
 
 /* ───────── DASHBOARD PAGE ───────── */
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
-  const [ordinaryMembers, setOrdinaryMembers] = useState([]);
-  const [lifeMembers, setLifeMembers] = useState([]);
-  const [associateMembers, setAssociateMembers] = useState([]);
-  const [honoraryMembers, setHonoraryMembers] = useState([]);
-  const [overseasMembers, setOverseasMembers] = useState([]);
-  const [guestMembers, setGuestMembers] = useState([]);
+  const [activeMembers, setActiveMembers] = useState([]);
+  const [todayProductionBags, setTodayProductionBags] = useState([]);
+  const [todaySterilizedBags, setTodaySterilizedBags] = useState([]);
+  const [todayInoculatedBags, setTodayInoculatedBags] = useState([]);
+  const [todayHarvestedKg, setTodayHarvestedKg] = useState([]);
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [todaySaleAmount, setTodaySaleAmount] = useState([]);
+  const [todayExpenses, setTodayExpenses] = useState([]);
+  const [contaminationLoss, setContaminationLoss] = useState([]);
 
   const [cashInHand, setCashInHand] = useState(0);
   const [savingAccounts, setSavingAccounts] = useState(0);
@@ -23,6 +27,7 @@ export default function DashboardPage() {
 
   const [openSections, setOpenSections] = useState({
     exco: true,
+    sales: true,
     finance: true,
   });
 
@@ -44,12 +49,8 @@ export default function DashboardPage() {
         );
         const list = membersRes.data;
 
-        setOrdinaryMembers(list.filter((m) => m.memberType === "ordinary"));
-        setLifeMembers(list.filter((m) => m.memberType === "life"));
-        setAssociateMembers(list.filter((m) => m.memberType === "associate"));
-        setHonoraryMembers(list.filter((m) => m.memberType === "honorary"));
-        setOverseasMembers(list.filter((m) => m.memberType === "overseas"));
-        setGuestMembers(list.filter((m) => m.memberRole === "guest"));
+        // setActiveMembers(list.filter((m) => m.status === "active"));
+        setActiveMembers(membersRes.data.length);
 
         const financeRes = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
@@ -85,30 +86,41 @@ export default function DashboardPage() {
 
         {/* MEMBERS */}
         <DashboardCard
-          title="Members Count"
+          title="Production Summary"
           icon={<FaUsersCog />}
           collapsible
           open={openSections.exco}
           onToggle={() => toggleSection("exco")}
         >
           <div className="grid grid-cols-2 gap-4">
-            <Stat label="Ordinary Members" value={ordinaryMembers.length} color="text-blue-600" />
-            <Stat label="Life Members" value={lifeMembers.length} color="text-green-600" />
-            <Stat label="Associate Members" value={associateMembers.length} color="text-purple-600" />
-            <Stat label="Honorary Members" value={honoraryMembers.length} color="text-orange-600" />
-            <Stat label="Overseas Members" value={overseasMembers.length} color="text-pink-600" />
+            <Stat label="Active Members" value={activeMembers} color="text-blue-600" />
+            <Stat label="Today Produced Bags" value={todayProductionBags.length} color="text-blue-600" />
+            <Stat label="Today Sterilized Bags" value={todaySterilizedBags.length} color="text-green-600" />
+            <Stat label="Today Inoculated Bags" value={todayInoculatedBags.length} color="text-purple-600" />
+            <Stat label="Today Harvested (kg)" value={todayHarvestedKg.length} color="text-orange-600" />
+            <Stat label="Pending Orders" value={pendingOrders.length} color="text-red-600" />
+          </div>
+        </DashboardCard>
+
+        {/* SALES & EXPENSES */}
+        <DashboardCard
+          title="Sales & Expenses"
+          icon={<FaUserClock />}
+          collapsible
+          open={openSections.sales}
+          onToggle={() => toggleSection("sales")}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Stat label="Today Sale Amount" value={formatCurrency(todaySaleAmount)} color="text-blue-600" />
+            <Stat label="Today Expenses" value={formatCurrency(todayExpenses)} color="text-green-600" />
+            <Stat label="Contamination Loss" value={formatCurrency(contaminationLoss)} color="text-purple-600" />
             <Stat
-              label="TOTAL"
-              value={
-                ordinaryMembers.length +
-                lifeMembers.length +
-                associateMembers.length +
-                honoraryMembers.length +
-                overseasMembers.length
-              }
-              color="text-red-600"
-              isTotal
+                label="GROSS PROFIT"
+                value={formatCurrency(todaySaleAmount - (todayExpenses + contaminationLoss))}
+                color="text-red-600"
+                isTotal
             />
+
           </div>
         </DashboardCard>
 
@@ -134,73 +146,6 @@ export default function DashboardPage() {
           </div>
         </DashboardCard>
 
-        {/* PENDING – FULL WIDTH */}
-        <DashboardCard
-          title="Pending Applications"
-          icon={<FaUserClock />}
-          className="xl:col-span-2"
-        >
-          {guestMembers && guestMembers.length > 0 ? (
-            <>
-              {/* Desktop table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-orange-200 table-fixed">
-                  <thead className="bg-orange-100">
-                    <tr>
-                      <th className="w-5 px-3 py-2 text-left">#</th>
-                      <th className="w-10 px-3 py-2 text-center">ID</th>
-                      <th className="w-50 px-3 py-2 text-left">Name</th>
-                      <th className="w-10 px-3 py-2 text-left">Mobile</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-orange-200">
-                    {guestMembers.map((item, index) => (
-                      <tr
-                        key={item.memberId}
-                        onClick={() => {
-                          setActiveRecord(item);
-                          setIsModalOpen(true);
-                        }}
-                        className="hover:bg-orange-50 cursor-pointer"
-                      >
-                        <td className="px-3 py-2">{index + 1}</td>
-                        <td className="px-3 py-2 text-center">{item.memberId}</td>
-                        <td className="px-3 py-2 break-words">
-                          {item.title} {item.firstName} {item.lastName}
-                        </td>
-                        <td className="px-3 py-2">{item.mobile}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile cards */}
-              <div className="md:hidden flex flex-col gap-3 p-3">
-                {guestMembers.map((item) => (
-                  <div
-                    key={item.memberId}
-                    onClick={() => {
-                      setActiveRecord(item);
-                      setIsModalOpen(true);
-                    }}
-                    className="flex items-center gap-3 p-3 border border-orange-200 rounded-lg shadow-sm hover:bg-orange-50 cursor-pointer"
-                  >
-                    <div className="flex-1">
-                      <p className="font-semibold">
-                        {item.title} {item.firstName} {item.lastName}
-                      </p>
-                      <p className="text-sm text-gray-600">{item.memberId}</p>
-                      <p className="text-sm text-gray-600">{item.mobile}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <Empty text="No pending applications" />
-          )}
-        </DashboardCard>
       </div>
     </div>
   );
