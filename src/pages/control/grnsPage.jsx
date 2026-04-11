@@ -9,7 +9,7 @@ export default function PurchaseEntryPage() {
 
   const [form, setForm] = useState({
     referenceId: "",
-    trxType: "grn",
+    trxType: "Purchase",
     isAdded: true,
     trxDate: "",
     clientId: "",
@@ -136,6 +136,27 @@ export default function PurchaseEntryPage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
         {
           items: payload.items,
+        }
+      );
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
+        {
+          referenceId: form.referenceId,
+          trxDate: form.trxDate,
+          trxType: form.trxType,
+          vendorId: form.clientId,
+          description: form.description,
+          isCredit: false,
+          amount: total,
+          dueAmount: total,
+        }
+      );
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.clientId}/add-due`,
+        {
+          amount: total,
         }
       );
 

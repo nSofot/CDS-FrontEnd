@@ -52,14 +52,6 @@ export default function ControlHomePage() {
       roles: [
         "admin",
         "president",
-        "secretary",
-        "treasurer",
-        "vice-president",
-        "assistant-secretary",
-        "assistant-treasurer",
-        "activity-coordinator",
-        "committee-member",
-        "internal-auditor",
       ],
     },
     {
@@ -69,14 +61,6 @@ export default function ControlHomePage() {
       roles: [
         "admin",
         "president",
-        "secretary",
-        "treasurer",
-        "vice-president",
-        "assistant-secretary",
-        "assistant-treasurer",
-        "activity-coordinator",
-        "committee-member",
-        "internal-auditor",
       ],
     },
     {
@@ -86,14 +70,6 @@ export default function ControlHomePage() {
       roles: [
         "admin",
         "president",
-        "secretary",
-        "treasurer",
-        "vice-president",
-        "assistant-secretary",
-        "assistant-treasurer",
-        "activity-coordinator",
-        "committee-member",
-        "internal-auditor",
       ],
     },
 
@@ -104,14 +80,6 @@ export default function ControlHomePage() {
       roles: [
         "admin",
         "president",
-        "secretary",
-        "treasurer",
-        "vice-president",
-        "assistant-secretary",
-        "assistant-treasurer",
-        "activity-coordinator",
-        "committee-member",
-        "internal-auditor",
       ],
     },
 
@@ -122,12 +90,6 @@ export default function ControlHomePage() {
       roles: [
         "admin",
         "president",
-        "secretary",
-        "treasurer",
-        "vice-president",
-        "assistant-secretary",
-        "assistant-treasurer",
-        "activity-coordinator",
       ],
     },
 
@@ -138,12 +100,56 @@ export default function ControlHomePage() {
       roles: [
         "admin",
         "president",
-        "secretary",
-        "treasurer",
-        "vice-president",
-        "assistant-secretary",
-        "assistant-treasurer",
-        "activity-coordinator",
+      ],
+    },
+
+    {
+      label: "Other Invoices",
+      to: "/other-invoices",
+      icon: <FaFileAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
+      label: "Vendor Payments",
+      to: "/vendor-payments",
+      icon: <FaMoneyCheckAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
+      label: "Member Payments",
+      to: "/member-payments",
+      icon: <FaUserClock />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
+      label: "Other Payments",
+      to: "/other-payments",
+      icon: <FaMoneyCheckAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+      
+    {
+      label: "Stock Adjustments",
+      to: "/stock-adjustments",
+      icon: <TbReport />,
+      roles: [
+        "admin",
+        "president",
       ],
     },
   ];
@@ -213,12 +219,16 @@ export default function ControlHomePage() {
       <main className="flex-1 flex flex-col">
         <header className="sticky top-0 z-20 bg-white px-4 py-3 flex gap-4 shadow-sm">
           <button
-            className="md:hidden"
+            className="md:hidden text-orange-600 text-4xl"
             onClick={() => setSidebarOpen(true)}
           >
             <FaBars />
           </button>
-          <h1 className="text-xl font-semibold">🖥️ Collective Development Society</h1>
+          <img src="/CDSLogo.png" alt="logo" className="w-12 h-12" />
+          <div className="flex flex-col">
+            <h1 className="md:text-xl text-lg font-semibold">Collective Development Society</h1>
+            <h2 className="md:text-sm text-xs text-gray-500">Smart Mushroom Production Management System</h2>
+          </div>
         </header>
 
         <div className="p-6">
