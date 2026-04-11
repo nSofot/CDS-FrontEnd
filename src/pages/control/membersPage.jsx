@@ -329,7 +329,7 @@ export default function MembersPage() {
 
       {/* Bottom Close Button */}
       <button
-        onClick={() => navigate("/control")}
+        onClick={() => navigate("/")}
         className="h-12 rounded-lg border bg-orange-100 hover:bg-orange-200 font-semibold"
       >
         Close
