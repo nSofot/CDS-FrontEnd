@@ -122,7 +122,7 @@ export default function VendorListPage() {
                   {v.vendorDueAmount}
                 </td>
 
-                <td className="p-3 flex justify-center gap-2">
+                <td className="p-3 flex justify-center gap-1">
                   <button
                     onClick={() =>
                       navigate(`/edit-vendor`, { state: { vendor: v } })
