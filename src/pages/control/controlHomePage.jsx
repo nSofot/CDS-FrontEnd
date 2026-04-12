@@ -105,7 +105,7 @@ export default function ControlHomePage() {
 
     {
       label: "Other Invoices",
-      to: "/other-invoices",
+      to: "/other-invoice",
       icon: <FaFileAlt />,
       roles: [
         "admin",
