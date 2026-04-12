@@ -153,7 +153,6 @@ export default function MembersPage() {
                           {item.memberId}
                         </td>
                         <td className="px-3 py-2">
-                          {item.title}{" "}
                           {item.nameInSinhala
                             ? item.nameInSinhala
                             : `${item.firstName} ${item.lastName}`}
@@ -218,7 +217,6 @@ export default function MembersPage() {
 
                     <div className="flex-1">
                       <p className="font-semibold">
-                        {item.title}{" "}
                         {item.nameInSinhala
                           ? item.nameInSinhala
                           : `${item.firstName} ${item.lastName}`}

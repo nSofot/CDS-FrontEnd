@@ -16,6 +16,7 @@ import VendorListPage from "./control/vendorPage";
 import AddVendorPage from "./control/addVendorPage";
 import EditVendorPage from "./control/editVendorPage";
 import GRNsPage from "./control/grnsPage";
+import OtherInvoicePage from "./control/otherInvoicePage";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -99,6 +100,7 @@ export default function ControlPage() {
         <Route path="edit-vendor" element={<EditVendorPage />} />
 
         <Route path="grns" element={<GRNsPage />} />
+        <Route path="other-invoice" element={<OtherInvoicePage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>
