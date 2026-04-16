@@ -16,37 +16,60 @@ export default function StockPage() {
 
   const navigate = useNavigate();
 
-  // ✅ GET TOKEN (FIXED)
   const token = localStorage.getItem("token");
+
+  // ✅ COMMON HEADERS FUNCTION
+  const getAuthHeaders = () => {
+    if (!token) return null;
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
+  // ✅ HANDLE AUTH ERROR
+  const handleAuthError = (err) => {
+    if (err.response?.status === 403) {
+      toast.error("Session expired. Please login again.");
+      localStorage.removeItem("token");
+      navigate("/login");
+    } else {
+      toast.error("Something went wrong");
+    }
+  };
 
   // ✅ FETCH STOCKS
   const fetchStocks = async () => {
     try {
+      if (!token) {
+        toast.error("Please login first");
+        navigate("/login");
+        return;
+      }
+
       setIsLoading(true);
 
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
         {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : {},
+          headers: getAuthHeaders(),
         }
       );
 
-      const sorted = res.data.sort((a, b) =>
+      const data = res.data || [];
+
+      const sorted = data.sort((a, b) =>
         (a.stockId || "").localeCompare(b.stockId || "")
       );
 
       setStocks(sorted);
     } catch (err) {
       console.error("Error fetching stocks:", err);
-      toast.error("Failed to load stocks");
+      handleAuthError(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ LOAD ON MOUNT
   useEffect(() => {
     fetchStocks();
   }, []);
@@ -56,20 +79,24 @@ export default function StockPage() {
     if (!confirm("Are you sure you want to delete this stock?")) return;
 
     try {
+      if (!token) {
+        toast.error("Please login first");
+        navigate("/login");
+        return;
+      }
+
       await axios.delete(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/${id}`,
         {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : {},
+          headers: getAuthHeaders(),
         }
       );
 
       toast.success("Stock deleted");
-      fetchStocks(); // ✅ refresh list
+      fetchStocks();
     } catch (err) {
       console.error(err);
-      toast.error("Delete failed");
+      handleAuthError(err);
     }
   };
 
@@ -106,7 +133,7 @@ export default function StockPage() {
         </div>
       </div>
 
-      {/* Table / List */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow flex-1 overflow-hidden">
         <div className="h-full max-h-[65vh] overflow-y-auto">
           {isLoading ? (
@@ -115,7 +142,6 @@ export default function StockPage() {
             </div>
           ) : (
             <>
-              {/* Desktop */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-orange-200 table-fixed">
                   <thead className="bg-orange-100">
@@ -133,7 +159,7 @@ export default function StockPage() {
                   <tbody className="divide-y divide-orange-200">
                     {stocks.map((item, index) => (
                       <tr
-                        key={item.stockId}
+                        key={item._id}
                         onClick={() => {
                           setActiveRecord(item);
                           setIsModalOpen(true);
@@ -141,27 +167,21 @@ export default function StockPage() {
                         className="hover:bg-orange-50 cursor-pointer"
                       >
                         <td className="px-3 py-2 text-center">{index + 1}</td>
-                        <td className="px-3 py-2 text-left">{item.stockId}</td>
-                        <td className="px-3 py-2 text-left">{item.stockName}</td>
-                        <td className="px-3 py-2 text-left">{item.stockQuantity}</td>
-                        <td className="px-3 py-2 text-left">{item.stockUOM}</td>
-
-                        {/* ✅ FIXED PRICE */}
-                        <td className="px-3 py-2 text-right">
-                          {item.stockPrice
-                            ? `Rs. ${item.stockPrice}`
-                            : "—"}
+                        <td>{item.stockId}</td>
+                        <td>{item.stockName}</td>
+                        <td>{item.stockQuantity}</td>
+                        <td>{item.stockUOM}</td>
+                        <td className="text-right">
+                          {item.stockPrice ? `Rs. ${item.stockPrice}` : "—"}
                         </td>
 
-                        <td className="px-3 py-2 text-right">
+                        <td className="text-right">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate("/edit-stock", {
-                                state: { stock: item },
-                              });
+                              navigate("/edit-stock", { state: { stock: item } });
                             }}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600"
                           >
                             <FaEdit />
                           </button>
@@ -169,9 +189,9 @@ export default function StockPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(item._id)
+                              handleDelete(item._id);
                             }}
-                            className="ml-2 text-red-600 hover:text-red-800"
+                            className="ml-2 text-red-600"
                           >
                             <FaTrash />
                           </button>
@@ -180,57 +200,6 @@ export default function StockPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-
-              {/* Mobile */}
-              <div className="md:hidden flex flex-col gap-3 p-3">
-                {stocks.map((item) => (
-                  <div
-                    key={item.stockId}
-                    onClick={() => {
-                      setActiveRecord(item);
-                      setIsModalOpen(true);
-                    }}
-                    className="p-3 border rounded-lg shadow hover:bg-orange-50"
-                  >
-                    <p className="font-semibold">{item.stockName}</p>
-                    <p className="text-sm text-gray-600">
-                      {item.stockQuantity} {item.stockUOM}
-                    </p>
-
-                    <div className="flex justify-between items-center mt-2">
-                      <p className="text-sm">
-                        {item.stockPrice
-                          ? `Rs. ${item.stockPrice}`
-                          : "—"}
-                      </p>
-
-                      <div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/edit-stock", {
-                              state: { stock: item },
-                            });
-                          }}
-                          className="text-blue-600"
-                        >
-                          <FaEdit />
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(item._id)
-                          }}
-                          className="ml-2 text-red-600"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
             </>
           )}
@@ -252,22 +221,18 @@ export default function StockPage() {
 
             <table className="w-full text-sm">
               <tbody>
-                {[
-                  ["ID", activeRecord.stockId],
-                  ["Name", activeRecord.stockName],
-                  ["Description", activeRecord.stockDescription],
-                  ["Qty", activeRecord.stockQuantity],
-                  ["UOM", activeRecord.stockUOM],
-                  ["Cost", activeRecord.stockCost],
-                  ["Price", activeRecord.stockPrice],
-                ].map(([label, value]) => (
-                  <tr key={label}>
-                    <td className="py-2 font-medium text-orange-600">
-                      {label}
-                    </td>
-                    <td className="py-2 text-right">
-                      {value || "—"}
-                    </td>
+                {Object.entries({
+                  ID: activeRecord.stockId,
+                  Name: activeRecord.stockName,
+                  Description: activeRecord.stockDescription,
+                  Qty: activeRecord.stockQuantity,
+                  UOM: activeRecord.stockUOM,
+                  Cost: activeRecord.stockCost,
+                  Price: activeRecord.stockPrice,
+                }).map(([key, val]) => (
+                  <tr key={key}>
+                    <td className="py-2 text-orange-600">{key}</td>
+                    <td className="py-2 text-right">{val || "—"}</td>
                   </tr>
                 ))}
               </tbody>
