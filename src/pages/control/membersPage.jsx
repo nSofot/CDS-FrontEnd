@@ -83,7 +83,7 @@ export default function MembersPage() {
               🧑‍🤝‍🧑 Members List
             </h1>
             <p className="text-gray-600 text-sm">
-              View all registered members
+              View and manage all registered members
             </p>
           </div>
 

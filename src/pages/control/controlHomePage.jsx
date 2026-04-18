@@ -115,7 +115,7 @@ export default function ControlHomePage() {
 
     {
       label: "Vendor Payments",
-      to: "/vendor-payments",
+      to: "/vendor-payment",
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
@@ -125,7 +125,7 @@ export default function ControlHomePage() {
 
     {
       label: "Member Payments",
-      to: "/member-payments",
+      to: "/member-payment",
       icon: <FaUserClock />,
       roles: [
         "admin",
@@ -135,7 +135,7 @@ export default function ControlHomePage() {
 
     {
       label: "Other Payments",
-      to: "/other-payments",
+      to: "/other-payment",
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",

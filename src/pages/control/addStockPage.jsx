@@ -21,7 +21,7 @@ export default function AddStockPage() {
     if (!token) return toast.error("Please log in first.");
 
     // Validation
-    if (!stockName || !stockQuantity || !stockCost || !stockPrice) {
+    if (!stockName || !stockDescription || !stockUOM) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -33,10 +33,10 @@ export default function AddStockPage() {
         stockId: stockId || undefined,
         stockName,
         stockDescription,
-        stockQuantity: Number(stockQuantity),
+        stockQuantity: Number(stockQuantity) || 0,
         stockUOM,
-        stockCost: Number(stockCost),
-        stockPrice: Number(stockPrice),
+        stockCost: Number(stockCost) || 0,
+        stockPrice: Number(stockPrice) || 0,
       };
 
       await axios.post(

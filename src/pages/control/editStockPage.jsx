@@ -70,7 +70,7 @@ export default function EditStockPage() {
 
   // ✏️ Update stock
   const updateStock = async () => {
-    if (!stockName || !stockQuantity || !stockCost || !stockPrice) {
+    if (!stockName || !stockDescription || !stockUOM) {
       toast.error("Please fill all required fields");
       return;
     }
