@@ -111,7 +111,7 @@ export default function StockPage() {
               📦 Stocks List
             </h1>
             <p className="text-gray-600 text-sm">
-              View all registered stocks
+              View and manage all registered stocks
             </p>
           </div>
 
