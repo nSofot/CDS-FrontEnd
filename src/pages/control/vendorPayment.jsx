@@ -1,22 +1,25 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-export default function OtherInvoicePage() {
+export default function VendorPaymentPage() {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     referenceId: "",
-    trxType: "OtherInvoice",
+    trxType: "Payment",
     trxDate: "",
     vendorId: "",
     vendorName: "",
+    paymentMethod: "Cash", // Cash | Bank | Cheque
     description: "",
     amount: "",
+    bankName: "",
+    chequeNo: "",
   });
 
-  // Fetch vendors
+  // ================= FETCH VENDORS =================
   const fetchVendors = async () => {
     try {
       const res = await axios.get(
@@ -32,84 +35,101 @@ export default function OtherInvoicePage() {
     fetchVendors();
   }, []);
 
-  // Handle change
+  // ================= HANDLE CHANGE =================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setForm({
       ...form,
-      [name]: name === "amount" ? Number(value) : value, // ✅ fix number issue
+      [name]: name === "amount" ? Number(value) : value,
     });
   };
 
-  // Submit
+  // ================= SUBMIT =================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.referenceId || !form.trxDate || !form.vendorId || !form.amount || !form.description) {
+    if (!form.referenceId || !form.trxDate || !form.vendorId || !form.amount) {
       return toast.error("Please fill required fields");
+    }
+
+    if (form.paymentMethod === "Bank" && !form.bankName) {
+      return toast.error("Enter bank name");
+    }
+
+    if (form.paymentMethod === "Cheque" && !form.chequeNo) {
+      return toast.error("Enter cheque number");
     }
 
     try {
       setLoading(true);
 
-      const total = Number(form.amount || 0);
+      const amount = Number(form.amount || 0);
 
+      // Save transaction
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
         {
           referenceId: form.referenceId,
           trxDate: form.trxDate,
           trxType: form.trxType,
-          vendorId: form.vendorId, // ✅ fixed
-          description: form.description,
-          isCredit: false,
-          amount: total,
-          dueAmount: total,
+          vendorId: form.vendorId,
+          description: `${form.paymentMethod} Payment - ${form.description}`,
+          isCredit: true, // Payment reduces due
+          amount: amount,
+          dueAmount: -amount,
+          paymentMethod: form.paymentMethod,
+          bankName: form.bankName,
+          chequeNo: form.chequeNo,
         }
       );
 
+      // Reduce vendor due
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/add-due`,
         {
-          amount: total,
+          amount: -amount,
         }
       );
 
-      toast.success("Invoice saved successfully");
+      toast.success("Payment recorded successfully");
 
-      // Reset
+      // RESET
       setForm({
         referenceId: "",
-        trxType: "OtherInvoice",
+        trxType: "Payment",
         trxDate: "",
         vendorId: "",
         vendorName: "",
+        paymentMethod: "Cash",
         description: "",
-        amount: 0,
+        amount: "",
+        bankName: "",
+        chequeNo: "",
       });
     } catch (err) {
       console.error(err);
-      toast.error("Error saving invoice");
+      toast.error("Error saving payment");
     } finally {
       setLoading(false);
     }
   };
 
+  // ================= UI =================
   return (
-    <div className="p-3 sm:p-6 bg-gray-100 min-h-screen">
-      <div className="max-w-5xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
+      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
 
         <h1 className="text-xl sm:text-2xl font-bold">
-          Other Invoice Entry
+          Vendor Payment Entry
         </h1>
-        <h2 className="text-sm sm:text-base text-gray-600 mb-6">
-          Manage Miscellaneous Invoice and expense records
+        <h2 className="text-sm text-gray-600 mb-6">
+          Record Cash, Bank and Cheque Payments to Vendors
         </h2>
 
         <form onSubmit={handleSubmit}>
 
-          {/* Header */}
+          {/* TOP */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
 
             <input
@@ -118,7 +138,7 @@ export default function OtherInvoicePage() {
               placeholder="Reference ID"
               value={form.referenceId}
               onChange={handleChange}
-              className="border p-2 rounded w-full"
+              className="border p-2 rounded"
               required
             />
 
@@ -127,7 +147,7 @@ export default function OtherInvoicePage() {
               name="trxDate"
               value={form.trxDate}
               onChange={handleChange}
-              className="border p-2 rounded w-full"
+              className="border p-2 rounded"
               required
             />
 
@@ -144,7 +164,7 @@ export default function OtherInvoicePage() {
                   vendorName: selected?.vendorName || "",
                 });
               }}
-              className="border p-2 rounded w-full"
+              className="border p-2 rounded"
               required
             >
               <option value="">Select Vendor</option>
@@ -156,7 +176,49 @@ export default function OtherInvoicePage() {
             </select>
           </div>
 
-          {/* Description + Amount */}
+          {/* PAYMENT METHOD */}
+          <div className="mb-4">
+            <label className="block mb-1 font-medium">
+              Payment Method
+            </label>
+            <select
+              name="paymentMethod"
+              value={form.paymentMethod}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+            >
+              <option value="Cash">Cash</option>
+              <option value="Bank">Bank Transfer</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+
+          {/* CONDITIONAL FIELDS */}
+          {form.paymentMethod === "Bank" && (
+            <input
+              type="text"
+              name="bankName"
+              placeholder="Bank Name"
+              value={form.bankName}
+              onChange={handleChange}
+              className="border p-2 rounded w-full mb-4"
+              required
+            />
+          )}
+
+          {form.paymentMethod === "Cheque" && (
+            <input
+              type="text"
+              name="chequeNo"
+              placeholder="Cheque Number"
+              value={form.chequeNo}
+              onChange={handleChange}
+              className="border p-2 rounded w-full mb-4"
+              required
+            />
+          )}
+
+          {/* DESCRIPTION + AMOUNT */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
 
             <input
@@ -165,8 +227,7 @@ export default function OtherInvoicePage() {
               placeholder="Description"
               value={form.description}
               onChange={handleChange}
-              className="border p-2 rounded col-span-2 w-full"
-              required
+              className="border p-2 rounded col-span-2"
             />
 
             <input
@@ -175,24 +236,25 @@ export default function OtherInvoicePage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded w-full"
+              className="border p-2 rounded"
               required
             />
           </div>
 
-          {/* Total */}
-          <div className="text-right text-lg sm:text-xl font-bold mb-4">
-            Total: Rs. {Number(form.amount ?? 0).toFixed(2)}
+          {/* TOTAL */}
+          <div className="text-right font-bold text-lg mb-4">
+            Amount: Rs. {Number(form.amount || 0).toFixed(2)}
           </div>
 
-          {/* Button */}
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
             className="w-full sm:w-auto bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
           >
-            {loading ? "Saving..." : "Save Invoice"}
+            {loading ? "Saving..." : "Save Payment"}
           </button>
+
         </form>
       </div>
     </div>

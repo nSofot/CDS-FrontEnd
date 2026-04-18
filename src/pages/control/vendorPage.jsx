@@ -73,7 +73,9 @@ export default function VendorListPage() {
       <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
         <div>
           <h1 className="text-xl font-semibold">🏢 Vendor List</h1>
-          <p className="text-sm text-gray-500">Manage your vendors</p>
+          <p className="text-sm sm:text-base text-gray-600 mb-6">
+            View and manage your vendors
+          </p>
         </div>
 
         <Link

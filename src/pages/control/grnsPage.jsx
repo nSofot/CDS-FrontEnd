@@ -55,7 +55,7 @@ export default function PurchaseEntryPage() {
           productId: "",
           productName: "",
           productUOM: "",
-          qty: 0,
+          qty: "",
           cost: 0,
           price: 0,
         },
@@ -73,7 +73,7 @@ export default function PurchaseEntryPage() {
         productId: value?.stockId || "",
         productName: value?.stockName || "",
         productUOM: value?.stockUOM || "",
-        qty: 0,
+        qty: "",
         cost: value?.stockCost || 0,
         price: value?.stockPrice || 0,
       };
@@ -100,13 +100,12 @@ export default function PurchaseEntryPage() {
   );
 
   // ================= SUBMIT =================
-  const handleSubmit = async () => {
-    if (!form.clientId || form.items.length === 0) {
-      return toast.error("Fill all required fields");
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (form.items.some(i => !i.productId || i.qty <= 0)) {
-      return toast.error("Invalid item data");
+    // Custom validation for empty items
+    if (form.items.length === 0) {
+      return toast.error("Add at least one item");
     }
 
     try {
@@ -171,260 +170,187 @@ export default function PurchaseEntryPage() {
   // ================= UI =================
   return (
     <div className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">
-        GRN & Purchase Entry
-      </h1>
+      <h1 className="text-2xl font-bold">GRN & Purchase Entry</h1>
+      <h2 className="text-sm text-gray-600 mb-6">
+        Manage Goods Received & Purchase Records
+      </h2>
 
-      {/* TOP */}
-      <div className="flex flex-col md:flex-row flex-wrap gap-3 mb-4">
+      <form onSubmit={handleSubmit}>
+        {/* TOP */}
+        <div className="flex flex-col md:flex-row flex-wrap gap-3 mb-4">
 
-        {/* DATE */}
-        <input
-          type="date"
-          value={form.trxDate || ""}
-          onChange={(e) =>
-            setForm({ ...form, trxDate: e.target.value })
-          }
-          className="w-full md:w-[20%] border px-3 py-2 rounded"
-        />
+          <input
+            type="date"
+            value={form.trxDate}
+            onChange={(e) =>
+              setForm({ ...form, trxDate: e.target.value })
+            }
+            className="w-full md:w-[20%] border px-3 py-2 rounded"
+            required
+          />
 
-        {/* REFERENCE ID */}
-        <input
-          type="text"
-          value={form.referenceId || ""}
-          onChange={(e) =>
-            setForm({ ...form, referenceId: e.target.value })
-          }
-          className="w-full md:w-[20%] border px-3 py-2 rounded"
-          placeholder="Reference ID"
-        />
+          <input
+            type="text"
+            value={form.referenceId}
+            onChange={(e) =>
+              setForm({ ...form, referenceId: e.target.value })
+            }
+            className="w-full md:w-[20%] border px-3 py-2 rounded"
+            placeholder="Reference ID"
+            required
+          />
 
-        {/* VENDOR */}
-        <select
-          value={form.clientId || ""}
-          onChange={(e) => {
-            const selected = vendors.find(
-              (v) => v.vendorId === e.target.value
-            );
+          <select
+            value={form.clientId}
+            onChange={(e) => {
+              const selected = vendors.find(
+                (v) => v.vendorId === e.target.value
+              );
 
-            setForm({
-              ...form,
-              clientId: selected?.vendorId || "",
-              description: selected?.vendorName || "",
-            });
-          }}
-          className="w-full md:w-[35%] border px-3 py-2 rounded"
-        >
-          <option value="">Select Vendor</option>
-          {vendors.map((v) => (
-            <option key={v.vendorId} value={v.vendorId}>
-              {v.vendorName}
-            </option>
-          ))}
-        </select>
+              setForm({
+                ...form,
+                clientId: selected?.vendorId || "",
+                description: selected?.vendorName || "",
+              });
+            }}
+            className="w-full md:w-[35%] border px-3 py-2 rounded"
+            required
+          >
+            <option value="">Select Vendor</option>
+            {vendors.map((v) => (
+              <option key={v.vendorId} value={v.vendorId}>
+                {v.vendorName}
+              </option>
+            ))}
+          </select>
 
-        {/* BUTTON */}
+          <button
+            type="button"
+            onClick={addItem}
+            disabled={isSaved}
+            className={`w-full md:w-[20%] text-white rounded px-3 py-2 ${
+              isSaved
+                ? "bg-gray-400"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            + Add Item
+          </button>
+        </div>
+
+        {/* ITEMS */}
+        <div className="hidden md:block">
+          <table className="w-full border rounded">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 text-left">Product</th>
+                <th>Qty</th>
+                <th>UOM</th>
+                <th>Cost</th>
+                <th>Price</th>
+                <th className="text-right">Total</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {form.items.map((item, i) => (
+                <tr key={i} className="border-t">
+                  <td className="p-2">
+                    <select
+                      value={item.productId}
+                      required
+                      onChange={(e) => {
+                        const selected = products.find(
+                          (p) => p.stockId === e.target.value
+                        );
+                        updateItem(i, "product", selected);
+                      }}
+                      className="border w-full p-2 rounded"
+                    >
+                      <option value="">Select</option>
+                      {products.map((p) => (
+                        <option key={p.stockId} value={p.stockId}>
+                          {p.stockName}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      value={item.qty}
+                      required
+                      min="1"
+                      onChange={(e) =>
+                        updateItem(i, "qty", e.target.value)
+                      }
+                      className="border w-20 p-1 rounded"
+                    />
+                  </td>
+
+                  <td>{item.productUOM || "-"}</td>
+
+                  <td>
+                    <input
+                      type="number"
+                      value={item.cost}
+                      onChange={(e) =>
+                        updateItem(i, "cost", e.target.value)
+                      }
+                      className="border w-24 p-1 rounded"
+                    />
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      value={item.price}
+                      onChange={(e) =>
+                        updateItem(i, "price", e.target.value)
+                      }
+                      className="border w-24 p-1 rounded"
+                    />
+                  </td>
+
+                  <td className="text-right pr-2">
+                    {(item.qty * item.cost || 0).toFixed(2)}
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(i)}
+                      className="text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* TOTAL */}
+        <div className="mt-4 font-bold text-right">
+          Total: Rs. {total.toFixed(2)}
+        </div>
+
+        {/* SAVE */}
         <button
-          onClick={addItem}
+          type="submit"
           disabled={isSaved}
-          className={`w-full md:w-[20%] text-white rounded px-3 py-2 ${
-            isSaved ? "bg-gray-400 cursor-not-allowed" : " bg-green-600 hover:bg-green-700"
+          className={`w-full py-3 mt-3 rounded text-white ${
+            isSaved
+              ? "bg-gray-400"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          + Add Item
-        </button>       
-      </div>
-
-      {/* DESKTOP */}
-      <div className="hidden md:block">
-        <table className="w-full border rounded">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 text-left">Product</th>
-              <th className="p-2 text-left">Qty</th>
-              <th className="p-2 text-left">UOM</th>
-              <th className="p-2 text-left">Cost</th>
-              <th className="p-2 text-left">Price</th>
-              <th className="p-2 text-right">Total</th>
-              <th></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {form.items.map((item, i) => (
-              <tr key={i} className="border-t">
-
-                {/* PRODUCT */}
-                <td className="p-2">
-                  <select
-                    value={item.productId || ""}
-                    onChange={(e) => {
-                      const selected = products.find(
-                        (p) => p.stockId === e.target.value
-                      );
-                      updateItem(i, "product", selected);
-                    }}
-                    className="border text-left w-full p-2 rounded"
-                  >
-                    <option value="">Select</option>
-                    {products.map((p) => (
-                      <option key={p.stockId} value={p.stockId}>
-                        {p.stockName}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                {/* QTY */}
-                <td>
-                  <input
-                    type="number"
-                    value={item.qty || ""}
-                    onChange={(e) =>
-                      updateItem(i, "qty", e.target.value)
-                    }
-                    className="border w-20 text-left rounded p-1"
-                  />
-                </td>
-
-                {/* UOM */}
-                <td className="text-left w-20">
-                  {item.productUOM || "-"}
-                </td>
-
-                {/* COST */}
-                <td>
-                  <input
-                    type="number"
-                    value={item.cost || ""}
-                    onChange={(e) =>
-                      updateItem(i, "cost", e.target.value)
-                    }
-                    className="border w-24 text-left rounded p-1"
-                  />
-                </td>
-
-                {/* PRICE */}
-                <td>
-                  <input
-                    type="number"
-                    value={item.price || ""}
-                    onChange={(e) =>
-                      updateItem(i, "price", e.target.value)
-                    }
-                    className="border w-24 text-left rounded p-1"
-                  />
-                </td>
-
-                {/* TOTAL */}
-                <td className="text-right pr-2">
-                  {(item.qty * item.cost || 0).toFixed(2)}
-                </td>
-
-                <td>
-                  <button
-                    onClick={() => removeItem(i)}
-                    className="text-red-500"
-                  >
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* MOBILE */}
-      <div className="md:hidden flex flex-col gap-3">
-        {form.items.map((item, i) => (
-          <div key={i} className="border p-3 rounded">
-
-            <select
-              value={item.productId || ""}
-              onChange={(e) => {
-                const selected = products.find(
-                  (p) => p.stockId === e.target.value
-                );
-                updateItem(i, "product", selected);
-              }}
-              className="border w-full mb-2 p-2 rounded"
-            >
-              <option value="">Select Product</option>
-              {products.map((p) => (
-                <option key={p.stockId} value={p.stockId}>
-                  {p.stockName}
-                </option>
-              ))}
-            </select>
-
-            <div className="grid grid-cols-4 gap-2">
-              <input
-                type="number"
-                placeholder="Qty"
-                value={item.qty || ""}
-                onChange={(e) =>
-                  updateItem(i, "qty", e.target.value)
-                }
-                className="border p-2 rounded"
-              />
-
-              <p className="p-2">{item.productUOM || "-"}</p>
-
-              <input
-                type="number"
-                placeholder="Cost"
-                value={item.cost || ""}
-                onChange={(e) =>
-                  updateItem(i, "cost", e.target.value)
-                }
-                className="border p-2 rounded"
-              />
-
-              <input
-                type="number"
-                placeholder="Price"
-                value={item.price || ""}
-                onChange={(e) =>
-                  updateItem(i, "price", e.target.value)
-                }
-                className="border p-2 rounded"
-              />
-            </div>
-
-            <div className="flex justify-between mt-2">
-              <span>Total</span>
-              <span>
-                Rs. {(item.qty * item.cost || 0).toFixed(2)}
-              </span>
-            </div>
-
-            <button
-              onClick={() => removeItem(i)}
-              className="text-red-500 mt-2"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* TOTAL */}
-      <div className="sticky bottom-0 bg-white p-3 mt-4 border-t flex justify-between font-bold">
-        <span>Total</span>
-        <span>Rs. {total.toFixed(2)}</span>
-      </div>
-
-      {/* SAVE */}
-      <button
-        onClick={handleSubmit}
-        disabled={isSaved}
-        className={`w-full py-3 mt-3 rounded text-white ${
-          isSaved ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        {isSaved ? "GRN Saved" : "Save GRN"}
-      </button>
+          {isSaved ? "GRN Saved" : "Save GRN"}
+        </button>
+      </form>
     </div>
   );
 }
