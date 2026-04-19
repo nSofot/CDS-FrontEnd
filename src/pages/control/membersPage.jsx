@@ -95,6 +95,13 @@ export default function MembersPage() {
           </button>
 
           <button
+            onClick={() => navigate("/member-ledger")}
+            className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+          >
+            Member Ledger
+          </button>
+
+          <button
             onClick={() => navigate("/")}
             className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
           >

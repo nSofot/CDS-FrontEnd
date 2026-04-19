@@ -66,29 +66,38 @@ export default function VendorPaymentPage() {
 
       const amount = Number(form.amount || 0);
 
+      let description = "";
+
+      if (form.paymentMethod === "Cash") {
+        description = `Cash - ${form.description}`;
+      } else if (form.paymentMethod === "Bank") {
+        description = `${form.bankName} - ${form.description}`;
+      } else if (form.paymentMethod === "Cheque") {
+        description = `${form.chequeNo} - ${form.description}`;
+      }    
+
+      const vendorTrxPayload = {
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        trxType: form.trxType,
+        vendorId: form.vendorId,
+        vendorName: form.vendorName,
+        description: description,
+        isCredit: true, // Payment reduces due
+        amount: amount,
+        dueAmount: 0,
+      }
       // Save transaction
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
-        {
-          referenceId: form.referenceId,
-          trxDate: form.trxDate,
-          trxType: form.trxType,
-          vendorId: form.vendorId,
-          description: `${form.paymentMethod} Payment - ${form.description}`,
-          isCredit: true, // Payment reduces due
-          amount: amount,
-          dueAmount: -amount,
-          paymentMethod: form.paymentMethod,
-          bankName: form.bankName,
-          chequeNo: form.chequeNo,
-        }
+        vendorTrxPayload
       );
 
       // Reduce vendor due
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/add-due`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/reduce-due`,
         {
-          amount: -amount,
+          amount: amount,
         }
       );
 
@@ -117,7 +126,7 @@ export default function VendorPaymentPage() {
 
   // ================= UI =================
   return (
-    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
+    <div className="sm:p-6 bg-gray-100 min-h-screen">
       <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
 
         <h1 className="text-xl sm:text-2xl font-bold">
@@ -236,7 +245,7 @@ export default function VendorPaymentPage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded"
+              className="border p-2 rounded col-span-2"
               required
             />
           </div>
