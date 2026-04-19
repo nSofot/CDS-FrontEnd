@@ -109,7 +109,7 @@ export default function PurchaseEntryPage() {
     }
 
     try {
-      const payload = {
+      const stockTrxPayload = {
         referenceId: form.referenceId,
         trxDate: form.trxDate,
         trxType: form.trxType,
@@ -128,28 +128,31 @@ export default function PurchaseEntryPage() {
 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
-        payload
+        stockTrxPayload
       );
 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
         {
-          items: payload.items,
+          items: stockTrxPayload.items,
         }
       );
 
+      const vendorTrxPayload = {
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        trxType: form.trxType,
+        vendorId: form.clientId,
+        vendorName: form.description,
+        description: "",
+        isCredit: false,
+        amount: total,
+        dueAmount: total,
+      };
+     
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
-        {
-          referenceId: form.referenceId,
-          trxDate: form.trxDate,
-          trxType: form.trxType,
-          vendorId: form.clientId,
-          description: form.description,
-          isCredit: false,
-          amount: total,
-          dueAmount: total,
-        }
+        vendorTrxPayload
       );
 
       await axios.post(
@@ -169,7 +172,8 @@ export default function PurchaseEntryPage() {
 
   // ================= UI =================
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <div className="sm:p-6 bg-gray-100 min-h-screen">
+    <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
       <h1 className="text-2xl font-bold">GRN & Purchase Entry</h1>
       <h2 className="text-sm text-gray-600 mb-6">
         Manage Goods Received & Purchase Records
@@ -351,6 +355,7 @@ export default function PurchaseEntryPage() {
           {isSaved ? "GRN Saved" : "Save GRN"}
         </button>
       </form>
+    </div>
     </div>
   );
 }

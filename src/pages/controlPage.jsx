@@ -9,17 +9,21 @@ import DashboardPage from "./control/dashboardPage";
 import MembersPage from "./control/membersPage";
 import AddNewMembers from "./control/addCustomerBySecratary";
 import EditMembers from "./control/editCustomerBySecratary";
+import MemberLedgerPage from "./control/memberLedgerPage";
 import StockPage from "./control/stockPage";
 import AddStockPage from "./control/addStockPage";
 import EditStockPage from "./control/editStockPage";
+import StockBinCardPage from "./control/stockBinCardPage";
 import VendorListPage from "./control/vendorPage";
 import AddVendorPage from "./control/addVendorPage";
 import EditVendorPage from "./control/editVendorPage";
+import VendorLedgerPage from "./control/vendorLedgerPage";
 import GRNsPage from "./control/grnsPage";
 import OtherInvoicePage from "./control/otherInvoicePage";
 import VendorPaymentPage from "./control/vendorPayment";
 import MemberPaymentPage from "./control/memberPaymentPage";
 import OtherPaymentPage from "./control/otherPaymentPage";
+
 
 import NotFoundPage from "./notFoundPage";
 
@@ -93,20 +97,24 @@ export default function ControlPage() {
         <Route path="members" element={<MembersPage />} />
         <Route path="add-member" element={<AddNewMembers />} />
         <Route path="edit-member" element={<EditMembers />} />   
+        <Route path="member-ledger" element={<MemberLedgerPage />} />
 
         <Route path="stock" element={<StockPage />} />
         <Route path="add-stock" element={<AddStockPage />} />
         <Route path="edit-stock" element={<EditStockPage />} />
+        <Route path="stock-bin-card" element={<StockBinCardPage />} />
 
         <Route path="vendors" element={<VendorListPage />} />
         <Route path="add-vendor" element={<AddVendorPage />} />
         <Route path="edit-vendor" element={<EditVendorPage />} />
+        <Route path="vendor-ledger" element={<VendorLedgerPage />} />
 
         <Route path="grns" element={<GRNsPage />} />
         <Route path="other-invoice" element={<OtherInvoicePage />} />
         <Route path="vendor-payment" element={<VendorPaymentPage />} />
         <Route path="member-payment" element={<MemberPaymentPage />} />
         <Route path="other-payment" element={<OtherPaymentPage />} />
+
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>
