@@ -25,7 +25,7 @@ export default function MemberPaymentPage() {
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/member`
       );
-      setMembers(res.data.data || res.data);
+      setMembers(res.data.data || res.data);   
     } catch {
       toast.error("Failed to load members");
     }
@@ -66,29 +66,39 @@ export default function MemberPaymentPage() {
 
       const amount = Number(form.amount || 0);
 
-      // Save transaction
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
-        {
-          referenceId: form.referenceId,
-          trxDate: form.trxDate,
-          trxType: form.trxType,
-          memberId: form.memberId,
-          description: `${form.paymentMethod} Payment - ${form.description}`,
-          isCredit: true,
-          amount: amount,
-          dueAmount: -amount,
-          paymentMethod: form.paymentMethod,
-          bankName: form.bankName,
-          chequeNo: form.chequeNo,
-        }
-      );
+
+      let description = "";
+
+      if (form.paymentMethod === "Cash") {
+        description = `Cash - ${form.description}`;
+      } else if (form.paymentMethod === "Bank") {
+        description = `${form.bankName} - ${form.description}`;
+      } else if (form.paymentMethod === "Cheque") {
+        description = `${form.chequeNo} - ${form.description}`;
+      }  
+      
+      const memberTrxPayload = {
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        trxType: form.trxType,
+        memberId: form.memberId,
+        description: description,
+        isCredit: false,
+        amount: amount,
+        dueAmount: 0,
+      };
+
+      // Save member transaction
+      // await axios.post(
+      //   `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
+      //   memberTrxPayload
+      // );
 
       // Reduce member due
       await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member/${form.memberId}/add-due`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/member/${form.memberId}/due/subtract`,
         {
-          amount: -amount,
+          amount: amount,
         }
       );
 
@@ -117,7 +127,7 @@ export default function MemberPaymentPage() {
 
   // ================= UI =================
   return (
-    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
+    <div className="sm:p-6 bg-gray-100 min-h-screen">
       <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
 
         <h1 className="text-xl sm:text-2xl font-bold">
@@ -161,7 +171,7 @@ export default function MemberPaymentPage() {
                 setForm({
                   ...form,
                   memberId: selected?.memberId || "",
-                  memberName: selected?.memberName || "",
+                  memberName: selected?.nameInSinhala || selected?.firstName || "",
                 });
               }}
               className="border p-2 rounded"
@@ -170,7 +180,7 @@ export default function MemberPaymentPage() {
               <option value="">Select Member</option>
               {members.map((m) => (
                 <option key={m.memberId} value={m.memberId}>
-                  {m.memberName}
+                  {m.nameInSinhala || `${m.firstName} ${m.lastName}`}
                 </option>
               ))}
             </select>
@@ -246,7 +256,7 @@ export default function MemberPaymentPage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded"
+              className="border p-2 rounded col-span-2"
               required
             />
           </div>

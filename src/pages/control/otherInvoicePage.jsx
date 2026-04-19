@@ -8,7 +8,7 @@ export default function OtherInvoicePage() {
 
   const [form, setForm] = useState({
     referenceId: "",
-    trxType: "OtherInvoice",
+    trxType: "Invoice",
     trxDate: "",
     vendorId: "",
     vendorName: "",
@@ -55,19 +55,22 @@ export default function OtherInvoicePage() {
 
       const total = Number(form.amount || 0);
 
+      const vendorTrxPayload = {
+        referenceId: form.referenceId || "N/A",
+        trxDate: new Date(form.trxDate),
+        trxType: form.trxType,
+        vendorId: form.vendorId,
+        vendorName: form.vendorName,
+        description: form.description || "",
+        isCredit: false,
+        amount: Number(total),
+        dueAmount: Number(total),
+      };
+   
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
-        {
-          referenceId: form.referenceId,
-          trxDate: form.trxDate,
-          trxType: form.trxType,
-          vendorId: form.vendorId, // ✅ fixed
-          description: form.description,
-          isCredit: false,
-          amount: total,
-          dueAmount: total,
-        }
-      );
+        vendorTrxPayload
+      );      
 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/add-due`,
@@ -81,7 +84,7 @@ export default function OtherInvoicePage() {
       // Reset
       setForm({
         referenceId: "",
-        trxType: "OtherInvoice",
+        trxType: "Invoice",
         trxDate: "",
         vendorId: "",
         vendorName: "",
@@ -97,7 +100,7 @@ export default function OtherInvoicePage() {
   };
 
   return (
-    <div className="p-3 sm:p-6 bg-gray-100 min-h-screen">
+    <div className="sm:p-6 bg-gray-100 min-h-screen">
       <div className="max-w-5xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
 
         <h1 className="text-xl sm:text-2xl font-bold">
@@ -175,7 +178,7 @@ export default function OtherInvoicePage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded w-full"
+              className="border p-2 rounded col-span-2 w-full"
               required
             />
           </div>

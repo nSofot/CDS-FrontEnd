@@ -85,7 +85,7 @@ export default function OtherPaymentPage() {
 
   // ================= UI =================
   return (
-    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
+    <div className="sm:p-6 bg-gray-100 min-h-screen">
       <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
 
         <h1 className="text-xl sm:text-2xl font-bold">
@@ -183,7 +183,7 @@ export default function OtherPaymentPage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded"
+              className="border p-2 rounded col-span-2"
               required
             />
           </div>
