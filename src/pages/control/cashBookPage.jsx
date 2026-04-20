@@ -8,6 +8,8 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 
 Modal.setAppElement("#root");
 
+//cashbook
+
 export default function CashBookPage() {
   const [ledgerAccounts, setLedgerAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
