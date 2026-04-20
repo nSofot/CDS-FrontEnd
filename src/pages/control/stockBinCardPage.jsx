@@ -143,10 +143,10 @@ export default function StockBinCardPage() {
 
   // ---------------- UI ----------------
   return (
-    <div className="p-4 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
 
       {/* HEADER */}
-      <div className="flex justify-between mb-4">
+      <div className="flex md:flex-row flex-col justify-between gap-2 py-3">
         <div>
           <h1 className="text-2xl font-bold text-orange-600">
             📦 Stock Bin Card
@@ -165,7 +165,7 @@ export default function StockBinCardPage() {
       </div>
 
       {/* FILTER */}
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex md:justify-start justify-between gap-3 mb-4 flex-wrap">
         <input
           type="date"
           value={fromDate}
