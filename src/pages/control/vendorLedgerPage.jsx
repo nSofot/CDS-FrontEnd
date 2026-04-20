@@ -124,7 +124,7 @@ export default function VendorLedgerPage() {
 
         <button
           onClick={() => navigate("/vendors")}
-          className="px-4 py-2 border rounded"
+          className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
         >
           ← Back
         </button>
@@ -189,12 +189,12 @@ export default function VendorLedgerPage() {
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         overlayClassName="fixed inset-0 bg-black/60 flex md:items-center justify-center md:pl-64 p-3"
-        className="bg-white w-full md:max-w-4xl rounded-xl shadow-xl max-h-[95vh] flex flex-col overflow-hidden mt-18 md:mt-0"
+        className="bg-white w-full md:max-w-4xl rounded-xl shadow-xl max-h-[95vh] flex flex-col overflow-hidden mt-20 md:mt-0"
       >
         {selectedVendor && (
           <>
             {/* HEADER */}
-            <div className="flex justify-between p-4 border-b ">
+            <div className="flex justify-between p-4 border-b">
               <div>
                 <h2 className="text-lg font-bold text-orange-600">
                   Vendor Ledger - {selectedVendor.vendorName}

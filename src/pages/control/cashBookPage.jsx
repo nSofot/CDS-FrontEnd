@@ -8,8 +8,8 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 
 Modal.setAppElement("#root");
 
-export default function StockPage() {
-  const [stocks, setStocks] = useState([]);
+export default function CashBookPage() {
+  const [ledgerAccounts, setLedgerAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeRecord, setActiveRecord] = useState(null);
@@ -44,17 +44,17 @@ export default function StockPage() {
       setIsLoading(true);
 
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`,
         { headers: getAuthHeaders() }
       );
 
       const data = res.data.data || res.data || [];
 
       const sorted = data.sort((a, b) =>
-        (a.stockId || "").localeCompare(b.stockId || "")
+        (a.accountId || "").localeCompare(b.accountId || "")
       );
 
-      setStocks(sorted);
+      setLedgerAccounts(sorted);
     } catch (err) {
       console.error(err);
       handleAuthError(err);
@@ -69,16 +69,16 @@ export default function StockPage() {
 
   // 🗑 DELETE STOCK
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this stock?"))
+    if (!window.confirm("Are you sure you want to delete this ledger account?"))
       return;
 
     try {
       await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/${id}`,
         { headers: getAuthHeaders() }
       );
 
-      toast.success("Stock deleted");
+      toast.success("Ledger account deleted");
       fetchStocks();
     } catch (err) {
       console.error(err);
@@ -93,26 +93,26 @@ export default function StockPage() {
         <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
-              📦 Stocks List
+              📦 Cash Book
             </h1>
             <p className="text-gray-600 text-sm">
-              View and manage all registered stocks
+              View and manage all registered cash book accounts
             </p>
           </div>
 
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/add-stock")}
+              onClick={() => navigate("/add-cash-account")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
-              + Add Stock
+              + Add Account
             </button>
 
             <button
-              onClick={() => navigate("/stock-bin-card")}
+              onClick={() => navigate("/cash-book-ledger")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
-              Bin Card
+              View
             </button>
 
             <button
@@ -134,7 +134,7 @@ export default function StockPage() {
         <>
           {/* 📱 MOBILE VIEW */}
           <div className="md:hidden space-y-3">
-            {stocks.map((item) => (
+            {ledgerAccounts.map((item) => (
               <div
                 key={item._id}
                 onClick={() => {
@@ -144,26 +144,22 @@ export default function StockPage() {
                 className="border rounded-lg p-3 shadow-sm bg-white cursor-pointer hover:bg-orange-50"
               >
                 <div className="font-bold text-orange-600">
-                  {item.stockName}
+                  {item.accountName || "Unnamed Account"}
                 </div>
 
                 <div className="text-sm text-gray-600">
-                  ID: {item.stockId}
+                  ID: {item.accountId}
                 </div>
 
                 <div className="text-sm">
-                  Qty: {item.stockQuantity} {item.stockUOM}
-                </div>
-
-                <div className="text-sm">
-                  Price: Rs. {item.stockPrice || "—"}
+                  Price: Rs. {item.accountBalance || "—"}
                 </div>
 
                 <div className="flex gap-3 mt-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); // ✅ FIX
-                      navigate("/edit-stock", { state: { stock: item } });
+                      navigate("/edit-cash-account", { state: { ledgerAccount: item } });
                     }}
                     className="text-blue-600"
                   >
@@ -183,8 +179,8 @@ export default function StockPage() {
               </div>
             ))}
 
-            {stocks.length === 0 && (
-              <p className="text-center text-gray-500">No stocks found</p>
+            {ledgerAccounts.length === 0 && (
+              <p className="text-center text-gray-500">No ledger accounts found</p>
             )}
           </div>
 
@@ -195,17 +191,15 @@ export default function StockPage() {
                 <thead className="bg-orange-100">
                   <tr>
                     <th className="px-3 py-2 text-center">#</th>
-                    <th className="px-3 py-2 text-left">ID</th>
-                    <th className="px-3 py-2 text-left">Name</th>
-                    <th className="px-3 py-2 text-left">Qty</th>
-                    <th className="px-3 py-2 text-left">UOM</th>
-                    <th className="px-3 py-2 text-right">Price</th>
+                    <th className="px-3 py-2 text-left">Account ID</th>
+                    <th className="px-3 py-2 text-left">Account Name</th>
+                    <th className="px-3 py-2 text-left">Balance</th>
                     <th className="px-3 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-orange-200">
-                  {stocks.map((item, index) => (
+                  {ledgerAccounts.map((item, index) => (
                     <tr
                       key={item._id}
                       onClick={() => {
@@ -215,20 +209,18 @@ export default function StockPage() {
                       className="hover:bg-orange-50 cursor-pointer"
                     >
                       <td className="px-3 py-2 text-center">{index + 1}</td>
-                      <td>{item.stockId}</td>
-                      <td>{item.stockName}</td>
-                      <td>{item.stockQuantity}</td>
-                      <td>{item.stockUOM}</td>
+                      <td>{item.accountId}</td>
+                      <td>{item.accountName || "Unnamed Account"}</td>
                       <td className="text-right">
-                        {item.stockPrice ? `Rs. ${item.stockPrice}` : "—"}
+                        {item.accountBalance ? `Rs. ${item.accountBalance}` : "—"}
                       </td>
 
                       <td className="text-right space-x-2 px-3 py-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate("/edit-stock", {
-                              state: { stock: item },
+                            navigate("/edit-cash-account", {
+                              state: { ledgerAccount: item },
                             });
                           }}
                           className="text-blue-600"
@@ -251,9 +243,9 @@ export default function StockPage() {
                 </tbody>
               </table>
 
-              {stocks.length === 0 && (
+              {ledgerAccounts.length === 0 && (
                 <p className="text-center p-4 text-gray-500">
-                  No stocks found
+                  No ledger accounts found
                 </p>
               )}
             </div>
@@ -271,19 +263,17 @@ export default function StockPage() {
         {activeRecord && (
           <div>
             <h2 className="text-xl font-bold text-orange-600 mb-4">
-              Stock Details
+              Account Details
             </h2>
 
             <table className="w-full text-sm">
               <tbody>
                 {Object.entries({
-                  ID: activeRecord.stockId,
-                  Name: activeRecord.stockName,
-                  Description: activeRecord.stockDescription,
-                  Qty: activeRecord.stockQuantity,
-                  UOM: activeRecord.stockUOM,
-                  Cost: activeRecord.stockCost,
-                  Price: activeRecord.stockPrice,
+                  ID: activeRecord.accountId,
+                  Name: activeRecord.accountName,
+                  Balance: activeRecord.accountBalance,
+                  Header: activeRecord.accountHeader,
+                  Type: activeRecord.accountType,
                 }).map(([key, val]) => (
                   <tr key={key} className="border-b">
                     <td className="py-2 text-orange-600">{key}</td>
