@@ -94,6 +94,16 @@ export default function ControlHomePage() {
     },
 
     {
+      label: "Cashbook",
+      to: "/cash-book",
+      icon: <FaMoneyCheckAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
       label: "GRNs & Purchases",
       to: "/grns",
       icon: <FaReceipt />,

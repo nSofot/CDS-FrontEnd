@@ -25,7 +25,7 @@ export default function StockBinCardPage() {
 
   const headers = { Authorization: `Bearer ${token}` };
 
-  // 🔄 FETCH STOCKS
+  // ---------------- FETCH STOCKS ----------------
   const fetchStocks = async () => {
     try {
       const res = await axios.get(
@@ -38,7 +38,7 @@ export default function StockBinCardPage() {
     }
   };
 
-  // 🔄 FETCH TRANSACTIONS
+  // ---------------- FETCH TRANSACTIONS ----------------
   const fetchTransactions = async () => {
     try {
       const res = await axios.get(
@@ -56,12 +56,23 @@ export default function StockBinCardPage() {
     fetchTransactions();
   }, []);
 
-  // 🔥 GENERATE BIN CARD
+  // ---------------- CLOSE MODAL (SAFE FOCUS RESET) ----------------
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedStock(null);
+
+    // ✅ FIX ARIA / FOCUS ISSUE
+    document.activeElement?.blur();
+  };
+
+  // ---------------- GENERATE BIN CARD ----------------
   const generateBinCard = (stock) => {
+    // ✅ IMPORTANT FIX: remove focus BEFORE opening modal
+    document.activeElement?.blur();
+
     setSelectedStock(stock);
     setLoading(true);
 
-    // ✅ Flatten transactions → items
     const flat = [];
 
     transactions.forEach((trx) => {
@@ -78,7 +89,6 @@ export default function StockBinCardPage() {
       });
     });
 
-    // 📅 FILTER DATE
     let filtered = [...flat];
 
     if (fromDate) {
@@ -93,10 +103,8 @@ export default function StockBinCardPage() {
       );
     }
 
-    // 🔢 SORT
     filtered.sort((a, b) => new Date(a.trxDate) - new Date(b.trxDate));
 
-    // 🔥 OPENING BALANCE
     let openingBalance = 0;
 
     flat.forEach((t) => {
@@ -123,36 +131,34 @@ export default function StockBinCardPage() {
         totalOut += qtyOut;
       }
 
-      return {
-        ...t,
-        qtyIn,
-        qtyOut,
-        balance,
-      };
+      return { ...t, qtyIn, qtyOut, balance };
     });
 
     setTotals({ inQty: totalIn, outQty: totalOut });
     setBinCard(computed);
+
     setIsModalOpen(true);
     setLoading(false);
   };
 
+  // ---------------- UI ----------------
   return (
     <div className="p-4 max-w-7xl mx-auto">
+
       {/* HEADER */}
       <div className="flex justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-orange-600">
             📦 Stock Bin Card
           </h1>
-          <h2 className="text-sm text-gray-600">
-            Detailed inventory movement and stock balance tracking
-          </h2>
+          <p className="text-sm text-gray-600">
+            Inventory movement & stock tracking
+          </p>
         </div>
 
         <button
           onClick={() => navigate("/stock")}
-          className="px-4 py-2 border rounded"
+          className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
         >
           ← Back
         </button>
@@ -177,134 +183,102 @@ export default function StockBinCardPage() {
       {/* STOCK LIST */}
       <div className="grid md:grid-cols-3 gap-4">
         {stocks.map((stock) => (
-          <div
+          <button
             key={stock._id}
             onClick={() => generateBinCard(stock)}
-            className="border rounded-lg p-4 bg-white shadow hover:bg-orange-50 cursor-pointer"
+            className="border rounded-lg p-4 bg-white shadow hover:bg-orange-50 text-left"
           >
             <h2 className="font-semibold text-orange-600">
               {stock.stockName}
             </h2>
-            <p className="text-sm text-gray-500">
-              ID: {stock.stockId}
-            </p>
+            <p className="text-sm text-gray-500">ID: {stock.stockId}</p>
             <p className="text-sm">
               Qty: {stock.stockQuantity} {stock.stockUOM}
             </p>
-          </div>
+          </button>
         ))}
       </div>
 
       {/* MODAL */}
-        <Modal
+      <Modal
         isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center md:pl-64 p-3"
-        className="bg-white w-full max-w-4xl rounded-xl shadow-xl max-h-[90vh] overflow-y-auto p-4"
-        >
+        onRequestClose={closeModal}
+        overlayClassName="fixed inset-0 bg-black/60 flex md:items-center justify-center md:pl-64 p-3"
+        className="bg-white w-full md:max-w-4xl rounded-xl shadow-xl max-h-[95vh] flex flex-col overflow-hidden mt-20 md:mt-0"
+      >
         {selectedStock && (
-            <>
+          <>
             {/* HEADER */}
-            <div className="flex justify-between mb-3">
-                <div>
+            <div className="flex justify-between p-4 border-b">
+              <div>
                 <h2 className="text-xl font-bold text-orange-600">
-                    Bin Card - {selectedStock.stockName}
+                  Bin Card - {selectedStock.stockName}
                 </h2>
                 <p className="text-sm text-gray-500">
-                    {selectedStock.stockId}
+                  {selectedStock.stockId}
                 </p>
-                </div>
+              </div>
 
-                <button onClick={() => setIsModalOpen(false)}>✖</button>
+              <button onClick={closeModal}>✖</button>
             </div>
 
             {/* TOTALS */}
-            <div className="flex gap-6 mb-3 font-semibold text-sm flex-wrap">
-                <span>Total IN: {totals.inQty}</span>
-                <span>Total OUT: {totals.outQty}</span>
+            <div className="flex gap-6 mb-3 font-semibold text-sm">
+              <span>Total IN: {totals.inQty}</span>
+              <span>Total OUT: {totals.outQty}</span>
             </div>
 
             {/* TABLE */}
             {loading ? (
-                <p>Loading...</p>
+              <p>Loading...</p>
             ) : (
-                <div className="overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm border">
-                    <thead className="bg-orange-100">
+                  <thead className="bg-orange-100">
                     <tr>
-                        <th className="px-2 py-2 text-left">Date</th>
-                        <th className="px-2 py-2 text-left">Type</th>
-                        <th className="px-2 py-2 text-left">Ref</th>
-                        <th className="px-2 py-2 text-right">IN</th>
-                        <th className="px-2 py-2 text-right">OUT</th>
-                        <th className="px-2 py-2 text-right">Balance</th>
-                    </tr>                   
-                    </thead>
-
-                    <tbody>
-                    {/* OPENING */}
-                    <tr className="bg-gray-100 font-semibold">
-                        <td className="px-2 py-2" colSpan="5">
-                        Opening Balance
-                        </td>
-                        <td className="px-2 py-2 text-right">
-                        {binCard.length > 0
-                            ? binCard[0].balance -
-                            (binCard[0].qtyIn || 0) +
-                            (binCard[0].qtyOut || 0)
-                            : 0}
-                        </td>
+                      <th className="px-2 py-2 text-left">Date</th>
+                      <th className="px-2 py-2 text-left">Type</th>
+                      <th className="px-2 py-2 text-left">Ref</th>
+                      <th className="px-2 py-2 text-right">IN</th>
+                      <th className="px-2 py-2 text-right">OUT</th>
+                      <th className="px-2 py-2 text-right">Balance</th>
                     </tr>
+                  </thead>
 
+                  <tbody>
                     {binCard.map((row, i) => (
-                        <tr key={i} className="border-t">
-                        <td className="px-2 py-2 whitespace-nowrap">
-                            {new Date(row.trxDate).toLocaleDateString()}
-                        </td>
-
+                      <tr key={i} className="border-t">
                         <td className="px-2 py-2">
-                            {row.trxType}
+                          {new Date(row.trxDate).toLocaleDateString()}
                         </td>
-
-                        <td className="px-2 py-2">
-                            {row.referenceId || "-"}
-                        </td>
-
+                        <td className="px-2 py-2">{row.trxType}</td>
+                        <td className="px-2 py-2">{row.referenceId || "-"}</td>
                         <td className="px-2 py-2 text-right text-green-600">
-                            {row.qtyIn || ""}
+                          {row.qtyIn || ""}
                         </td>
-
                         <td className="px-2 py-2 text-right text-red-600">
-                            {row.qtyOut || ""}
+                          {row.qtyOut || ""}
                         </td>
-
-                        <td
-                            className={`px-2 py-2 text-right font-semibold ${
-                            row.balance < 0 ? "text-red-600" : ""
-                            }`}
-                        >
-                            {row.balance}
+                        <td className="px-2 py-2 text-right font-semibold">
+                          {row.balance}
                         </td>
-                        </tr>
+                      </tr>
                     ))}
 
                     {binCard.length === 0 && (
-                        <tr>
-                        <td
-                            colSpan="6"
-                            className="px-3 py-4 text-center text-gray-500"
-                        >
-                            No transactions found
+                      <tr>
+                        <td colSpan="6" className="text-center py-4 text-gray-500">
+                          No transactions found
                         </td>
-                        </tr>
+                      </tr>
                     )}
-                    </tbody>
+                  </tbody>
                 </table>
-                </div>
+              </div>
             )}
-            </>
+          </>
         )}
-        </Modal>
+      </Modal>
     </div>
   );
 }
