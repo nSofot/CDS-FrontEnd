@@ -87,7 +87,7 @@ export default function StockPage() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen p-3 flex flex-col gap-4">
+    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
       {/* HEADER */}
       <div className="bg-white border-b border-gray-200">
         <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-3">
@@ -100,7 +100,7 @@ export default function StockPage() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex md:flex-row flex-col gap-4">
             <button
               onClick={() => navigate("/add-stock")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
@@ -112,7 +112,7 @@ export default function StockPage() {
               onClick={() => navigate("/stock-bin-card")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
-              Bin Card
+              ⌕ Bin Card
             </button>
 
             <button

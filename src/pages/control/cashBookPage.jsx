@@ -89,10 +89,10 @@ export default function CashBookPage() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen p-3 flex flex-col gap-4">
+    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
       {/* HEADER */}
       <div className="bg-white border-b border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-3">
+        <div className="flex md:flex-row flex-col justify-between gap-2 px-4 py-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
               📦 Cash Book
@@ -102,7 +102,7 @@ export default function CashBookPage() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex md:flex-row flex-col gap-4">
             <button
               onClick={() => navigate("/add-cash-account")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
@@ -114,7 +114,7 @@ export default function CashBookPage() {
               onClick={() => navigate("/cash-book-ledger")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
-              View
+              ⌕ View Account
             </button>
 
             <button

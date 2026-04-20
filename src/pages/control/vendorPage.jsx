@@ -74,9 +74,9 @@ export default function VendorListPage() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
+    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+      <div className="flex md:flex-row flex-col justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold">🏢 Vendor List</h1>
           <p className="text-sm text-gray-600">
@@ -84,13 +84,7 @@ export default function VendorListPage() {
           </p>
         </div>
 
-        {/* <Link
-          to="/add-vendor"
-          className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-        >
-          + Add Vendor
-        </Link> */}
-        <div className="flex gap-2">
+        <div className="flex md:flex-row flex-col gap-4">
             <button
               onClick={() => navigate("/add-vendor")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
@@ -102,7 +96,7 @@ export default function VendorListPage() {
               onClick={() => navigate("/vendor-ledger")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
-              Vendor Ledger
+              ⌕ Vendor Ledger
             </button>
 
             <button

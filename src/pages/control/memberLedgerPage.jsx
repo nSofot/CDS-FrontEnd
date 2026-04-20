@@ -86,9 +86,9 @@ export default function MemberLedgerPage() {
     : transactions;
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 flex flex-col gap-4">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex md:flex-row flex-col justify-between gap-2 py-4">
         <div>
           <h1 className="text-2xl font-bold text-orange-600">
             📒 Member Ledger
