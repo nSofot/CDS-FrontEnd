@@ -109,10 +109,10 @@ export default function VendorLedgerPage() {
     };
 
   return (
-    <div className="p-4 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
 
       {/* HEADER */}
-      <div className="flex justify-between mb-4">
+      <div className="flex md:flex-row flex-col justify-between gap-2 py-3">
         <div >
         <h1 className="text-2xl font-bold text-orange-600">
           🧾 Vendor Ledger
@@ -131,38 +131,38 @@ export default function VendorLedgerPage() {
       </div>
 
         {/* DATE RANGE FILTER */}
-        <div className="flex gap-2 p-3 border-b flex-wrap bg-gray-50">
-        <input
-            type="date"
-            className="border p-2 rounded text-sm"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-        />
+        <div className="flex gap-2 border-b flex-wrap bg-gray-50 py-4">
+          <input
+              type="date"
+              className="border p-2 rounded text-sm"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+          />
 
-        <input
-            type="date"
-            className="border p-2 rounded text-sm"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-        />
+          <input
+              type="date"
+              className="border p-2 rounded text-sm"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+          />
 
-        <button
-            onClick={() => generateLedger(selectedVendor)}
-            className="px-3 py-2 text-sm border rounded bg-orange-100"
-        >
-            Apply Filter
-        </button>
+          <button
+              onClick={() => generateLedger(selectedVendor)}
+              className="px-3 py-2 text-sm border rounded bg-orange-100"
+          >
+              Apply Filter
+          </button>
 
-        <button
-            onClick={() => {
-            setFromDate("");
-            setToDate("");
-            generateLedger(selectedVendor);
-            }}
-            className="px-3 py-2 text-sm border rounded"
-        >
-            Reset
-        </button>
+          <button
+              onClick={() => {
+              setFromDate("");
+              setToDate("");
+              generateLedger(selectedVendor);
+              }}
+              className="px-3 py-2 text-sm border rounded"
+          >
+              Reset
+          </button>
         </div>
 
       {/* VENDORS */}

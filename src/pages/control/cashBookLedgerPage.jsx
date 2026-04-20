@@ -112,10 +112,10 @@ export default function CashBookLedgerPage() {
   };
 
   return (
-    <div className="p-4 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
 
       {/* HEADER */}
-      <div className="flex justify-between mb-4">
+      <div className="flex md:flex-row flex-col justify-between gap-2 py-4">
         <div>
           <h1 className="text-2xl font-bold text-orange-600">
             💰 Cash Book Ledger

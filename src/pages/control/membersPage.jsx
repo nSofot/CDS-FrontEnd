@@ -114,7 +114,7 @@ export default function MembersPage() {
 
   
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen p-3 flex flex-col gap-4">
+    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="flex md:flex-row flex-col justify-between gap-2 px-4 py-3">
@@ -127,26 +127,28 @@ export default function MembersPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => navigate("/add-member")}
-            className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-          >
-            + Add Member
-          </button>
+          <div className="flex md:flex-row flex-col gap-4">
+            <button
+              onClick={() => navigate("/add-member")}
+              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+            >
+              + Add Member
+            </button>
 
-          <button
-            onClick={() => navigate("/member-ledger")}
-            className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-          >
-            Member Ledger
-          </button>
+            <button
+              onClick={() => navigate("/member-ledger")}
+              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+            >
+              ⌕ Member Ledger
+            </button>
 
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-          >
-            ← Go Back
-          </button>
+            <button
+              onClick={() => navigate("/")}
+              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+            >
+              ← Go Back
+            </button>
+          </div>
         </div>
       </div>
 
