@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Modal from "react-modal";
+import toast from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import LoadingSpinner from "../../components/loadingSpinner";
 import { FaUser, FaEdit, FaTrash } from "react-icons/fa";
@@ -15,6 +16,23 @@ export default function MembersPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  const token = localStorage.getItem("token");
+
+  const getAuthHeaders = () => {
+    if (!token) return null;
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  const handleAuthError = (err) => {
+    if (err.response?.status === 403) {
+      toast.error("Session expired. Please login again.");
+      localStorage.removeItem("token");
+      navigate("/login");
+    } else {
+      toast.error("Something went wrong");
+    }
+  };
 
   const roleMap = {
     admin: "Admin",
@@ -32,22 +50,44 @@ export default function MembersPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    setIsLoading(true);
 
-    axios
-      .get(import.meta.env.VITE_BACKEND_URL + "/api/member")
-      .then((res) => {
-        const sorted = res.data.sort((a, b) =>
+    const fetchMembers = async () => {
+      try {
+        setIsLoading(true);
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          toast.error("Please login first");
+          navigate("/login");
+          return;
+        }
+
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/member`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = res?.data || [];
+
+        const sorted = data.sort((a, b) =>
           a.memberId.localeCompare(b.memberId)
         );
 
         setCustomers(sorted);
-        setIsLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching members:", err);
+        handleAuthError(err); // ✅ use your handler
+      } finally {
         setIsLoading(false);
-      });
+      }
+    };
+
+    fetchMembers();
   }, [location]);
 
   const getImageUrl = (img) =>
