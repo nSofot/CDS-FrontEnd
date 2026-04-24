@@ -2,21 +2,22 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-export default function MemberPaymentPage() {
+export default function MemberReceiptPage() {
   const [members, setMembers] = useState([]);
+  const [ledgers, setLedgers] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     referenceId: "",
-    trxType: "MemberPayment",
+    trxType: "Receipt",
     trxDate: "",
     memberId: "",
     memberName: "",
-    paymentMethod: "Cash", // Cash | Bank | Cheque
+    paymentMethod: "",
+    accountId: "",
+    accountName: "",
     description: "",
     amount: "",
-    bankName: "",
-    chequeNo: "",
   });
 
   // ================= FETCH MEMBERS =================
@@ -31,8 +32,30 @@ export default function MemberPaymentPage() {
     }
   };
 
+  const fetchLedgers = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
+      );
+
+      const data = res.data.data || res.data;
+
+      // Only Cash & Bank (110,115)
+      const filtered = data.filter(
+        (item) =>
+          item.headerAccountId === "110" ||
+          item.headerAccountId === "115"
+      );
+
+      setLedgers(filtered);
+    } catch {
+      toast.error("Failed to load ledgers");
+    }
+  };
+
   useEffect(() => {
     fetchMembers();
+    fetchLedgers();
   }, []);
 
   // ================= HANDLE CHANGE =================
@@ -65,34 +88,26 @@ export default function MemberPaymentPage() {
       setLoading(true);
 
       const amount = Number(form.amount || 0);
-
-
-      let description = "";
-
-      if (form.paymentMethod === "Cash") {
-        description = `Cash - ${form.description}`;
-      } else if (form.paymentMethod === "Bank") {
-        description = `${form.bankName} - ${form.description}`;
-      } else if (form.paymentMethod === "Cheque") {
-        description = `${form.chequeNo} - ${form.description}`;
-      }  
       
       const memberTrxPayload = {
         referenceId: form.referenceId,
         trxDate: form.trxDate,
         trxType: form.trxType,
         memberId: form.memberId,
-        description: description,
+        memberName: form.memberName,
+        description: `${form.accountName} - ${form.description}`,
         isCredit: false,
         amount: amount,
         dueAmount: 0,
       };
 
       // Save member transaction
-      // await axios.post(
-      //   `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
-      //   memberTrxPayload
-      // );
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
+        memberTrxPayload
+      );
+
+      const savedTrxId = res.data.data || res.data;
 
       // Reduce member due
       await axios.post(
@@ -102,16 +117,48 @@ export default function MemberPaymentPage() {
         }
       );
 
+
+      // ================= 3. UPDATE LEDGER BALANCE =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: form.accountId,
+              amount: amount,
+            },
+          ],
+        }
+      );
+
+      // ================= 4. SAVE LEDGER TRANSACTION =================
+      const ledgerTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: form.accountId,
+        accountName: form.accountName,
+        description: form.memberName + " - " + form.description,
+        isCredit: false,
+        trxAmount: amount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerTrxPayload
+      );      
+
       toast.success("Payment recorded successfully");
 
       // RESET
       setForm({
         referenceId: "",
-        trxType: "MemberPayment",
+        trxType: "Receipt",
         trxDate: "",
         memberId: "",
         memberName: "",
-        paymentMethod: "Cash",
+        paymentMethod: "",
         description: "",
         amount: "",
         bankName: "",
@@ -128,19 +175,19 @@ export default function MemberPaymentPage() {
   // ================= UI =================
   return (
     <div className="sm:p-6 bg-gray-100 min-h-screen">
-      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
+      <div className="max-w-4xl mx-auto bg-white p-3 sm:p-6 rounded-xl shadow">
 
         <h1 className="text-xl sm:text-2xl font-bold">
-          Member Payment Entry
+          Member Receipt Entry
         </h1>
         <h2 className="text-sm text-gray-600 mb-6">
-          Record Cash, Bank Transfer and Cheque Payments from Members
+          Record Cash, Bank Transfer and Cheque Receipts from Members
         </h2>
 
         <form onSubmit={handleSubmit}>
 
           {/* TOP */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3 mb-4">
 
             <input
               type="text"
@@ -184,62 +231,31 @@ export default function MemberPaymentPage() {
                 </option>
               ))}
             </select>
-          </div>
 
-          {/* PAYMENT METHOD */}
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">
-              Payment Method
-            </label>
+            {/* Ledger */}
             <select
-              name="paymentMethod"
-              value={form.paymentMethod}
+              value={form.accountId}
               onChange={(e) => {
-                const value = e.target.value;
+                const selected = ledgers.find(
+                  (l) => l.accountId === e.target.value
+                );
 
                 setForm({
                   ...form,
-                  paymentMethod: value,
-                  bankName: "",
-                  chequeNo: "",
+                  accountId: selected?.accountId || "",
+                  accountName: selected?.accountName || "",
                 });
               }}
-              className="border p-2 rounded w-full"
+              className="border p-2 rounded"
+              required
             >
-              <option value="Cash">Cash</option>
-              <option value="Bank">Bank Transfer</option>
-              <option value="Cheque">Cheque</option>
-            </select>
-          </div>
-
-          {/* BANK FIELD */}
-          {form.paymentMethod === "Bank" && (
-            <input
-              type="text"
-              name="bankName"
-              placeholder="Bank Name"
-              value={form.bankName}
-              onChange={handleChange}
-              className="border p-2 rounded w-full mb-4"
-              required
-            />
-          )}
-
-          {/* CHEQUE FIELD */}
-          {form.paymentMethod === "Cheque" && (
-            <input
-              type="text"
-              name="chequeNo"
-              placeholder="Cheque Number"
-              value={form.chequeNo}
-              onChange={handleChange}
-              className="border p-2 rounded w-full mb-4"
-              required
-            />
-          )}
-
-          {/* DESCRIPTION + AMOUNT */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <option value="">Select receiving account</option>
+              {ledgers.map((l) => (
+                <option key={l.accountId} value={l.accountId}>
+                  {l.accountName}
+                </option>
+              ))}
+            </select>            
 
             <input
               type="text"
@@ -247,7 +263,8 @@ export default function MemberPaymentPage() {
               placeholder="Description"
               value={form.description}
               onChange={handleChange}
-              className="border p-2 rounded col-span-2"
+              className="border p-2 rounded"
+              required
             />
 
             <input
@@ -256,7 +273,7 @@ export default function MemberPaymentPage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded col-span-2"
+              className="border p-2 rounded"
               required
             />
           </div>

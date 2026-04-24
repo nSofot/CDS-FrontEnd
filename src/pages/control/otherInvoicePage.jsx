@@ -113,7 +113,7 @@ export default function OtherInvoicePage() {
         <form onSubmit={handleSubmit}>
 
           {/* Header */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3 mb-4">
 
             <input
               type="text"
@@ -157,10 +157,21 @@ export default function OtherInvoicePage() {
                 </option>
               ))}
             </select>
+
+            <input
+              type="number"
+              name="amount"
+              placeholder="Amount"
+              value={form.amount}
+              onChange={handleChange}
+              className="border p-2 rounded"
+              required
+            />
+
           </div>
 
           {/* Description + Amount */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mb-4">
 
             <input
               type="text"
@@ -172,15 +183,7 @@ export default function OtherInvoicePage() {
               required
             />
 
-            <input
-              type="number"
-              name="amount"
-              placeholder="Amount"
-              value={form.amount}
-              onChange={handleChange}
-              className="border p-2 rounded col-span-2 w-full"
-              required
-            />
+
           </div>
 
           {/* Total */}
