@@ -126,10 +126,12 @@ export default function PurchaseEntryPage() {
         })),
       };
 
-      await axios.post(
+      const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
         stockTrxPayload
       );
+
+      const savedTrxId = res.data.data.trxId || res.data.trxId;
 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
@@ -138,7 +140,9 @@ export default function PurchaseEntryPage() {
         }
       );
 
+
       const vendorTrxPayload = {
+        trxId: savedTrxId,
         referenceId: form.referenceId,
         trxDate: form.trxDate,
         trxType: form.trxType,

@@ -70,13 +70,12 @@ export default function CashBookPage() {
   }, []);
 
   // 🗑 DELETE STOCK
-  const handleDelete = async (id) => {
+  const handleDelete = async (accountId) => {
     if (!window.confirm("Are you sure you want to delete this ledger account?"))
       return;
-
     try {
       await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/${accountId}`,
         { headers: getAuthHeaders() }
       );
 
@@ -171,7 +170,7 @@ export default function CashBookPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); // ✅ FIX
-                      handleDelete(item._id);
+                      handleDelete(item.accountId);
                     }}
                     className="text-red-600"
                   >
@@ -233,7 +232,7 @@ export default function CashBookPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(item._id);
+                            handleDelete(item.accountId);
                           }}
                           className="text-red-600"
                         >

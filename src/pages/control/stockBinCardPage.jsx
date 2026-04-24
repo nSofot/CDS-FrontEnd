@@ -146,7 +146,7 @@ export default function StockBinCardPage() {
     <div className="max-w-7xl mx-auto">
 
       {/* HEADER */}
-      <div className="flex md:flex-row flex-col justify-between gap-2 py-3">
+      <div className="flex md:flex-row flex-col justify-between gap-2 py-4">
         <div>
           <h1 className="text-2xl font-bold text-orange-600">
             📦 Stock Bin Card

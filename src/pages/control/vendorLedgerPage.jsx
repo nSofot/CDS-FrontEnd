@@ -185,149 +185,168 @@ export default function VendorLedgerPage() {
       </div>
 
       {/* MODAL */}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        overlayClassName="fixed inset-0 bg-black/60 flex md:items-center justify-center md:pl-64 p-3"
-        className="bg-white w-full md:max-w-4xl rounded-xl shadow-xl max-h-[95vh] flex flex-col overflow-hidden mt-20 md:mt-0"
-      >
-        {selectedVendor && (
-          <>
-            {/* HEADER */}
-            <div className="flex justify-between p-4 border-b">
-              <div>
-                <h2 className="text-lg font-bold text-orange-600">
-                  Vendor Ledger - {selectedVendor.vendorName}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {selectedVendor.vendorId}
-                </p>
-              </div>
-
-              <button onClick={() => setIsModalOpen(false)}>
-                ✖
-              </button>
+    <Modal
+      isOpen={isModalOpen}
+      onRequestClose={() => setIsModalOpen(false)}
+      overlayClassName="fixed inset-0 bg-black/60 flex md:items-center justify-center md:pl-64 p-3"
+      className="bg-white w-full md:max-w-4xl rounded-xl shadow-xl max-h-[80vh] flex flex-col overflow-hidden mt-30 md:mt-0"
+    >
+      {selectedVendor && (
+        <>
+          {/* HEADER */}
+          <div className="flex justify-between items-center p-4 border-b">
+            <div>
+              <h2 className="text-lg font-bold text-orange-600">
+                Vendor Ledger - {selectedVendor.vendorName}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {selectedVendor.vendorId}
+              </p>
             </div>
 
-            {/* BODY */}
-            <div className="flex-1 overflow-y-auto p-3">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="text-xl"
+            >
+              ✖
+            </button>
+          </div>
 
-              {loading ? (
-                <p>Loading...</p>
-              ) : (
-                <>
-                  {/* TABLE */}
-                  <div className="hidden md:block">
-                    <table className="w-full text-sm border">
-                      <thead className="bg-orange-100">
-                        <tr>
-                          <th className="p-2 text-left">Date</th>
-                          <th className="p-2 text-left">Ref</th>
-                          <th className="p-2 text-left">Type</th>
-                          <th className="p-2 text-right">Debit</th>
-                          <th className="p-2 text-right">Credit</th>
-                          <th className="p-2 text-right">Balance</th>
-                        </tr>
-                      </thead>
+          {/* BODY */}
+          <div className="flex-1 overflow-y-auto p-3">
+            {loading ? (
+              <p>Loading...</p>
+            ) : (
+              <>
+                {/* DESKTOP TABLE */}
+                <div className="hidden md:block">
+                  <table className="w-full text-sm border">
+                    <thead className="bg-orange-100">
+                      <tr>
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Ref</th>
+                        <th className="p-2 text-left">Type</th>
+                        <th className="p-2 text-left">Description</th>
+                        <th className="p-2 text-right">Debit</th>
+                        <th className="p-2 text-right">Credit</th>
+                        <th className="p-2 text-right">Balance</th>
+                      </tr>
+                    </thead>
 
-                      <tbody>
-                        {ledger.map((row, i) => (
-                          <tr key={i} className="border-t">
-                            <td className="p-2">
-                              {new Date(row.trxDate).toLocaleDateString()}
-                            </td>
-                            <td className="p-2">{row.referenceId}</td>
-                            <td className="p-2">{row.trxType}</td>
-                            <td className="p-2 text-right text-red-600">
-                            {Number(row.debit || 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            })}
-                            </td>
-
-                            <td className="p-2 text-right text-green-600">
-                            {Number(row.credit || 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            })}
-                            </td>
-
-                            <td
-                            className={`p-2 text-right font-semibold ${
-                                Number(row.balance || 0) < 0 ? "text-red-600" : "text-gray-700"
-                            }`}
-                            >
-                            {Number(row.balance || 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            })}
-                            </td>
-                            
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* MOBILE */}
-                  <div className="md:hidden">
-                    {ledger.map((row, i) => (
-                      <div
-                        key={i}
-                        className="border-b border-gray-600 p-3 bg-white"
-                      >
-                        <div className="flex justify-left gap-6">
-                          <span className="text-sm">
+                    <tbody>
+                      {ledger.map((row, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="p-2">
                             {new Date(row.trxDate).toLocaleDateString()}
-                          </span>                       
-                          <span className="text-sm">
-                            {row.trxType}
-                          </span>
-                          <span className="text-sm">
-                            {row.referenceId}
-                          </span>
-                        </div>
+                          </td>
+                          <td className="p-2">{row.referenceId}</td>
+                          <td className="p-2">{row.trxType}</td>
+                          <td className="p-2">
+                            {row.description || "-"}
+                          </td>
 
-                        <div className="flex justify-right items-right start-end mt-2 text-sm">
-                            <span className="text-red-600 text-right w-1/3">
+                          <td className="p-2 text-right text-red-600">
                             {Number(row.debit || 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
                             })}
-                            </span>
+                          </td>
 
-                            <span className="text-green-600 text-right w-1/3">
+                          <td className="p-2 text-right text-green-600">
                             {Number(row.credit || 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
                             })}
-                            </span>
+                          </td>
 
-                            <span
-                            className={`text-right w-1/3 font-semibold ${
-                                row.balance < 0 ? "text-red-600" : "text-gray-900"
+                          <td
+                            className={`p-2 text-right font-semibold ${
+                              Number(row.balance || 0) < 0
+                                ? "text-red-600"
+                                : "text-gray-700"
                             }`}
-                            >
-                            {Number(row.balance || 0).toLocaleString(undefined, {
+                          >
+                            {Number(row.balance || 0).toLocaleString(
+                              undefined,
+                              {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                            })}
-                            </span>
-                        </div>
+                              }
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                        {/* <div className="text-right font-bold mt-2">
-                          Balance: {row.balance}
-                        </div> */}
+                {/* MOBILE VIEW */}
+                <div className="md:hidden">
+                  {ledger.map((row, i) => (
+                    <div
+                      key={i}
+                      className="border-b border-gray-300 p-3 bg-white text-sm"
+                    >
+                      {/* LINE 1 */}
+                      <div className="flex justify-left flex-wrap gap-4">
+                        <span>
+                          {new Date(row.trxDate).toLocaleDateString()}
+                        </span>
+                        <span className="text-gray-600">
+                          {row.referenceId}
+                        </span>
+                        <span className="font-medium">
+                          {row.trxType}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
 
-            </div>
-          </>
-        )}
-      </Modal>
+                      {/* LINE 2 */}
+                      <div className="mt-1 text-gray-700">
+                        {row.description || "-"}
+                      </div>
+
+                      {/* LINE 3 */}
+                      <div className="flex justify-right text-sm">
+                        <span className="text-red-600 w-1/3 text-right">
+                          {Number(row.debit || 0).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+
+                        <span className="text-green-600 w-1/3 text-right">
+                          {Number(row.credit || 0).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+
+                        <span
+                          className={`w-1/3 text-right font-semibold ${
+                            Number(row.balance || 0) < 0
+                              ? "text-red-600"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {Number(row.balance || 0).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </Modal>
+
     </div>
   );
 }

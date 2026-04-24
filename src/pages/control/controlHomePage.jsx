@@ -134,19 +134,9 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "Member Payments",
-      to: "/member-payment",
+      label: "Member Receipts",
+      to: "/member-receipt",
       icon: <FaUserClock />,
-      roles: [
-        "admin",
-        "president",
-      ],
-    },
-
-    {
-      label: "Other Payments",
-      to: "/other-payment",
-      icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
         "president",
@@ -157,6 +147,16 @@ export default function ControlHomePage() {
       label: "Stock Adjustments",
       to: "/stock-adjustments",
       icon: <TbReport />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
+      label: "Mushroom Process",
+      to: "/mushroom-process",
+      icon: <FaUsersCog />,
       roles: [
         "admin",
         "president",
