@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 
 export default function VendorPaymentPage() {
   const [vendors, setVendors] = useState([]);
+  const [ledgers, setLedgers] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -12,14 +13,13 @@ export default function VendorPaymentPage() {
     trxDate: "",
     vendorId: "",
     vendorName: "",
-    paymentMethod: "Cash", // Cash | Bank | Cheque
+    accountId: "",
+    accountName: "",
     description: "",
     amount: "",
-    bankName: "",
-    chequeNo: "",
   });
 
-  // ================= FETCH VENDORS =================
+  // ================= FETCH =================
   const fetchVendors = async () => {
     try {
       const res = await axios.get(
@@ -31,8 +31,30 @@ export default function VendorPaymentPage() {
     }
   };
 
+  const fetchLedgers = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
+      );
+
+      const data = res.data.data || res.data;
+
+      // Only Cash & Bank (110,115)
+      const filtered = data.filter(
+        (item) =>
+          item.headerAccountId === "110" ||
+          item.headerAccountId === "115"
+      );
+
+      setLedgers(filtered);
+    } catch {
+      toast.error("Failed to load ledgers");
+    }
+  };
+
   useEffect(() => {
     fetchVendors();
+    fetchLedgers();
   }, []);
 
   // ================= HANDLE CHANGE =================
@@ -49,76 +71,107 @@ export default function VendorPaymentPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.referenceId || !form.trxDate || !form.vendorId || !form.amount) {
-      return toast.error("Please fill required fields");
+    // ✅ VALIDATION
+    if (!form.referenceId || !form.trxDate) {
+      return toast.error("Reference & Date required");
     }
 
-    if (form.paymentMethod === "Bank" && !form.bankName) {
-      return toast.error("Enter bank name");
+    if (!form.vendorId) {
+      return toast.error("Please select a vendor");
     }
 
-    if (form.paymentMethod === "Cheque" && !form.chequeNo) {
-      return toast.error("Enter cheque number");
+    if (!form.accountId) {
+      return toast.error("Please select a paying account");
+    }
+
+    if (!form.amount || Number(form.amount) <= 0) {
+      return toast.error("Enter valid amount");
     }
 
     try {
       setLoading(true);
 
-      const amount = Number(form.amount || 0);
+      const amount = Number(form.amount);
 
-      let description = "";
-
-      if (form.paymentMethod === "Cash") {
-        description = `Cash - ${form.description}`;
-      } else if (form.paymentMethod === "Bank") {
-        description = `${form.bankName} - ${form.description}`;
-      } else if (form.paymentMethod === "Cheque") {
-        description = `${form.chequeNo} - ${form.description}`;
-      }    
-
+      // ================= 1. SAVE VENDOR TRANSACTION =================
       const vendorTrxPayload = {
         referenceId: form.referenceId,
         trxDate: form.trxDate,
         trxType: form.trxType,
         vendorId: form.vendorId,
         vendorName: form.vendorName,
-        description: description,
-        isCredit: true, // Payment reduces due
+        description: form.accountName + " - " + form.description,
+        isCredit: true,
         amount: amount,
         dueAmount: 0,
-      }
-      // Save transaction
-      await axios.post(
+      };
+
+      const vendorRes = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
         vendorTrxPayload
       );
 
-      // Reduce vendor due
+      const savedTrxId = vendorRes.data.data.trxId;
+
+      // ================= 2. REDUCE VENDOR DUE =================
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/reduce-due`,
+        { amount }
+      );
+
+      // ================= 3. UPDATE LEDGER BALANCE =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
         {
-          amount: amount,
+          updates: [
+            {
+              accountId: form.accountId,
+              amount: amount,
+            },
+          ],
         }
       );
 
+      // ================= 4. SAVE LEDGER TRANSACTION =================
+      const ledgerTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: form.accountId,
+        accountName: form.accountName,
+        description: form.vendorName + " - " + form.description,
+        isCredit: true,
+        trxAmount: amount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerTrxPayload
+      );
+
+      // ================= SUCCESS =================
       toast.success("Payment recorded successfully");
 
-      // RESET
+      // RESET FORM
       setForm({
         referenceId: "",
         trxType: "Payment",
         trxDate: "",
         vendorId: "",
         vendorName: "",
-        paymentMethod: "Cash",
+        accountId: "",
+        accountName: "",
         description: "",
         amount: "",
-        bankName: "",
-        chequeNo: "",
       });
+
     } catch (err) {
-      console.error(err);
-      toast.error("Error saving payment");
+      console.error("FULL ERROR:", err.response?.data || err);
+
+      toast.error(
+        err.response?.data?.message || "Error saving payment"
+      );
     } finally {
       setLoading(false);
     }
@@ -139,7 +192,7 @@ export default function VendorPaymentPage() {
         <form onSubmit={handleSubmit}>
 
           {/* TOP */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
 
             <input
               type="text"
@@ -160,6 +213,7 @@ export default function VendorPaymentPage() {
               required
             />
 
+            {/* Vendor */}
             <select
               value={form.vendorId}
               onChange={(e) => {
@@ -183,52 +237,36 @@ export default function VendorPaymentPage() {
                 </option>
               ))}
             </select>
-          </div>
 
-          {/* PAYMENT METHOD */}
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">
-              Payment Method
-            </label>
+            {/* Ledger */}
             <select
-              name="paymentMethod"
-              value={form.paymentMethod}
-              onChange={handleChange}
-              className="border p-2 rounded w-full"
+              value={form.accountId}
+              onChange={(e) => {
+                const selected = ledgers.find(
+                  (l) => l.accountId === e.target.value
+                );
+
+                setForm({
+                  ...form,
+                  accountId: selected?.accountId || "",
+                  accountName: selected?.accountName || "",
+                });
+              }}
+              className="border p-2 rounded"
+              required
             >
-              <option value="Cash">Cash</option>
-              <option value="Bank">Bank Transfer</option>
-              <option value="Cheque">Cheque</option>
+              <option value="">Select paying account</option>
+              {ledgers.map((l) => (
+                <option key={l.accountId} value={l.accountId}>
+                  {l.accountName}
+                </option>
+              ))}
             </select>
+
           </div>
-
-          {/* CONDITIONAL FIELDS */}
-          {form.paymentMethod === "Bank" && (
-            <input
-              type="text"
-              name="bankName"
-              placeholder="Bank Name"
-              value={form.bankName}
-              onChange={handleChange}
-              className="border p-2 rounded w-full mb-4"
-              required
-            />
-          )}
-
-          {form.paymentMethod === "Cheque" && (
-            <input
-              type="text"
-              name="chequeNo"
-              placeholder="Cheque Number"
-              value={form.chequeNo}
-              onChange={handleChange}
-              className="border p-2 rounded w-full mb-4"
-              required
-            />
-          )}
 
           {/* DESCRIPTION + AMOUNT */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 gap-3 mb-4">
 
             <input
               type="text"
@@ -236,7 +274,8 @@ export default function VendorPaymentPage() {
               placeholder="Description"
               value={form.description}
               onChange={handleChange}
-              className="border p-2 rounded col-span-2"
+              className="border p-2 rounded"
+              required
             />
 
             <input
@@ -245,7 +284,7 @@ export default function VendorPaymentPage() {
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
-              className="border p-2 rounded col-span-2"
+              className="border p-2 rounded"
               required
             />
           </div>
@@ -259,7 +298,7 @@ export default function VendorPaymentPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+            className="w-full sm:w-auto bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
           >
             {loading ? "Saving..." : "Save Payment"}
           </button>

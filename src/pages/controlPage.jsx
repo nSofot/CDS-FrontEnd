@@ -27,8 +27,9 @@ import CashBookLedgerPage from "./control/cashBookLedgerPage"
 import GRNsPage from "./control/grnsPage";
 import OtherInvoicePage from "./control/otherInvoicePage";
 import VendorPaymentPage from "./control/vendorPayment";
-import MemberPaymentPage from "./control/memberPaymentPage";
-import OtherPaymentPage from "./control/otherPaymentPage";
+import MemberReceiptPage from "./control/memberReceiptPage";
+
+import MushroomProcessMenu from "./control/mushroomProcessMenu";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -122,8 +123,9 @@ export default function ControlPage() {
         <Route path="grns" element={<GRNsPage />} />
         <Route path="other-invoice" element={<OtherInvoicePage />} />
         <Route path="vendor-payment" element={<VendorPaymentPage />} />
-        <Route path="member-payment" element={<MemberPaymentPage />} />
-        <Route path="other-payment" element={<OtherPaymentPage />} />
+        <Route path="member-receipt" element={<MemberReceiptPage />} />
+
+        <Route path="mushroom-process" element={<MushroomProcessMenu />} />
 
 
         <Route path="*" element={<NotFoundPage />} />

@@ -116,7 +116,7 @@ export default function EditCashBookPage() {
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
 
           {/* Account ID */}
           <input
@@ -125,22 +125,6 @@ export default function EditCashBookPage() {
             value={form.accountId}
             onChange={handleAccountIdChange}
             placeholder="100-001"
-            className="border p-2 rounded w-full"
-          />
-
-          {/* Account Type (fixed) */}
-          <input
-            value="Asset"
-            disabled
-            className="border p-2 rounded w-full bg-gray-100 text-gray-700"
-          />
-
-          {/* Account Name */}
-          <input
-            name="accountName"
-            value={form.accountName}
-            onChange={handleChange}
-            placeholder="Account Name"
             className="border p-2 rounded w-full"
           />
 
@@ -154,6 +138,35 @@ export default function EditCashBookPage() {
             className="border p-2 rounded w-full"
           />
 
+          {/* Account Type (fixed) */}
+          <input
+            value="Asset"
+            disabled
+            className="border p-2 rounded w-full bg-gray-100 text-gray-700"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+
+          {/* Header Account */}
+          <input
+            disabled
+            name="headerAccountId"
+            value={form.headerAccountId}
+            onChange={handleChange}
+            placeholder="Header Account ID"
+            className="border p-2 rounded w-full"
+          />
+
+          {/* Account Name */}
+          <input
+            name="accountName"
+            value={form.accountName}
+            onChange={handleChange}
+            placeholder="Account Name"
+            className="border p-2 rounded w-full"
+          />
+
           {/* Balance */}
           <input
             type="number"
@@ -161,7 +174,7 @@ export default function EditCashBookPage() {
             value={form.accountBalance}
             onChange={handleChange}
             placeholder="Balance"
-            className="border p-2 rounded w-full md:col-span-2"
+            className="border p-2 rounded w-full"
           />
 
         </div>

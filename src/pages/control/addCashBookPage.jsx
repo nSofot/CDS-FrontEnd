@@ -9,7 +9,8 @@ export default function AddCashBookPage() {
   const [form, setForm] = useState({
     accountId: "",
     accountType: "Asset",
-    headerAccountId: "100",
+    accountMode: "",
+    headerAccountId: "",
     accountName: "",
     accountBalance: 0,
   });
@@ -18,6 +19,27 @@ export default function AddCashBookPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "accountMode") {
+      let prefix = "";
+      let headerId = "";
+
+      if (value === "Cash") {
+        prefix = "110-";
+        headerId = "110";
+      } else if (value === "Bank") {
+        prefix = "115-";
+        headerId = "115";
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        accountMode: value,
+        accountId: prefix,
+        headerAccountId: headerId,
+      }));
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
@@ -60,7 +82,8 @@ export default function AddCashBookPage() {
       setForm({
         accountId: "",
         accountType: "Asset",
-        headerAccountId: "100",
+        accountMode: "",
+        headerAccountId: "",
         accountName: "",
         accountBalance: 0,
       });
@@ -82,7 +105,7 @@ export default function AddCashBookPage() {
 
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
 
           <input
             disabled={true}
@@ -91,26 +114,42 @@ export default function AddCashBookPage() {
             onChange={(e) => {
               let value = e.target.value;
 
+              let prefix = "100-";
+              if (form.accountMode === "Cash") prefix = "110-";
+              if (form.accountMode === "Bank") prefix = "115-";
+
               // Allow only digits and dash
               value = value.replace(/[^0-9-]/g, "");
 
-              // Auto-force prefix "100-"
-              if (!value.startsWith("100-")) {
-                value = "100-" + value.replace(/100-?/g, "");
+              // Force prefix
+              if (!value.startsWith(prefix)) {
+                value = prefix + value.replace(/^\d{3}-?/, "");
               }
 
-              // Limit last part to 3 digits
+              // Limit last 3 digits
               const parts = value.split("-");
               if (parts[1]) {
                 parts[1] = parts[1].slice(0, 3);
                 value = `${parts[0]}-${parts[1]}`;
               }
 
-              setForm({ ...form, accountId: value });
-            }}
-            placeholder="100-001"
+              setForm((prev) => ({
+                ...prev,
+                accountId: value,
+              }));
+            }}            placeholder="110-001 / 115-001"
             className="border p-2 rounded w-full"
             required
+          />
+
+
+          <input
+            disabled
+            name="headerAccountId"
+            value={form.headerAccountId}
+            onChange={handleChange}
+            placeholder="Header Account ID"
+            className="border p-2 rounded w-full"
           />
 
           <input
@@ -119,6 +158,19 @@ export default function AddCashBookPage() {
             disabled
             className="border p-2 rounded w-full bg-gray-100 text-gray-700"
           />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <select
+            name="accountMode"
+            value={form.accountMode}
+            onChange={handleChange}
+            className="border p-2 rounded w-full"
+          >
+            <option value="">Select Account Mode</option>
+            <option value="Cash">Cash Account</option>
+            <option value="Bank">Bank Account</option>
+          </select>
 
           <input
             name="accountName"
@@ -127,14 +179,6 @@ export default function AddCashBookPage() {
             placeholder="Account Name"
             className="border p-2 rounded w-full"
             required
-          />
-
-          <input
-            name="headerAccountId"
-            value={form.headerAccountId}
-            onChange={handleChange}
-            placeholder="Header Account ID (optional)"
-            className="border p-2 rounded w-full"
           />
         </div>
 
