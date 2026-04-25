@@ -51,11 +51,11 @@ export default function MakeSubstrateBagPage() {
 
   const defaultSmQtyMap = {
     // Substrate Materials
-    "001": 2.5, // Sawdust
-    "002": 0.5, // Rice Bran
-    "003": 0.1, // Lime
-    "004": 0.05, // Gypsum
-    "005": 0.02, // Magnesium Sulfate
+    "001": 0.625, // Sawdust
+    "002": 0.0625, // Rice Bran
+    "003": 0.0125, // Lime
+    "004": 0, // Gypsum
+    "005": 0.00125, // Magnesium Sulfate
   };
 
   const defaultPmQtyMap = {
