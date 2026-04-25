@@ -154,7 +154,7 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "Mushroom Process",
+      label: "Production Process",
       to: "/mushroom-process",
       icon: <FaUsersCog />,
       roles: [
