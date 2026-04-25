@@ -30,6 +30,8 @@ import VendorPaymentPage from "./control/vendorPayment";
 import MemberReceiptPage from "./control/memberReceiptPage";
 
 import MushroomProcessMenu from "./control/mushroomProcessMenu";
+import MakeSubstrateBagPage from "./control/makeSubstrateBagPage";
+
 
 import NotFoundPage from "./notFoundPage";
 
@@ -126,6 +128,7 @@ export default function ControlPage() {
         <Route path="member-receipt" element={<MemberReceiptPage />} />
 
         <Route path="mushroom-process" element={<MushroomProcessMenu />} />
+        <Route path="make-substrate-bag" element={<MakeSubstrateBagPage />} />
 
 
         <Route path="*" element={<NotFoundPage />} />

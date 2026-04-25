@@ -7,7 +7,7 @@ export default function MushroomProcessMenu() {
     {
       title: "Substrate Bag",
       desc: "Filled with sawdust / straw / coco coir mix",
-      path: "/substrate-bag",
+      path: "/make-substrate-bag",
       color: "bg-green-500",
     },
     {
