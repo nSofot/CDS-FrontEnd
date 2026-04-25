@@ -754,7 +754,22 @@ const handleOtherExpenseChange = (id, value) => {
               {batchNumber || "N/A"}
             </span>
           </p>
-
+          <p className="text-sm text-gray-500">
+            Cost Value of a Bag:{" "}
+          <span className="font-semibold text-gray-800">
+            {numberOfBags
+              ? (totalCostValue / numberOfBags).toFixed(2)
+              : "N/A"}
+          </span>
+          </p>
+          <p className="text-sm text-gray-500">
+            Price Value of a Bag:{" "}
+            <span className="font-semibold text-gray-800">
+              {numberOfBags
+                ? (totalJobValue / numberOfBags).toFixed(2)
+                : "N/A"}
+            </span>
+          </p>          
           {/* Buttons */}
           <div className="flex justify-end gap-3">
 
