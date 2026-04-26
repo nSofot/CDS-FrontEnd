@@ -18,6 +18,7 @@ export default function MakeSubstrateBagPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState("");
+
     const token = localStorage.getItem("token");
 
     const getAuthHeaders = () => {
@@ -86,6 +87,67 @@ export default function MakeSubstrateBagPage() {
       "9004": { expenseId: "9004", name: "Transport", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
       "9005": { expenseId: "9005", name: "Other", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
+
+
+    useEffect(() => {
+      const bagCount = Number(numberOfBags || 0);
+
+      setSubstrateMaterials((prev) =>
+        prev.map((item) =>
+          item.isSelected
+            ? {
+                ...item,
+                totalQty: bagCount * Number(item.baseQuantity || 0),
+                rowTotalValue:
+                  bagCount *
+                  Number(item.baseQuantity || 0) *
+                  Number(item.stockPrice || 0),
+                rowCostValue:
+                  bagCount *
+                  Number(item.baseQuantity || 0) *
+                  Number(item.stockCost || 0),
+              }
+            : item
+        )
+      );
+
+      setPackingMaterials((prev) =>
+        prev.map((item) =>
+          item.isSelected
+            ? {
+                ...item,
+                totalQty: bagCount * Number(item.baseQuantity || 0),
+                rowTotalValue:
+                  bagCount *
+                  Number(item.baseQuantity || 0) *
+                  Number(item.stockPrice || 0),
+                rowCostValue:
+                  bagCount *
+                  Number(item.baseQuantity || 0) *
+                  Number(item.stockCost || 0),
+              }
+            : item
+        )
+      );
+
+      setOtherExpenses((prev) => {
+        const updated = {};
+
+        Object.entries(prev).forEach(([id, item]) => {
+          updated[id] = {
+            ...item,
+            qty: item.isSelected ? bagCount : 0,
+            rowTotal:
+              item.isSelected && item.editablePrice > 0
+                ? bagCount * Number(item.editablePrice || 0)
+                : 0,
+          };
+        });
+
+        return updated;
+      });
+    }, [numberOfBags]);
+
 
     const handleQtyChange = (type, index, value) => {
       const bagCount = Number(numberOfBags || 0);
@@ -159,15 +221,22 @@ export default function MakeSubstrateBagPage() {
       if (type === "oe") {
         setOtherExpenses((prev) => {
           const item = prev[index];
+          const bagCount = Number(numberOfBags || 0);
+
+          const editablePrice = checked
+            ? Number(item.editablePrice || item.price || 0)
+            : 0;
 
           return {
             ...prev,
             [index]: {
               ...item,
               isSelected: checked,
-              editablePrice: checked ? item.price : 0,
-              qty: checked ? Number(numberOfBags || 0) : 0,
-              rowTotal: 0, // ❗ keep it 0 initially
+              editablePrice,
+              qty: checked ? bagCount : 0,
+              rowTotal: checked
+                ? bagCount * editablePrice
+                : 0,
             },
           };
         });
@@ -181,68 +250,76 @@ export default function MakeSubstrateBagPage() {
     }, [substrateMaterials]);
 
     const substrateTotals = useMemo(() => {
-      return selectedSubstrate.reduce(
-        (acc, item) => {
-          const qty = Number(item.baseQty || 0) * bagCount;
+      return substrateMaterials
+        .filter((item) => item.isSelected)
+        .reduce(
+          (acc, item) => {
+            acc.totalQty += Number(item.totalQty || 0);
+            acc.cost += Number(item.rowCostValue || 0);
+            acc.value += Number(item.rowTotalValue || 0);
 
-          acc.totalQty += qty;
-          acc.cost += qty * Number(item.stockCost || 0);
-          acc.value += qty * Number(item.stockPrice || 0);
-
-          return acc;
-        },
-        { totalQty: 0, cost: 0, value: 0 }
-      );
-    }, [selectedSubstrate, bagCount]);    
+            return acc;
+          },
+          {
+            totalQty: 0,
+            cost: 0,
+            value: 0,
+          }
+        );
+    }, [substrateMaterials]);    
 
     const selectedPacking = useMemo(() => {
       return packingMaterials.filter((i) => i.isSelected);
     }, [packingMaterials]);
 
     const packingTotals = useMemo(() => {
-      return selectedPacking.reduce(
-        (acc, item) => {
-          const qty = Number(item.baseQty || 0) * bagCount;
+      return packingMaterials
+        .filter((item) => item.isSelected)
+        .reduce(
+          (acc, item) => {
+            acc.totalQty += Number(item.totalQty || 0);
+            acc.cost += Number(item.rowCostValue || 0);
+            acc.value += Number(item.rowTotalValue || 0);
 
-          acc.totalQty += qty;
-          acc.cost += qty * Number(item.stockCost || 0);
-          acc.value += qty * Number(item.stockPrice || 0);
+            return acc;
+          },
+          {
+            totalQty: 0,
+            cost: 0,
+            value: 0,
+          }
+        );
+    }, [packingMaterials]);
 
-          return acc;
-        },
-        { totalQty: 0, cost: 0, value: 0 }
-      );
-    }, [selectedPacking, bagCount]);
-
-    const totalMaterialCount = useMemo(() => {
-      return substrateTotals.totalQty + packingTotals.totalQty;
-    }, [substrateTotals, packingTotals]);
+    const otherExpenseTotals = useMemo(() => {
+      return Object.values(otherExpenses)
+        .filter((item) => item.isSelected)
+        .reduce(
+          (acc, item) => {
+            acc.value += Number(item.rowTotal || 0);
+            return acc;
+          },
+          {
+            value: 0,
+          }
+        );
+    }, [otherExpenses]);
 
     const totalCostValue = useMemo(() => {
-      return substrateTotals.cost + packingTotals.cost;
-    }, [substrateTotals, packingTotals]);
+      return (
+        substrateTotals.cost +
+        packingTotals.cost +
+        otherExpenseTotals.value
+      );
+    }, [substrateTotals, packingTotals, otherExpenseTotals]);
 
     const totalJobValue = useMemo(() => {
-      return substrateTotals.value + packingTotals.value;
-    }, [substrateTotals, packingTotals]);
-
-    const totalMaterialValue = useMemo(() => {
-      return materials.reduce((sum, item) => {
-          return (
-          sum +
-          Number(item.totalQty || 0) * Number(item.stockPrice || 0)
-          );
-      }, 0);
-    }, [materials]);
-
-    const totalMaterialCost = useMemo(() => {
-      return materials.reduce((sum, item) => {
-          return (
-          sum +
-          Number(item.totalQty || 0) * Number(item.stockCost || 0)
-          );
-      }, 0);
-    }, [materials]);  
+      return (
+        substrateTotals.value +
+        packingTotals.value +
+        otherExpenseTotals.value
+      );
+    }, [substrateTotals, packingTotals, otherExpenseTotals]);
 
 
     const handleSubmit = async () => {
@@ -253,6 +330,12 @@ export default function MakeSubstrateBagPage() {
         return;
       }
 
+      const selectedOther = Object.values(otherExpenses).filter((item) => item.isSelected);
+      const materials = [
+        ...selectedSubstrate,
+        ...selectedPacking,
+      ];      
+
       if (materials.length === 0) {
         toast.error("No materials found");
         return;
@@ -260,14 +343,14 @@ export default function MakeSubstrateBagPage() {
 
       try {      
           // Batch create
-          const otherExpensesArray = Object.entries(otherExpenses).map(
-              ([id, item]) => ({
-                  expenseId: item.expenseId || id,
-                  name: item.name,
-                  price: Number(item.price || 0),
-                  rowTotal: Number(item.rowTotal || 0),
-              })
-          );        
+          // const otherExpensesArray = Object.entries(otherExpenses).map(
+          //     ([id, item]) => ({
+          //         expenseId: item.expenseId || id,
+          //         name: item.name,
+          //         price: Number(item.price || 0),
+          //         rowTotal: Number(item.rowTotal || 0),
+          //     })
+          // );        
           
           const batchPayload = {
             batchNo: "",
@@ -275,8 +358,7 @@ export default function MakeSubstrateBagPage() {
             numberOfBags: Number(numberOfBags),
             status: "Substrate",
             materials: materials,
-            otherExpenses: otherExpensesArray,
-            totalMaterialCount: totalMaterialCount,
+            otherExpenses: selectedOther,
             totalCostValue: totalCostValue,
             totalJobValue: totalJobValue,
           };
@@ -331,7 +413,7 @@ export default function MakeSubstrateBagPage() {
             {
               items: [
                 {
-                  stockId: "100",
+                  stockId: "5000",
                   quantity: Number(numberOfBags || 0),
                 },
               ],
@@ -410,6 +492,7 @@ export default function MakeSubstrateBagPage() {
                                 Number of Bags
                             </label>
                             <input
+                                disabled={isSubmitting || isSubmitted}
                                 type="number"
                                 min="1"
                                 value={numberOfBags}
@@ -428,6 +511,7 @@ export default function MakeSubstrateBagPage() {
                             </label>
 
                             <input
+                              disabled={isSubmitting || isSubmitted}
                               type="date"
                               value={trxDate}
                               onChange={(e) => setTrxDate(e.target.value)}
@@ -439,13 +523,16 @@ export default function MakeSubstrateBagPage() {
 
                     <div className="flex items-end gap-4">
                         <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 w-full">
-                            <p className="text-sm text-gray-500">
-                              Total Material Quantity
+                            <p className="text-sm text-gray-500 text-right">
+                              Total Cost Value
                             </p>
 
-                            <p className="text-xl font-bold text-orange-600">
-                              {totalMaterialCount.toFixed(2)}
-                            </p>
+                            <p className="text-xl font-bold text-orange-600 text-right">
+                              {new Intl.NumberFormat("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                              }).format(totalCostValue)}
+                            </p> 
                         </div>
 
                         <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 w-full">
@@ -458,7 +545,7 @@ export default function MakeSubstrateBagPage() {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                               }).format(totalJobValue)}
-                            </p>
+                            </p>                           
                         </div>            
                     </div>
                 </div>
@@ -501,6 +588,7 @@ export default function MakeSubstrateBagPage() {
                             >
                               <td className="p-3">
                                 <input
+                                  disabled={isSubmitting || isSubmitted}
                                   type="checkbox"
                                   checked={item.isSelected || false}
                                   onChange={(e) =>
@@ -518,7 +606,12 @@ export default function MakeSubstrateBagPage() {
                                   type="number"
                                   // step="0.01"
                                   value={Number(item.totalQty || 0)}
-                                  disabled={!item.isSelected || Number(numberOfBags) <= 0}
+                                  disabled={
+                                    !item.isSelected ||
+                                    Number(numberOfBags) <= 0 ||
+                                    isSubmitting ||
+                                    isSubmitted
+                                  }
                                   onChange={(e) =>
                                     handleQtyChange("sm", index, e.target.value)
                                   }
@@ -567,6 +660,7 @@ export default function MakeSubstrateBagPage() {
                             >
                               <td className="p-3">
                                 <input
+                                  disabled={isSubmitting || isSubmitted}
                                   type="checkbox"
                                   checked={item.isSelected || false}
                                   onChange={(e) =>
@@ -584,7 +678,12 @@ export default function MakeSubstrateBagPage() {
                                   type="number"
                                   step="0.01"
                                   value={Number(item.totalQty || 0)}
-                                  disabled={!item.isSelected || Number(numberOfBags) <= 0}
+                                  disabled={
+                                    !item.isSelected ||
+                                    Number(numberOfBags) <= 0 ||
+                                    isSubmitting ||
+                                    isSubmitted
+                                  }
                                   onChange={(e) =>
                                     handleQtyChange("pm", index, e.target.value)
                                   }
@@ -641,6 +740,7 @@ export default function MakeSubstrateBagPage() {
                                 {/* CHECKBOX */}
                                 <td className="p-3">
                                   <input
+                                    disabled={isSubmitting || isSubmitted}
                                     type="checkbox"
                                     checked={item.isSelected || false}
                                     onChange={(e) =>
@@ -660,7 +760,12 @@ export default function MakeSubstrateBagPage() {
                                     type="number"
                                     step="0.01"
                                     value={Number(item.editablePrice || 0)}
-                                    disabled={!item.isSelected || Number(numberOfBags) <= 0}
+                                    disabled={
+                                      !item.isSelected ||
+                                      Number(numberOfBags) <= 0 ||
+                                      isSubmitting ||
+                                      isSubmitted
+                                    }
                                     onChange={(e) =>
                                       handleOtherExpenseChange(id, e.target.value)
                                     }
