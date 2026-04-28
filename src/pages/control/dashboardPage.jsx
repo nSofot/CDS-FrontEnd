@@ -12,14 +12,15 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeMembers, setActiveMembers] = useState([]);
-  const [todayProductionBags, setTodayProductionBags] = useState([]);
-  const [todaySterilizedBags, setTodaySterilizedBags] = useState([]);
-  const [todayInoculatedBags, setTodayInoculatedBags] = useState([]);
-  const [todayHarvestedKg, setTodayHarvestedKg] = useState([]);
-  const [pendingOrders, setPendingOrders] = useState([]);
-  const [todaySaleAmount, setTodaySaleAmount] = useState([]);
-  const [todayExpenses, setTodayExpenses] = useState([]);
-  const [contaminationLoss, setContaminationLoss] = useState([]);
+  const [todayProductionBags, setTodayProductionBags] = useState(0);
+  const [todaySterilizedBags, setTodaySterilizedBags] = useState(0);
+  const [todayInoculatedBags, setTodayInoculatedBags] = useState(0);
+  const [currentIcubatingBags, setCurrentIcubatingBags] = useState(0);
+  const [todaySoldBags, setTodaySoldBags] = useState(0);
+
+  const [todaySaleAmount, setTodaySaleAmount] = useState(0);
+  const [todayExpenses, setTodayExpenses] = useState(0);
+  const [contaminationLoss, setContaminationLoss] = useState(0);
 
   const [cashInHand, setCashInHand] = useState(0);
   const [savingAccounts, setSavingAccounts] = useState(0);
@@ -48,7 +49,6 @@ export default function DashboardPage() {
           `${import.meta.env.VITE_BACKEND_URL}/api/member`
         );
         const list = membersRes.data;
-
         // setActiveMembers(list.filter((m) => m.status === "active"));
         setActiveMembers(membersRes.data.length);
 
@@ -58,14 +58,46 @@ export default function DashboardPage() {
         const accounts = financeRes.data;
 
         setCashInHand(
-          accounts.find((a) => a.accountId === "325-001")?.accountBalance || 0
+          accounts.find((a) => a.accountId === "110-0001")?.accountBalance || 0
         );
         setSavingAccounts(
-          accounts.find((a) => a.accountId === "325-002")?.accountBalance || 0
+          accounts.find((a) => a.accountId === "115-0001")?.accountBalance || 0
         );
         setCurrentAccounts(
-          accounts.find((a) => a.accountId === "325-003")?.accountBalance || 0
+          accounts.find((a) => a.accountId === "115-0002")?.accountBalance || 0
         );
+
+        const batchRes = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/batch`
+        );
+        const batches = batchRes.data;
+
+        setTodayProductionBags(
+          batches
+            .filter(
+              (b) =>
+                b.status === "Substrate" &&
+                new Date(b.batchDate).toDateString() === new Date().toDateString()
+            )
+            .reduce(
+              (sum, b) => sum + Number(b.numberOfBags || 0),
+              0
+            )
+        );
+
+        setTodaySterilizedBags(
+          batches.filter((b) => b.status === "Sterilized" && b.sterilizationDate === new Date().toDateString())
+        );
+        setTodayInoculatedBags(
+          batches.filter((b) => b.status === "Inoculated" && b.inoculationDate === new Date().toDateString())
+        );
+        setCurrentIcubatingBags(
+          batches.filter((b) => b.status === "Incubating")
+        );
+        setTodaySoldBags(
+          batches.filter((b) => b.status === "Sold" && b.soldDate === new Date().toDateString())
+        );
+
       } catch (err) {
         console.error(err);
       } finally {
@@ -94,11 +126,15 @@ export default function DashboardPage() {
         >
           <div className="grid grid-cols-2 gap-4">
             <Stat label="Active Members" value={activeMembers} color="text-blue-600" />
-            <Stat label="Today Produced Bags" value={todayProductionBags.length} color="text-blue-600" />
+<Stat
+  label="Today Produced Bags"
+  value={todayProductionBags}
+  color="text-blue-600"
+/>
             <Stat label="Today Sterilized Bags" value={todaySterilizedBags.length} color="text-green-600" />
             <Stat label="Today Inoculated Bags" value={todayInoculatedBags.length} color="text-purple-600" />
-            <Stat label="Today Harvested (kg)" value={todayHarvestedKg.length} color="text-orange-600" />
-            <Stat label="Pending Orders" value={pendingOrders.length} color="text-red-600" />
+            <Stat label="Current Incubating Bags" value={currentIcubatingBags.length} color="text-orange-600" />
+            <Stat label="Today Sold Bags" value={todaySoldBags.length} color="text-red-600" />
           </div>
         </DashboardCard>
 
