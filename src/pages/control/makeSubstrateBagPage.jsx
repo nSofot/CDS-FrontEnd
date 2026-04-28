@@ -7,10 +7,19 @@ import { ArrowLeft } from "lucide-react";
 export default function MakeSubstrateBagPage() {
     const navigate = useNavigate();
 
+    const getLocalDate = () => {
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const localDate = new Date(today.getTime() - offset * 60000);
+      return localDate.toISOString().split("T")[0];
+    };
+
+    const [trxDate, setTrxDate] = useState(getLocalDate());     
+
     const [substrateMaterials, setSubstrateMaterials] = useState([]);
     const [packingMaterials, setPackingMaterials] = useState([]);
     const [materials, setMaterials] = useState([]);
-    const [trxDate, setTrxDate] = useState(new Date().toISOString().slice(0, 10));
+   
     const [numberOfBags, setNumberOfBags] = useState("");
     const [batchNumber, setBatchNumber] = useState("");
     let newBatchId = "";
@@ -93,41 +102,51 @@ export default function MakeSubstrateBagPage() {
       const bagCount = Number(numberOfBags || 0);
 
       setSubstrateMaterials((prev) =>
-        prev.map((item) =>
-          item.isSelected
-            ? {
-                ...item,
-                totalQty: bagCount * Number(item.baseQuantity || 0),
-                rowTotalValue:
-                  bagCount *
-                  Number(item.baseQuantity || 0) *
-                  Number(item.stockPrice || 0),
-                rowCostValue:
-                  bagCount *
-                  Number(item.baseQuantity || 0) *
-                  Number(item.stockCost || 0),
-              }
-            : item
-        )
+        prev.map((item) => {
+          if (!item.isSelected) return item;
+
+          const calculatedQty =
+            bagCount * Number(item.baseQuantity || 0);
+
+          const maxQty = Number(item.stockQuantity || 0);
+
+          // Ensure totalQty does not exceed available stock
+          const finalQty =
+            calculatedQty > maxQty ? maxQty : calculatedQty;
+
+          return {
+            ...item,
+            totalQty: finalQty,
+            rowTotalValue:
+              finalQty * Number(item.stockPrice || 0),
+            rowCostValue:
+              finalQty * Number(item.stockCost || 0),
+          };
+        })
       );
 
       setPackingMaterials((prev) =>
-        prev.map((item) =>
-          item.isSelected
-            ? {
-                ...item,
-                totalQty: bagCount * Number(item.baseQuantity || 0),
-                rowTotalValue:
-                  bagCount *
-                  Number(item.baseQuantity || 0) *
-                  Number(item.stockPrice || 0),
-                rowCostValue:
-                  bagCount *
-                  Number(item.baseQuantity || 0) *
-                  Number(item.stockCost || 0),
-              }
-            : item
-        )
+        prev.map((item) => {
+          if (!item.isSelected) return item;
+
+          const calculatedQty =
+            bagCount * Number(item.baseQuantity || 0);
+
+          const maxQty = Number(item.stockQuantity || 0);
+
+          // Ensure totalQty does not exceed available stock
+          const finalQty =
+            calculatedQty > maxQty ? maxQty : calculatedQty;
+
+          return {
+            ...item,
+            totalQty: finalQty,
+            rowTotalValue:
+              finalQty * Number(item.stockPrice || 0),
+            rowCostValue:
+              finalQty * Number(item.stockCost || 0),
+          };
+        })
       );
 
       setOtherExpenses((prev) => {
@@ -197,23 +216,30 @@ export default function MakeSubstrateBagPage() {
           type === "sm" ? setSubstrateMaterials : setPackingMaterials;
 
         setter((prev) =>
-          prev.map((item, i) =>
-            i === index
-              ? {
-                  ...item,
-                  isSelected: checked,
-                  totalQty: checked
-                    ? bagCount * Number(item.baseQuantity || 0)
-                    : 0,
-                  rowTotalValue: checked
-                    ? (Number(item.baseQuantity || 0) * bagCount) * Number(item.stockPrice || 0)
-                    : 0,
-                  rowCostValue: checked
-                    ? (Number(item.baseQuantity || 0) * bagCount) * Number(item.stockCost || 0)
-                    : 0,
-                }
-              : item
-          )
+          prev.map((item, i) => {
+            if (i !== index) return item;
+
+            const calculatedQty = checked
+              ? bagCount * Number(item.baseQuantity || 0)
+              : 0;
+
+            const maxQty = Number(item.stockQuantity || 0);
+
+            // Ensure totalQty does not exceed available stock
+            const finalQty = calculatedQty > maxQty ? maxQty : calculatedQty;
+
+            return {
+              ...item,
+              isSelected: checked,
+              totalQty: finalQty,
+              rowTotalValue: checked
+                ? finalQty * Number(item.stockPrice || 0)
+                : 0,
+              rowCostValue: checked
+                ? finalQty * Number(item.stockCost || 0)
+                : 0,
+            };
+          })
         );
       }
 
@@ -341,20 +367,10 @@ export default function MakeSubstrateBagPage() {
         return;
       }
 
-      try {      
-          // Batch create
-          // const otherExpensesArray = Object.entries(otherExpenses).map(
-          //     ([id, item]) => ({
-          //         expenseId: item.expenseId || id,
-          //         name: item.name,
-          //         price: Number(item.price || 0),
-          //         rowTotal: Number(item.rowTotal || 0),
-          //     })
-          // );        
-          
+      try {  
+          // 1. Create batch            
           const batchPayload = {
-            batchNo: "",
-            batchDate: new Date(),
+            batchDate: trxDate,
             numberOfBags: Number(numberOfBags),
             status: "Substrate",
             materials: materials,
@@ -371,7 +387,7 @@ export default function MakeSubstrateBagPage() {
           newBatchId = response.data.data.batchNo || response.data.batchNo;
           setBatchNumber(newBatchId);
 
-          // Update stock quantities
+          // 2. Update stock quantities
           await axios.post(
               `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
               {
@@ -385,7 +401,7 @@ export default function MakeSubstrateBagPage() {
               }
           );
 
-          // Write stock movement logs
+          // 3. Write stock movement logs - Issued
           const stockTrxPayload = {       
             referenceId: newBatchId,
             trxDate: trxDate,
@@ -397,17 +413,18 @@ export default function MakeSubstrateBagPage() {
               stockId: item.stockId,
               stockName: item.stockName,
               quantity: Number(item.totalQty || 0),
+              quantityBalance: Number(0),
               stockUOM: item.stockUOM,
               stockCost: Number(item.stockCost || 0),
               stockPrice: Number(item.stockPrice || 0),
             })),
           };               
-          await axios.post(
-              `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
-              stockTrxPayload
+          const issuedTrxResponse = await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
+            stockTrxPayload
           );
 
-          // Update Substrate Bag batchNo after stock movement log is created
+          // 4. Update Substrate Bag stock
           await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
             {
@@ -423,6 +440,7 @@ export default function MakeSubstrateBagPage() {
             }
           );
 
+          // 5. Write stock movement logs - Received Substract bags
           const bagTrxPayload = {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
@@ -436,6 +454,7 @@ export default function MakeSubstrateBagPage() {
                 stockId: "100",
                 stockName: "Substrate Bag",
                 quantity: Number(numberOfBags || 0),
+                quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
                 stockCost:
                   Number(totalCostValue || 0) / Number(numberOfBags || 1),
@@ -452,16 +471,57 @@ export default function MakeSubstrateBagPage() {
             }
           );
 
+          // 6. Update stock quantity balance in GRN
+          const payload = {
+            items: materials,
+          };
+          const detailsRes = await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/updateQuantityBalance`,
+            payload,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          const updatedDetails = detailsRes?.data?.issueDetails || [];
+
+          // 7. Update Stock Issue Details
+          const issuedTrxId = issuedTrxResponse.data.data?.issuedTrxId;
+          const issuedTrxDate = issuedTrxResponse.data.data?.trxDate;         
+
+          const updatePayload = {
+            issueTrxId: issuedTrxId,
+            issueReferenceId: newBatchId,
+            issueDate: new Date(),
+            items: updatedDetails,
+          };         
+          const updateRes = await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
+            updatePayload,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
           setIsSubmitted(true);
           toast.success(
               "Substrate bag details prepared successfully"
           );
       } catch (error) {
-        console.error(error);
-        toast.error("Failed to save");
+        console.error("FULL BACKEND ERROR:");
+        console.error(error.response?.data || error);
+
+        toast.error(
+          error.response?.data?.message || "Failed to save"
+        );
+
+        setIsSubmitting(false);
       }
     };
-
+    
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-6">
             <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
@@ -475,11 +535,12 @@ export default function MakeSubstrateBagPage() {
 
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
-                          Make Substrate Bag
+                          Substrate Bag Production Process
                         </h1>
 
                         <p className="text-sm text-gray-500">
-                          Generate material requirements and cost breakdown per batch of substrate bags
+                          Generate material requirements and detailed cost breakdown for each substrate bag 
+                          batch using FIFO-based inventory consumption from available GRN stock batches.
                         </p>
                     </div>
                 </div>
@@ -571,7 +632,7 @@ export default function MakeSubstrateBagPage() {
                       ) : (
                         <Fragment key="substrate-section">
                           <tr className="bg-orange-100 text-orange-500">
-                            <th className="p-3 text-left">Get</th>
+                            <th className="p-3 text-left">Use</th>
                             <th className="p-3 text-left">Substrate Material</th>
                             <th className="p-3 text-right">Base Qty</th>
                             <th className="p-3 text-left">UOM</th>
@@ -604,17 +665,22 @@ export default function MakeSubstrateBagPage() {
                               <td className="p-3">
                                 <input
                                   type="number"
-                                  // step="0.01"
                                   value={Number(item.totalQty || 0)}
+                                  max={Number(item.stockQuantity || 0)}
                                   disabled={
                                     !item.isSelected ||
                                     Number(numberOfBags) <= 0 ||
                                     isSubmitting ||
                                     isSubmitted
                                   }
-                                  onChange={(e) =>
-                                    handleQtyChange("sm", index, e.target.value)
-                                  }
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value || 0);
+                                    const maxQty = Number(item.stockQuantity || 0);
+
+                                    if (value <= maxQty) {
+                                      handleQtyChange("sm", index, value);
+                                    }
+                                  }}
                                   className={`w-full border rounded-lg px-3 py-2 ${
                                     !item.isSelected && Number(numberOfBags) <= 0
                                       ? "bg-gray-100 cursor-not-allowed"
@@ -643,7 +709,7 @@ export default function MakeSubstrateBagPage() {
                       {!loading && packingMaterials.length > 0 && (
                         <Fragment key="packing-section">
                           <tr className="bg-orange-100 text-orange-500">
-                            <th className="p-3 text-left">Get</th>
+                            <th className="p-3 text-left">Use</th>
                             <th className="p-3 text-left">Packing Material</th>
                             <th className="p-3 text-right">Base Qty</th>
                             <th className="p-3 text-left">UOM</th>
@@ -676,17 +742,22 @@ export default function MakeSubstrateBagPage() {
                               <td className="p-3">
                                 <input
                                   type="number"
-                                  step="0.01"
                                   value={Number(item.totalQty || 0)}
+                                  max={Number(item.stockQuantity || 0)}
                                   disabled={
                                     !item.isSelected ||
                                     Number(numberOfBags) <= 0 ||
                                     isSubmitting ||
                                     isSubmitted
                                   }
-                                  onChange={(e) =>
-                                    handleQtyChange("pm", index, e.target.value)
-                                  }
+                                  onChange={(e) => {
+                                    const value = Number(e.target.value || 0);
+                                    const maxQty = Number(item.stockQuantity || 0);
+
+                                    if (value <= maxQty) {
+                                      handleQtyChange("sm", index, value);
+                                    }
+                                  }}
                                   className={`w-full border rounded-lg px-3 py-2 ${
                                     !item.isSelected && Number(numberOfBags) <= 0
                                       ? "bg-gray-100 cursor-not-allowed"
@@ -715,7 +786,7 @@ export default function MakeSubstrateBagPage() {
                       {!loading && Object.keys(otherExpenses).length > 0 && (
                         <Fragment key="otherExpense-section">
                           <tr className="bg-orange-100 text-orange-500">
-                            <th className="p-3 text-left">Get</th>
+                            <th className="p-3 text-left">Use</th>
                             <th className="p-3 text-left">Other Expense</th>
                             <th className="p-3 text-right">Base Price</th>
                             <th className="p-3 text-left"></th>

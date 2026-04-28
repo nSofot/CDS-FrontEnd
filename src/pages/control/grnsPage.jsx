@@ -120,6 +120,7 @@ export default function PurchaseEntryPage() {
           stockId: i.productId,
           stockName: i.productName,
           quantity: i.qty,
+          quantityBalance: i.qty,
           stockUOM: i.productUOM,
           stockCost: i.cost,
           stockPrice: i.price,
@@ -136,10 +137,14 @@ export default function PurchaseEntryPage() {
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
         {
-          items: stockTrxPayload.items,
+          items: stockTrxPayload.items.map((item) => ({
+            stockId: item.stockId,
+            quantity: Number(item.quantity || 0),
+            stockCost: Number(item.stockCost || 0),
+            stockPrice: Number(item.stockPrice || 0),
+          })),
         }
       );
-
 
       const vendorTrxPayload = {
         trxId: savedTrxId,
@@ -252,10 +257,10 @@ export default function PurchaseEntryPage() {
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 text-left">Product</th>
-                <th>Qty</th>
-                <th>UOM</th>
-                <th>Cost</th>
-                <th>Price</th>
+                <th className="p-2 text-left">Qty</th>
+                <th className="p-2 text-left">UOM</th>
+                <th className="p-2 text-left">Cost</th>
+                <th className="p-2 text-left">Price</th>
                 <th className="text-right">Total</th>
                 <th></th>
               </tr>
