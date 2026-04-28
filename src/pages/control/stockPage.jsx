@@ -32,6 +32,23 @@ export default function StockPage() {
     }
   };
 
+  const categoryMap = {
+    "packing material": "Packing Material",
+    "substrate material": "Substrate Material",
+    "sterilizing material": "Sterilizing Material",
+    "inoculating material": "Inoculating Material",
+    "incubating material": "Incubating Material",
+    "finished products": "Finished Products",
+  };
+
+  const uomMap = {
+    "kg": "Kg",
+    "g": "Gram",
+    "L": "Liter",
+    "ml": "Milliliter",
+    "pcs": "Piece",
+  };
+
   // 🔄 FETCH STOCKS
   const fetchStocks = async () => {
     try {
@@ -100,7 +117,7 @@ export default function StockPage() {
             </p>
           </div>
 
-          <div className="flex md:flex-row flex-col gap-4">
+          <div className="flex flex-row gap-4">
             <button
               onClick={() => navigate("/add-stock")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
@@ -143,20 +160,20 @@ export default function StockPage() {
                 }}
                 className="border rounded-lg p-3 shadow-sm bg-white cursor-pointer hover:bg-orange-50"
               >
-                <div className="font-bold text-orange-600">
+                <div className="font-bold text-orange-400">
                   {item.stockName}
                 </div>
 
                 <div className="text-sm text-gray-600">
-                  ID: {item.stockId}
+                  {categoryMap[item.stockCategory]}
                 </div>
 
                 <div className="text-sm">
-                  Qty: {item.stockQuantity} {item.stockUOM}
+                  Qty: {item.stockQuantity.toFixed(3)} {item.stockUOM}
                 </div>
 
                 <div className="text-sm">
-                  Price: Rs. {item.stockPrice || "—"}
+                  Price: Rs. {item.stockPrice.toFixed(2) || "—"}
                 </div>
 
                 <div className="flex gap-3 mt-2">
@@ -197,10 +214,11 @@ export default function StockPage() {
                     <th className="px-3 py-2 text-center">#</th>
                     <th className="px-3 py-2 text-left">ID</th>
                     <th className="px-3 py-2 text-left">Name</th>
-                    <th className="px-3 py-2 text-left">Qty</th>
+                    <th className="px-3 py-2 text-left">Category</th>
+                    <th className="px-3 py-2 text-right">Qty</th>
                     <th className="px-3 py-2 text-left">UOM</th>
                     <th className="px-3 py-2 text-right">Price</th>
-                    <th className="px-3 py-2 text-right">Actions</th>
+                    <th className="px-3 py-2 text-center">Actions</th>
                   </tr>
                 </thead>
 
@@ -215,15 +233,16 @@ export default function StockPage() {
                       className="hover:bg-orange-50 cursor-pointer"
                     >
                       <td className="px-3 py-2 text-center">{index + 1}</td>
-                      <td>{item.stockId}</td>
-                      <td>{item.stockName}</td>
-                      <td>{item.stockQuantity}</td>
-                      <td>{item.stockUOM}</td>
-                      <td className="text-right">
-                        {item.stockPrice ? `Rs. ${item.stockPrice}` : "—"}
+                      <td className="px-3 py-2 text-left">{item.stockId}</td>
+                      <td className="px-3 py-2 text-left">{item.stockName}</td>
+                      <td className="px-3 py-2 text-left">{categoryMap[item.stockCategory] || "—"}</td>
+                      <td className="px-3 py-2 text-right">{item.stockQuantity?.toFixed(3) || "—"}</td>
+                      <td className="px-3 py-2 text-left">{uomMap[item.stockUOM] || item.stockUOM}</td>
+                      <td className="px-3 py-2 text-right">
+                        {item.stockPrice ? `${item.stockPrice.toFixed(2)}` : "—"}
                       </td>
 
-                      <td className="text-right space-x-2 px-3 py-2">
+                      <td className="text-center space-x-2 px-3 py-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -279,11 +298,13 @@ export default function StockPage() {
                 {Object.entries({
                   ID: activeRecord.stockId,
                   Name: activeRecord.stockName,
+                  Category: categoryMap[activeRecord.stockCategory],
                   Description: activeRecord.stockDescription,
-                  Qty: activeRecord.stockQuantity,
-                  UOM: activeRecord.stockUOM,
-                  Cost: activeRecord.stockCost,
-                  Price: activeRecord.stockPrice,
+                  Qty: Number(activeRecord.stockQuantity || 0).toFixed(3),
+                  BaseQty: Number(activeRecord.baseQuantity || 0).toFixed(3),
+                  UOM: uomMap[activeRecord.stockUOM] || "—",
+                  Cost: Number(activeRecord.stockCost || 0).toFixed(2),
+                  Price: Number(activeRecord.stockPrice || 0).toFixed(2),
                 }).map(([key, val]) => (
                   <tr key={key} className="border-b">
                     <td className="py-2 text-orange-600">{key}</td>

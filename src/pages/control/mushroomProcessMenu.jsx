@@ -5,7 +5,7 @@ export default function MushroomProcessMenu() {
 
   const menuItems = [
     {
-      title: "Substrate Bag",
+      title: "Substrate Bag Production",
       desc: "Filled with sawdust / straw / coco coir mix",
       path: "/make-substrate-bag",
       color: "bg-green-500",

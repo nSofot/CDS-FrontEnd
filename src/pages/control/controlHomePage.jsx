@@ -47,7 +47,7 @@ export default function ControlHomePage() {
   const menuItems = [
     {
       label: "Home",
-      to: "/",
+      to: "*",
       icon: <FaHome />,
       roles: [
         "admin",
@@ -56,7 +56,7 @@ export default function ControlHomePage() {
     },
     {
       label: "Dashboard",
-      to: "*",
+      to: "/",
       icon: <FaAtom />,
       roles: [
         "admin",

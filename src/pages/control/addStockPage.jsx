@@ -4,24 +4,32 @@ import toast from "react-hot-toast";
 import axios from "axios";
 
 export default function AddStockPage() {
-
   const navigate = useNavigate();
 
-  const [stockId, setStockId] = useState("");
+  const [stockCategory, setStockCategory] = useState("");
   const [stockName, setStockName] = useState("");
   const [stockDescription, setStockDescription] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
-  const [stockUOM, setStockUOM] = useState("pcs");
+  const [baseQuantity, setBaseQuantity] = useState("");
+  const [stockUOM, setStockUOM] = useState("");
   const [stockCost, setStockCost] = useState("");
   const [stockPrice, setStockPrice] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
   const handleAddStock = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return toast.error("Please log in first.");
+
+    if (!token) {
+      toast.error("Please log in first.");
+      return;
+    }
 
     // Validation
-    if (!stockName || !stockDescription || !stockUOM) {
+    if (
+      !stockCategory ||
+      !stockName ||
+      !stockUOM
+    ) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -30,10 +38,11 @@ export default function AddStockPage() {
       setIsAdding(true);
 
       const newStock = {
-        stockId: stockId || undefined,
+        stockCategory,
         stockName,
         stockDescription,
         stockQuantity: Number(stockQuantity) || 0,
+        baseQuantity: Number(baseQuantity) || 0,
         stockUOM,
         stockCost: Number(stockCost) || 0,
         stockPrice: Number(stockPrice) || 0,
@@ -43,136 +52,198 @@ export default function AddStockPage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
         newStock,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
       toast.success("Stock added successfully!");
       navigate("/stock", { replace: true });
-
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Something went wrong");
+      console.error(err);
+      toast.error(
+        err?.response?.data?.message || "Something went wrong"
+      );
     } finally {
       setIsAdding(false);
     }
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
+    <div className="w-full min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              📦 Add New Stock
+            </h1>
+            <p className="text-sm text-gray-500">
+              Add materials, products, and inventory records
+            </p>
+          </div>
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h1 className="text-xl font-semibold">📦➕ Add New Stock</h1>
-          <p className="text-sm text-gray-500">Enter stock details</p>
+          <div className="flex md:justify-between gap-3">
+            <button
+              onClick={handleAddStock}
+              disabled={isAdding}
+              className={`px-6 py-3 rounded-xl text-white transition ${
+                isAdding
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-600"
+              }`}
+            >
+              {isAdding ? "Adding..." : "Add Stock"}
+            </button>
+
+            <Link
+              to="/stock"
+              className="px-6 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white transition"
+            >
+              Cancel
+            </Link>
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={handleAddStock}
-            disabled={isAdding}
-            className={`px-5 py-2 rounded-lg text-white ${
-              isAdding ? "bg-gray-500" : "bg-green-600 hover:bg-green-700"
-            }`}
-          >
-            {isAdding ? "Adding..." : "Add Stock"}
-          </button>
+        {/* Form */}
+        <div className="space-y-6">
+          {/* Category + Name */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Item Category *
+              </label>
 
-          <Link
-            to="/stock"
-            className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg"
-          >
-            Cancel
-          </Link>
-        </div>
-      </div>
+              <select
+                value={stockCategory}
+                onChange={(e) => setStockCategory(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              >
+                <option value="">Select a category</option>
+                <option value="packing material">Packing Material</option>
+                <option value="substrate material">Substrate Material</option>
+                <option value="sterilizing material">Sterilizing Material</option>
+                <option value="inoculating material">Inoculating Material</option>
+                <option value="incubating material">Incubating Material</option>
+                <option value="finished products">Finished Products</option>
+              </select>
+            </div>
 
-      {/* Form */}
-      <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Item Name *
+              </label>
 
-        {/* Stock ID */}
-        <div>
-          <label className="text-sm font-medium">Stock ID</label>
-          <input
-            type="text"
-            value={stockId}
-            onChange={(e) => setStockId(e.target.value)}
-            placeholder="Auto or manual"
-            className="w-full p-2 border rounded-lg"
-          />
-        </div>
+              <input
+                type="text"
+                value={stockName}
+                onChange={(e) => setStockName(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Enter item name"
+                required
+              />
+            </div>
+          </div>
 
-        {/* Stock Name */}
-        <div>
-          <label className="text-sm font-medium">Stock Name *</label>
-          <input
-            type="text"
-            value={stockName}
-            onChange={(e) => setStockName(e.target.value)}
-            className="w-full p-2 border rounded-lg"
-          />
-        </div>
+          {/* Description */}
+          <div>
+            <label className="block mb-2 font-medium text-gray-700">
+              Description *
+            </label>
 
-        {/* Description */}
-        <div>
-          <label className="text-sm font-medium">Description</label>
-          <textarea
-            value={stockDescription}
-            onChange={(e) => setStockDescription(e.target.value)}
-            className="w-full p-2 border rounded-lg"
-          />
-        </div>
-
-        {/* Quantity + UOM */}
-        <div className="flex gap-3">
-          <div className="w-1/2">
-            <label className="text-sm font-medium">Quantity *</label>
-            <input
-              type="number"
-              value={stockQuantity}
-              onChange={(e) => setStockQuantity(e.target.value)}
-              className="w-full p-2 border rounded-lg"
+            <textarea
+              value={stockDescription}
+              onChange={(e) => setStockDescription(e.target.value)}
+              rows="3"
+              className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              placeholder="Enter stock description"
+              required
             />
           </div>
 
-          <div className="w-1/2">
-            <label className="text-sm font-medium">UOM *</label>
-            <select
-              value={stockUOM}
-              onChange={(e) => setStockUOM(e.target.value)}
-              className="w-full p-2 border rounded-lg"
-            >
-              <option value="pcs">PCS</option>
-              <option value="kg">KG</option>
-              <option value="g">G</option>
-              <option value="L">L</option>
-              <option value="ml">ML</option>
-            </select>
+          {/* Quantity + UOM */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Quantity
+              </label>
+
+              <input
+                type="number"
+                value={stockQuantity}
+                onChange={(e) => setStockQuantity(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Enter quantity"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Base Quantity Per Bag
+              </label>
+
+              <input
+                type="number"
+                value={baseQuantity}
+                onChange={(e) => setBaseQuantity(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Enter base quantity"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                UOM *
+              </label>
+
+              <select
+                value={stockUOM}
+                onChange={(e) => setStockUOM(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              >
+                <option value="">Select UOM</option>
+                <option value="pcs">PCS</option>
+                <option value="kg">KG</option>
+                <option value="g">G</option>
+                <option value="L">L</option>
+                <option value="ml">ML</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Cost + Selling */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Cost Price
+              </label>
+
+              <input
+                type="number"
+                value={stockCost}
+                onChange={(e) => setStockCost(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Enter cost price"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Selling Price
+              </label>
+
+              <input
+                type="number"
+                value={stockPrice}
+                onChange={(e) => setStockPrice(e.target.value)}
+                className="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Enter selling price"
+              />
+            </div>
           </div>
         </div>
-
-        {/* Cost */}
-        <div>
-          <label className="text-sm font-medium">Cost Price *</label>
-          <input
-            type="number"
-            value={stockCost}
-            onChange={(e) => setStockCost(e.target.value)}
-            className="w-full p-2 border rounded-lg"
-          />
-        </div>
-
-        {/* Selling Price */}
-        <div>
-          <label className="text-sm font-medium">Selling Price *</label>
-          <input
-            type="number"
-            value={stockPrice}
-            onChange={(e) => setStockPrice(e.target.value)}
-            className="w-full p-2 border rounded-lg"
-          />
-        </div>
-
       </div>
     </div>
   );
