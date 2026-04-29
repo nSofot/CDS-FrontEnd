@@ -94,6 +94,16 @@ export default function ControlHomePage() {
     },
 
     {
+      label: "Batch Records",
+      to: "/batch-list",
+      icon: <FaFileAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
       label: "Cashbook",
       to: "/cash-book",
       icon: <FaMoneyCheckAlt />,
