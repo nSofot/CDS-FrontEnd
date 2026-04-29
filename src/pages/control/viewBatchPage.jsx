@@ -166,6 +166,7 @@ export default function ViewBatchPage() {
           </div>
         </div>
 
+        {/* ================= MATERIALS ================= */}
         <div className="bg-white rounded-2xl border shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Materials Used</h2>
 
@@ -184,60 +185,93 @@ export default function ViewBatchPage() {
                   </tr>
                 </thead>
 
-                  <tbody>
+                <tbody>
                   {batch.materials.map((item, index) => {
                     const grn = issueMap[item.stockId];
 
                     return (
-                      <Fragment key={item.stockId || index}>
+                      <Fragment key={`mat-${item.stockId || index}`}>
+                        <tr className="border-t">
+                          <td className="px-4 py-3 font-medium">{item.stockName}</td>
+                          <td className="px-4 py-3">{item.totalQty}</td>
+                          <td className="px-4 py-3">{item.stockUOM || "-"}</td>
+                          <td className="px-4 py-3">Rs. {formatCurrency(item.rowCostValue)}</td>
+                          <td className="px-4 py-3">Rs. {formatCurrency(item.rowTotalValue)}</td>
+                        </tr>
 
-                            {/* MAIN ROW */}
-                            <tr className="border-t">
-                              <td className="px-4 py-3 font-medium">{item.stockName}</td>
-                              <td className="px-4 py-3">{item.totalQty}</td>
-                              <td className="px-4 py-3">{item.stockUOM || "-"}</td>
-                              <td className="px-4 py-3">Rs. {formatCurrency(item.rowCostValue)}</td>
-                              <td className="px-4 py-3">Rs. {formatCurrency(item.rowTotalValue)}</td>
-                            </tr>
+                        {grn && (
+                          <tr className="bg-gray-50 text-xs text-gray-600">
+                            <td colSpan="5" className="px-4 py-2">
+                              <div className="grid grid-cols-4 gap-4">
+                                <div>
+                                  <p className="font-semibold">GRN ID</p>
+                                  <p>{grn.receivedTrxId}</p>
+                                </div>
 
-                            {/* GRN ROW */}
-                            {grn && (
-                              <tr className="bg-gray-50 text-xs text-gray-600">
-                                <td colSpan="5" className="px-4 py-2">
-                                  <div className="grid grid-cols-4 gap-4">
-                                    
-                                    <div>
-                                      <p className="font-semibold">GRN ID</p>
-                                      <p>{grn.receivedTrxId}</p>
-                                    </div>
+                                <div>
+                                  <p className="font-semibold">Received Date</p>
+                                  <p>{new Date(grn.receivedDate).toLocaleDateString()}</p>
+                                </div>
 
-                                    <div>
-                                      <p className="font-semibold">Received Date</p>
-                                      <p>{new Date(grn.receivedDate).toLocaleDateString()}</p>
-                                    </div>
+                                <div>
+                                  <p className="font-semibold">Vendor</p>
+                                  <p>{vendorMap[grn.receivedVendorId] || grn.receivedVendorId}</p>
+                                </div>
 
-                                    <div>
-                                      <p className="font-semibold">Vendor</p>
-                                      <p>{vendorMap[grn.receivedVendorId] || grn.receivedVendorId}</p>
-                                    </div>
-
-                                    <div>
-                                      <p className="font-semibold">Issued Qty</p>
-                                      <p>{grn.issuedQuantity}</p>
-                                    </div>
-
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        );
-                      })}
+                                <div>
+                                  <p className="font-semibold">Issued Qty</p>
+                                  <p>{grn.issuedQuantity}</p>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
+
+        {/* ================= OTHER EXPENSES ================= */}
+        <div className="bg-white rounded-2xl border shadow-sm p-6">
+          <h2 className="text-lg font-semibold mb-4">Other Expenses</h2>
+
+          {!batch.otherExpenses?.length ? (
+            <p className="text-gray-500">No other expenses found</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Expense</th>
+                    <th className="px-4 py-3 text-left">Price</th>
+                    <th className="px-4 py-3 text-right">Total</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {batch.otherExpenses.map((item, index) => {
+                    return (
+                      <Fragment key={`exp-${item.expenseId || index}`}>
+                        <tr className="border-t">
+                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          <td className="px-4 py-3">{formatCurrency(item.price)}</td>
+                          <td className="px-4 py-3 text-right">
+                            Rs. {formatCurrency(item.rowTotal)}
+                          </td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
