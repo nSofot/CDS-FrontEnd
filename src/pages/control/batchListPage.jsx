@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Plus, Eye, Search, RefreshCw } from "lucide-react";
+import { Plus, Eye, Search, RefreshCw, ArrowLeft } from "lucide-react";
 
 export default function BatchListPage() {
   const navigate = useNavigate();
@@ -88,11 +88,11 @@ export default function BatchListPage() {
           </div>
 
           <button
-            onClick={() => navigate("/dashboard/create-batch")}
+            onClick={() => navigate("/")}
             className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
           >
-            <Plus size={18} />
-            Create Batch
+            <ArrowLeft size={20} />
+            Back
           </button>
         </div>
 
