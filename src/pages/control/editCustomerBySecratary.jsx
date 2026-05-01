@@ -18,6 +18,7 @@ export default function EditMember() {
 	const [lastName, setLastName] = useState("");
 	const [nameInSinhala, setNameInSinhala] = useState("");
 	const [memberRole, setMemberRole] = useState("");	
+	const [memberType, setMemberType] = useState("");
 	const [address, setAddress] = useState("");
 	const [mobile, setMobile] = useState("");
 	const [phone, setPhone] = useState("");
@@ -53,6 +54,7 @@ export default function EditMember() {
 				setLastName(res.data.lastName || "");
 				setNameInSinhala(res.data.nameInSinhala || "");
 				setMemberRole(res.data.memberRole || "");
+				setMemberType(res.data.memberType || "");
 				setAddress(Array.isArray(res.data.address) ? res.data.address.join(", ") : res.data.address || "");
 				setNotes(res.data.notes || "");
 				setMobile(res.data.mobile || "");
@@ -80,6 +82,7 @@ export default function EditMember() {
 		setLastName(data.lastName || "");
 		setNameInSinhala(data.nameInSinhala || "");
 		setMemberRole(data.memberRole || "");
+		setMemberType(data.memberType || "");
 		setAddress(
 			Array.isArray(data.address)
 			? data.address.join(", ")
@@ -234,6 +237,7 @@ export default function EditMember() {
 				lastName,
 				nameInSinhala,
 				memberRole,
+				memberType,
 				address: address
 					? address.split(",").map(n => n.trim()).filter(Boolean)  // remove empty strings
 					: undefined,			
@@ -468,17 +472,18 @@ export default function EditMember() {
 								</select>
 							</div>
 							
-							<div className="w-full sm:w-[50%]">
-								<label className="block text-sm font-medium text-gray-700 mb-1">
-									Due Amount
-								</label>
-								<input
-									type="number"
-									value={dueAmount}
-									onChange={(e) => setDueAmount(e.target.value)}
-									className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-									placeholder="e.g. 1500"
-								/>
+							<div className="w-full sm:w-1/2">
+								<label className="text-sm font-medium">Member Type</label>
+								<select
+									value={memberType}
+									onChange={(e) => setMemberType(e.target.value)}
+									className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+									>
+									<option value="">Select Type</option>
+									<option value="Member">Member</option>
+									<option value="Customer">Customer</option>
+									<option value="Guest">Guest</option>
+								</select>
 							</div>
 						</div>	
 					</div>
