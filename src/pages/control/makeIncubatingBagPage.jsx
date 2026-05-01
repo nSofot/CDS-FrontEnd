@@ -4,7 +4,8 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-export default function MakeSubstrateBagPage() {
+export default function MakeIncubatingBagPage() {
+   
     const navigate = useNavigate();
 
     const getLocalDate = () => {
@@ -15,9 +16,8 @@ export default function MakeSubstrateBagPage() {
     };
 
     const [trxDate, setTrxDate] = useState(getLocalDate());     
-
-    const [substrateMaterials, setSubstrateMaterials] = useState([]);
-    const [packingMaterials, setPackingMaterials] = useState([]);
+    const [batchDetails, setBatchDetails] = useState([]);
+    const [sterilizingMmaterial, setSterilizingMmaterial] = useState([]);
     const [materials, setMaterials] = useState([]);
    
     const [numberOfBags, setNumberOfBags] = useState("");
@@ -49,33 +49,33 @@ export default function MakeSubstrateBagPage() {
       try {
         setLoading(true);
 
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
-          {
+        const [stockRes, batchRes] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/stock`, {
             headers: getAuthHeaders(),
-          }
+          }),
+
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/batch`, {
+            headers: getAuthHeaders(),
+          }),
+        ]);
+
+        /* ---------------- STOCKS ---------------- */
+        const allStocks = stockRes.data?.data || stockRes.data || [];
+
+        const filteredSmStocks = allStocks
+          .filter((item) => item.stockCategory === "incubating material")
+          .sort((a, b) => a.stockName.localeCompare(b.stockName));
+
+        setSterilizingMmaterial(filteredSmStocks);
+
+        /* ---------------- BATCHES ---------------- */
+        const allBatches = batchRes.data?.data || batchRes.data || [];
+
+        const filteredBatches = allBatches.filter(
+          (item) => item.status === "Inoculated"
         );
 
-        const allStocks = res.data.data || res.data || [];
-
-        const filteredSmStocks = allStocks.filter(
-          (item) => item.stockCategory === "substrate material"
-        );
-
-        const filteredPmStocks = allStocks.filter(
-          (item) => item.stockCategory === "packing material"
-        );
-
-        filteredSmStocks.sort((a, b) =>
-          a.stockName.localeCompare(b.stockName)
-        );
-
-        filteredPmStocks.sort((a, b) =>
-          a.stockName.localeCompare(b.stockName)
-        );
-        
-        setSubstrateMaterials(filteredSmStocks);
-        setPackingMaterials(filteredPmStocks);
+        setBatchDetails(filteredBatches);
 
       } catch (error) {
         console.error(error);
@@ -84,48 +84,25 @@ export default function MakeSubstrateBagPage() {
         setLoading(false);
       }
     };
+
     useEffect(() => {
       fetchStocks();
     }, []);
 
     const [otherExpenses, setOtherExpenses] = useState({
-      "9000": { expenseId: "9000", name: "Water", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9001": { expenseId: "9001", name: "Electricity", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9002": { expenseId: "9002", name: "Machine Depreciation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9003": { expenseId: "9003", name: "Labor Cost", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9004": { expenseId: "9004", name: "Transport", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9005": { expenseId: "9005", name: "Other", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9030": { expenseId: "9030", name: "Water for Incubation", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9031": { expenseId: "9031", name: "Electricity for Incubation", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9032": { expenseId: "9032", name: "Machine Depreciation for Incubation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9033": { expenseId: "9033", name: "Labor Cost for Incubation", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9034": { expenseId: "9034", name: "Transport for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9035": { expenseId: "9035", name: "Other for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
 
 
     useEffect(() => {
       const bagCount = Number(numberOfBags || 0);
 
-      setSubstrateMaterials((prev) =>
-        prev.map((item) => {
-          if (!item.isSelected) return item;
-
-          const calculatedQty =
-            bagCount * Number(item.baseQuantity || 0);
-
-          const maxQty = Number(item.stockQuantity || 0);
-
-          // Ensure totalQty does not exceed available stock
-          const finalQty =
-            calculatedQty > maxQty ? maxQty : calculatedQty;
-
-          return {
-            ...item,
-            totalQty: finalQty,
-            rowTotalValue:
-              finalQty * Number(item.stockPrice || 0),
-            rowCostValue:
-              finalQty * Number(item.stockCost || 0),
-          };
-        })
-      );
-
-      setPackingMaterials((prev) =>
+      setSterilizingMmaterial((prev) =>
         prev.map((item) => {
           if (!item.isSelected) return item;
 
@@ -172,10 +149,7 @@ export default function MakeSubstrateBagPage() {
       const bagCount = Number(numberOfBags || 0);
       const totalQty = Number(value || 0);
 
-      const setter =
-        type === "sm" ? setSubstrateMaterials : setPackingMaterials;
-
-      setter((prev) =>
+      setSterilizingMmaterial((prev) =>
         prev.map((item, i) =>
           i === index
             ? {
@@ -206,27 +180,28 @@ export default function MakeSubstrateBagPage() {
       });
     };
 
+    const formatDate = (date) => {
+      if (!date) return "N/A";
+      return new Date(date).toLocaleDateString();
+    }
 
     const handleCheckboxChange = (type, index, checked) => {
       const bagCount = Number(numberOfBags || 0);
 
-      // For substrate + packing materials
-      if (type === "sm" || type === "pm") {
-        const setter =
-          type === "sm" ? setSubstrateMaterials : setPackingMaterials;
-
-        setter((prev) =>
+      /* =======================
+        STERILIZING MATERIALS
+      ======================== */
+      if (type === "sm") {        
+        setSterilizingMmaterial((prev) =>
           prev.map((item, i) => {
             if (i !== index) return item;
 
-            const calculatedQty = checked
-              ? bagCount * Number(item.baseQuantity || 0)
-              : 0;
-
+            const baseQty = Number(item.baseQuantity || 0);
             const maxQty = Number(item.stockQuantity || 0);
 
-            // Ensure totalQty does not exceed available stock
-            const finalQty = calculatedQty > maxQty ? maxQty : calculatedQty;
+            const calculatedQty = checked ? bagCount * baseQty : 0;
+
+            const finalQty = Math.min(calculatedQty, maxQty);
 
             return {
               ...item,
@@ -243,13 +218,32 @@ export default function MakeSubstrateBagPage() {
         );
       }
 
-      // For other expenses
-      if (type === "oe") {
+      /* =======================
+        BAG DETAILS
+      ======================== */
+      if (type === "bd") {
+        setBatchDetails((prev) => {
+          const updated = prev.map((item, i) => ({
+            ...item,
+            isSelected: i === index ? checked : false,
+          }));
+
+          const selected = updated.find((item) => item.isSelected);
+
+          setNumberOfBags(selected ? Number(selected.numberOfBags || 0) : 0);
+
+          return updated;
+        });
+      }
+
+      /* =======================
+        OTHER EXPENSES
+      ======================== */
+      if (type === "oe") {        
         setOtherExpenses((prev) => {
           const item = prev[index];
-          const bagCount = Number(numberOfBags || 0);
 
-          const editablePrice = checked
+          const price = checked
             ? Number(item.editablePrice || item.price || 0)
             : 0;
 
@@ -258,11 +252,9 @@ export default function MakeSubstrateBagPage() {
             [index]: {
               ...item,
               isSelected: checked,
-              editablePrice,
+              editablePrice: price,
               qty: checked ? bagCount : 0,
-              rowTotal: checked
-                ? bagCount * editablePrice
-                : 0,
+              rowTotal: checked ? bagCount * price : 0,
             },
           };
         });
@@ -272,11 +264,11 @@ export default function MakeSubstrateBagPage() {
     const bagCount = Number(numberOfBags || 0);
 
     const selectedSubstrate = useMemo(() => {
-      return substrateMaterials.filter((i) => i.isSelected);
-    }, [substrateMaterials]);
+      return sterilizingMmaterial.filter((i) => i.isSelected);
+    }, [sterilizingMmaterial]);
 
     const substrateTotals = useMemo(() => {
-      return substrateMaterials
+      return sterilizingMmaterial
         .filter((item) => item.isSelected)
         .reduce(
           (acc, item) => {
@@ -292,30 +284,7 @@ export default function MakeSubstrateBagPage() {
             value: 0,
           }
         );
-    }, [substrateMaterials]);    
-
-    const selectedPacking = useMemo(() => {
-      return packingMaterials.filter((i) => i.isSelected);
-    }, [packingMaterials]);
-
-    const packingTotals = useMemo(() => {
-      return packingMaterials
-        .filter((item) => item.isSelected)
-        .reduce(
-          (acc, item) => {
-            acc.totalQty += Number(item.totalQty || 0);
-            acc.cost += Number(item.rowCostValue || 0);
-            acc.value += Number(item.rowTotalValue || 0);
-
-            return acc;
-          },
-          {
-            totalQty: 0,
-            cost: 0,
-            value: 0,
-          }
-        );
-    }, [packingMaterials]);
+    }, [sterilizingMmaterial]);    
 
     const otherExpenseTotals = useMemo(() => {
       return Object.values(otherExpenses)
@@ -331,109 +300,130 @@ export default function MakeSubstrateBagPage() {
         );
     }, [otherExpenses]);
 
+    const batchTotals = useMemo(() => {
+      return batchDetails
+        .filter((item) => item.isSelected)
+        .reduce(
+          (acc, item) => {
+            acc.cost += Number(item.totalCostValue || 0);
+            acc.value += Number(item.totalJobValue || 0);
+            return acc;
+          },
+          { cost: 0, value: 0 }
+        );
+    }, [batchDetails]);    
+
     const totalCostValue = useMemo(() => {
       return (
         substrateTotals.cost +
-        packingTotals.cost +
-        otherExpenseTotals.value
+        otherExpenseTotals.value +
+        batchTotals.cost
       );
-    }, [substrateTotals, packingTotals, otherExpenseTotals]);
+    }, [substrateTotals, otherExpenseTotals, batchTotals]);
 
     const totalJobValue = useMemo(() => {
       return (
         substrateTotals.value +
-        packingTotals.value +
-        otherExpenseTotals.value
+        otherExpenseTotals.value +
+        batchTotals.value
       );
-    }, [substrateTotals, packingTotals, otherExpenseTotals]);
+    }, [substrateTotals, otherExpenseTotals, batchTotals]);
 
 
+    // Submitting the form save
     const handleSubmit = async () => {
       setIsSubmitting(true);
 
       if (!numberOfBags || Number(numberOfBags) <= 0) {
-        toast.error("Please enter number of bags");
+        toast.error("Please select batch details.");
+        setIsSubmitting(false);
         return;
       }
 
+      const selectedBatch = Object.values(batchDetails).filter((item) => item.isSelected);
       const selectedOther = Object.values(otherExpenses).filter((item) => item.isSelected);
-      const materials = [
-        ...selectedSubstrate,
-        ...selectedPacking,
-      ];      
+      const materials = [...selectedSubstrate];
 
-      if (materials.length === 0) {
-        toast.error("No materials found");
-        return;
-      }
+    //   if (materials.length === 0) {
+    //     toast.error("No materials found");
+    //     setIsSubmitting(false);
+    //     return;
+    //   }
 
       try {  
           // 1. Create batch            
           const batchPayload = {
-            batchDate: trxDate,
-            numberOfBags: Number(numberOfBags),
-            status: "Substrate",
-            materials: materials,
+            batches: selectedBatch.map((item) => ({
+              batchNo: item.batchNo,
+              status: "Incubating",
+              inoculationDate: trxDate,
+              totalCostValue: totalCostValue,
+              totalJobValue: totalJobValue,
+              materials: materials,
+              otherExpenses: selectedOther,
+            })),
+            materials: selectedSubstrate,
             otherExpenses: selectedOther,
-            totalCostValue: totalCostValue,
-            totalJobValue: totalJobValue,
           };
-
-          const response = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/batch`,
+          const response = await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/batch/bulk-update`,
             batchPayload
           );
 
-          newBatchId = response.data.data.batchNo || response.data.batchNo;
+
+          const newBatchId = selectedBatch[0].batchNo;
           setBatchNumber(newBatchId);
 
 
-          // 2. Update stock issued quantities
-          await axios.post(
-              `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
-              {
-                  items: materials.map((item) => ({
-                  stockId: item.stockId,
-                  quantity: Number(item.totalQty || 0),
-                  })),
-              },
-              {
-                  headers: getAuthHeaders(),
-              }
-          );
+          // 2. Update stock quantities
+          if (materials.length > 0) {
+
+            await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
+                {
+                    items: materials.map((item) => ({
+                    stockId: item.stockId,
+                    quantity: Number(item.totalQty || 0),
+                    })),
+                },
+                {
+                    headers: getAuthHeaders(),
+                }
+            );
 
 
-          // 3. Write stock transaction logs - Issued
-          const stockTrxPayload = {       
-            referenceId: newBatchId,
-            trxDate: trxDate,
-            trxType: "GoodIssue",
-            description: "Substrate bag production",
-            isAdded: false,
-            clientId: "",
-            items: materials.map((item) => ({
-              stockId: item.stockId,
-              stockName: item.stockName,
-              quantity: Number(item.totalQty || 0),
-              quantityBalance: Number(0),
-              stockUOM: item.stockUOM,
-              stockCost: Number(item.stockCost || 0),
-              stockPrice: Number(item.stockPrice || 0),
-            })),
-          };               
-          const issuedTrxResponse = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
-            stockTrxPayload
-          );
+            // 3. Write stock movement logs - Issued
+            const stockTrxPayload = {       
+                referenceId: newBatchId,
+                trxDate: trxDate,
+                trxType: "GoodIssue",
+                description: "Incubating Substrate Bag",
+                isAdded: false,
+                clientId: "",
+                items: materials.map((item) => ({
+                stockId: item.stockId,
+                stockName: item.stockName,
+                quantity: Number(item.totalQty || 0),
+                quantityBalance: Number(0),
+                stockUOM: item.stockUOM,
+                stockCost: Number(item.stockCost || 0),
+                stockPrice: Number(item.stockPrice || 0),
+                })),
+            };               
+            const issuedTrxResponse = await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
+                stockTrxPayload
+            );
+          }
 
 
-          // 4. Update add Substrate Bag stock
+          // 4. Update Add Sterilized Bag stock
           await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
             {
               items: [
                 {
-                  stockId: "5000",
+                  stockId: "5003",
                   quantity: Number(numberOfBags || 0),
                 },
               ],
@@ -444,19 +434,68 @@ export default function MakeSubstrateBagPage() {
           );
 
 
-          // 5. Write stock movement logs - Received Substract bags
-          const bagTrxPayload = {
+          // 5. Write stock movement logs - Received Sterilized bags
+          const bagSterilizedTrxPayload = {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
             trxDate: new Date(trxDate),
-            trxType: "Substrate",
-            description: "Substrate bag production",
+            trxType: "Incubating",
+            description: "Incubating Substrate Bag",
             isAdded: true,
             clientId: "",
             items: [
               {
-                stockId: "5000",
-                stockName: "Substrate Bag",
+                stockId: "5003",
+                stockName: "Inoculated Substrate Bag",
+                quantity: Number(numberOfBags || 0),
+                quantityBalance: Number(numberOfBags || 0),
+                stockUOM: "pcs",
+                stockCost:
+                  Number(totalCostValue || 0) / Number(numberOfBags || 1),
+                stockPrice:
+                  Number(totalJobValue || 0) / Number(numberOfBags || 1),
+              },
+            ],
+          };
+          const res1 = await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
+            bagSterilizedTrxPayload,
+            {
+              headers: getAuthHeaders(),
+            }
+          );
+
+          
+          // 6. Update Substract Substrate Bag stock
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
+            {
+              items: [
+                {
+                  stockId: "5002",
+                  quantity: Number(numberOfBags || 0),
+                },
+              ],
+            },
+            {
+              headers: getAuthHeaders(),
+            }
+          );   
+
+
+          // 7. Write stock movement logs - Issued Substract bags
+          const bagTrxPayload = {
+            trxId: String(newBatchId),
+            referenceId: String(newBatchId),
+            trxDate: new Date(trxDate),
+            trxType: "Incubating",
+            description: "Incubating Substrate Bag",
+            isAdded: false,
+            clientId: "",
+            items: [
+              {
+                stockId: "5002",
+                stockName: "Inoculated Substrate Bag",
                 quantity: Number(numberOfBags || 0),
                 quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
@@ -476,10 +515,13 @@ export default function MakeSubstrateBagPage() {
           );
 
 
-          // 6. Update stock quantity balance in GRN
+        if (materials.length > 0) {
+            
+          // 8. Update stock quantity balance in GRN
           const payload = {
             items: materials,
           };
+     
           const detailsRes = await axios.put(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/updateQuantityBalance`,
             payload,
@@ -492,18 +534,16 @@ export default function MakeSubstrateBagPage() {
           const updatedDetails = detailsRes?.data?.issueDetails || [];
 
 
-          // 7. Update Stock Issue Details
+          // 9. Update Stock Issue Details
           const issuedTrxId = issuedTrxResponse.data.data?.issuedTrxId;
           const issuedTrxDate = issuedTrxResponse.data.data?.trxDate;         
 
           const updatePayload = {
-            issueTrxId: issuedTrxId,
-            issueReferenceId: newBatchId,
-            issueDate: new Date(),
             items: updatedDetails,
-          };         
-          const updateRes = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
+          };   
+                
+          const updateRes = await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details/batchNo/${newBatchId}`,
             updatePayload,
             {
               headers: {
@@ -511,36 +551,30 @@ export default function MakeSubstrateBagPage() {
               },
             }
           );
+        };
 
-          setIsSubmitted(true);
-          toast.success(
-              "Substrate bag details prepared successfully"
-          );
+
+        setIsSubmitted(true);
+        toast.success("Substrate bag details prepared successfully");
       } catch (error) {
-        console.error("FULL BACKEND ERROR:");
         console.error(error.response?.data || error);
-
-        toast.error(
-          error.response?.data?.message || "Failed to save"
-        );
-
-        setIsSubmitting(false);
+        toast.error(error.response?.data?.message || "Failed to save");
+      } finally {
+        setIsSubmitting(false); // ✅ always reset
       }
     };
     
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-6">
             <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex justify-between gap-3 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
-                          Substrate Bag Production Process
+                          Incubation of Substrate Bags
                         </h1>
 
                         <p className="text-sm text-gray-500">
-                          Generate material requirements and detailed cost breakdown for each substrate bag 
-                          batch using FIFO-based inventory consumption from available GRN stock batches.
-                        </p>
+                            Monitoring and managing substrate bag incubation process                     </p>
                     </div>
                     <button
                       onClick={() => navigate("/mushroom-process")}
@@ -548,7 +582,7 @@ export default function MakeSubstrateBagPage() {
                     >
                       <ArrowLeft size={20} />
                       Back
-                    </button>                     
+                    </button>                    
                 </div>
 
                 {/* Number of Bags */}
@@ -559,7 +593,7 @@ export default function MakeSubstrateBagPage() {
                                 Number of Bags
                             </label>
                             <input
-                                disabled={isSubmitting || isSubmitted}
+                                disabled
                                 type="number"
                                 min="1"
                                 value={numberOfBags}
@@ -574,7 +608,7 @@ export default function MakeSubstrateBagPage() {
 
                         <div className="flex flex-col">
                             <label className="block mb-2 font-medium text-gray-700">
-                                Production Date
+                                Sterilization Date
                             </label>
 
                             <input
@@ -622,14 +656,88 @@ export default function MakeSubstrateBagPage() {
                   <table className="w-full border rounded-xl overflow-hidden">
                     <tbody>
 
+                      {/* ================= BATCH DETAILS ================= */}
+                      {loading ? (
+                        <tr>
+                          <td colSpan="8" className="text-center p-6">
+                            Loading batch details...
+                          </td>
+                        </tr>
+                      ) : batchDetails.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="text-center p-6 text-gray-500">
+                            Enter number of bags to generate material rows
+                          </td>
+                        </tr>
+                      ) : (
+                        <Fragment key="batch-section">
+                          <tr className="bg-orange-100 text-orange-500">
+                            <th className="p-3 text-left">Use</th>
+                            <th className="p-3 text-left">Batch Number</th>
+                            <th className="p-3 text-left">Date</th>
+                            <th className="p-3 text-right">Bags</th>
+                            <th className="p-3 text-right">Total Cost</th>
+                            <th className="p-3 text-right">Total Value</th>
+                            <th>  </th>
+                            <th>  </th>
+                          </tr>
+
+                          {batchDetails.map((item, index) => (
+                            <tr
+                              key={`bd-${item.batchNo}-${index}`}
+                              className={item.isSelected ? "" : "opacity-50 bg-gray-50"}
+                            >
+                              {/* Use */}
+                              <td className="p-3">
+                                <input
+                                  type="radio"
+                                  name="batchSelect"
+                                  checked={item.isSelected || false}
+                                  onChange={(e) =>
+                                    handleCheckboxChange("bd", index, e.target.checked)
+                                  }
+                                />
+                              </td>
+
+                              {/* Batch No */}
+                              <td className="p-3">{item.batchNo}</td>
+
+                              {/* Date */}
+                              <td className="p-3">{formatDate(item.batchDate)}</td>
+
+                              {/* Bags */}
+                              <td className="p-3 text-right">
+                                {Number(item.numberOfBags || 0)}
+                              </td>
+
+                              {/* Total Cost */}
+                              <td className="p-3 text-right">
+                                {new Intl.NumberFormat("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }).format(item.totalCostValue || 0)}
+                              </td>
+
+                              {/* Total Value */}
+                              <td className="p-3 text-right">
+                                {new Intl.NumberFormat("en-US", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }).format(item.totalJobValue || 0)}
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      )}                      
+
                       {/* ================= SUBSTRATE MATERIALS ================= */}
                       {loading ? (
                         <tr>
                           <td colSpan="8" className="text-center p-6">
-                            Loading substrate materials...
+                            Loading sterilizing materials...
                           </td>
                         </tr>
-                      ) : substrateMaterials.length === 0 ? (
+                      ) : sterilizingMmaterial.length === 0 ? (
                         <tr>
                           <td colSpan="8" className="text-center p-6 text-gray-500">
                             Enter number of bags to generate material rows
@@ -639,7 +747,7 @@ export default function MakeSubstrateBagPage() {
                         <Fragment key="substrate-section">
                           <tr className="bg-orange-100 text-orange-500">
                             <th className="p-3 text-left">Use</th>
-                            <th className="p-3 text-left">Substrate Material</th>
+                            <th className="p-3 text-left">Sterilizing Material</th>
                             <th className="p-3 text-right">Base Qty</th>
                             <th className="p-3 text-left">UOM</th>
                             <th className="p-3 text-left">Total Quantity</th>
@@ -648,7 +756,7 @@ export default function MakeSubstrateBagPage() {
                             <th className="p-3 text-right">Amount</th>
                           </tr>
 
-                          {substrateMaterials.map((item, index) => (
+                          {sterilizingMmaterial.map((item, index) => (
                             <tr
                               key={`sm-${item.stockId}-${index}`}
                               className={item.isSelected ? "" : "opacity-50 bg-gray-50"}
@@ -660,83 +768,6 @@ export default function MakeSubstrateBagPage() {
                                   checked={item.isSelected || false}
                                   onChange={(e) =>
                                     handleCheckboxChange("sm", index, e.target.checked)
-                                  }
-                                />
-                              </td>
-
-                              <td className="p-3">{item.stockName}</td>
-                              <td className="p-3 text-right">{item.baseQuantity}</td>
-                              <td className="p-3">{item.stockUOM}</td>
-
-                              <td className="p-3">
-                                <input
-                                  type="number"
-                                  value={Number(item.totalQty || 0)}
-                                  max={Number(item.stockQuantity || 0)}
-                                  disabled={
-                                    !item.isSelected ||
-                                    Number(numberOfBags) <= 0 ||
-                                    isSubmitting ||
-                                    isSubmitted
-                                  }
-                                  onChange={(e) => {
-                                    const value = Number(e.target.value || 0);
-                                    const maxQty = Number(item.stockQuantity || 0);
-
-                                    if (value <= maxQty) {
-                                      handleQtyChange("sm", index, value);
-                                    }
-                                  }}
-                                  className={`w-full border rounded-lg px-3 py-2 ${
-                                    !item.isSelected && Number(numberOfBags) <= 0
-                                      ? "bg-gray-100 cursor-not-allowed"
-                                      : "focus:ring-2 focus:ring-orange-400"
-                                  }`}
-                                />
-                              </td>
-
-                              <td className="p-3 text-right text-gray-500">
-                                {Number(item.stockQuantity || 0).toFixed(3)}
-                              </td>
-
-                              <td className="p-3 text-right">
-                                {Number(item.stockPrice || 0).toFixed(2)}
-                              </td>
-
-                              <td className="p-3 text-right font-semibold">
-                                {Number(item.rowTotalValue || 0).toFixed(2)}
-                              </td>
-                            </tr>
-                          ))}
-                        </Fragment>
-                      )}
-
-                      {/* ================= PACKING MATERIALS ================= */}
-                      {!loading && packingMaterials.length > 0 && (
-                        <Fragment key="packing-section">
-                          <tr className="bg-orange-100 text-orange-500">
-                            <th className="p-3 text-left">Use</th>
-                            <th className="p-3 text-left">Packing Material</th>
-                            <th className="p-3 text-right">Base Qty</th>
-                            <th className="p-3 text-left">UOM</th>
-                            <th className="p-3 text-left">Total Quantity</th>
-                            <th className="p-3 text-right">Available</th>
-                            <th className="p-3 text-right">Stock Price</th>
-                            <th className="p-3 text-right">Amount</th>
-                          </tr>
-
-                          {packingMaterials.map((item, index) => (
-                            <tr
-                              key={`pm-${item.stockId}-${index}`}
-                              className={item.isSelected ? "" : "opacity-50 bg-gray-50"}
-                            >
-                              <td className="p-3">
-                                <input
-                                  disabled={isSubmitting || isSubmitted}
-                                  type="checkbox"
-                                  checked={item.isSelected || false}
-                                  onChange={(e) =>
-                                    handleCheckboxChange("pm", index, e.target.checked)
                                   }
                                 />
                               </td>

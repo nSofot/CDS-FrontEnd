@@ -13,13 +13,13 @@ export default function MushroomProcessMenu() {
     {
       title: "Sterilized Substrate Bag",
       desc: "After heat treatment in boiler / autoclave",
-      path: "/sterilized-substrate-bag",
+      path: "/make-sterilized-bag",
       color: "bg-blue-500",
     },
     {
       title: "Inoculated Substrate Bag",
       desc: "After adding mushroom spawn",
-      path: "/inoculated-substrate-bag",
+      path: "/make-inoculating-bag",
       color: "bg-orange-500",
     },
     {

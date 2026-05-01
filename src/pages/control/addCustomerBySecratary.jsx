@@ -14,6 +14,7 @@ export default function AddCustomerBySecratary() {
 	const [nameInSinhala, setNameInSinhala] = useState("");
 	const [address, setAddress] = useState("");
 	const [memberRole, setMemberRole] = useState("member");
+	const [memberType, setMemberType] = useState("");
 	const [notes, setNotes] = useState("");
 	const [image, setImage] = useState([]);     // empty by default
 	const [mobile, setMobile] = useState("");
@@ -27,8 +28,8 @@ export default function AddCustomerBySecratary() {
 		if (!token) return toast.error("Please log in first.");
 
 		// Required validation
-		if (!firstName || !lastName || !mobile || !memberRole) {
-			toast.error("Please fill in first name, last name, mobile number and member role");
+		if (!firstName || !lastName || !mobile || !memberRole || !memberType) {
+			toast.error("Please fill in first name, last name, mobile number, member role and member type");
 			setIsAdding(false);
 			return;
 		}
@@ -50,6 +51,7 @@ export default function AddCustomerBySecratary() {
 				lastName,
 				nameInSinhala,
 				memberRole,
+				memberType,
 				address: address ? address.split(",").map(n => n.trim()).filter(Boolean) : [], 
 				notes: notes || "",
 				image: image.length > 0 ? await Promise.all(image.map(img => mediaUpload(img))) : [],
@@ -207,17 +209,22 @@ export default function AddCustomerBySecratary() {
 								<label className="text-sm font-medium">Member Role</label>
 								<select value={memberRole} onChange={(e) => setMemberRole(e.target.value)} className="w-full p-2 border border-gray-300 rounded-lg text-sm">
 									<option value="member">Member</option>
-									{/* <option value="president">President</option>
-									<option value="secretary">Secretary</option>
-									<option value="treasurer">Treasurer</option>
-									<option value="vice-president">Vice-President</option>
-									<option value="assistant-secretary">Assistant Secretary</option>
-									<option value="assistant-treasurer">Assistant Treasurer</option>
-									<option value="activity-coordinator">Activity Coordinator</option>
-									<option value="committee-member">Committee Member</option>
-									<option value="internal-auditor">Internal Auditor</option> */}
 								</select>
 							</div>
+
+							<div className="w-full sm:w-1/2">
+								<label className="text-sm font-medium">Member Type</label>
+								<select
+									value={memberType}
+									onChange={(e) => setMemberType(e.target.value)}
+									className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+									>
+									<option value="">Select Type</option>
+									<option value="Member">Member</option>
+									<option value="Customer">Customer</option>
+									<option value="Guest">Guest</option>
+								</select>
+							</div>							
 						</div>
 					</div>
 

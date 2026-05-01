@@ -48,6 +48,20 @@ export default function MembersPage() {
   const getRoleLabel = (role) =>
     roleMap[role?.toLowerCase()] || role;
 
+  const getTypeStyle = (status) => {
+    switch (status) {
+      case "Guest":
+        return "bg-blue-100 text-blue-700";
+      case "Member":
+        return "bg-yellow-100 text-yellow-700";
+      case "Customer":
+        return "bg-purple-100 text-purple-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+  
+  
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -170,7 +184,7 @@ export default function MembersPage() {
                       <th className="px-3 py-2 text-center">Image</th>
                       <th className="px-3 py-2 text-center">ID</th>
                       <th className="px-3 py-2 text-left">Name</th>
-                      <th className="px-3 py-2 text-left">M/Type</th>
+                      <th className="px-3 py-2 text-left">Type</th>
                       <th className="px-3 py-2 text-left">Address</th>
                       <th className="px-3 py-2 text-left">Mobile</th>
                       <th className="px-3 py-2 text-right">Due Amount</th>
@@ -206,9 +220,22 @@ export default function MembersPage() {
                             ? item.nameInSinhala
                             : `${item.firstName} ${item.lastName}`}
                         </td>
+
+
+                        {/* <td className="px-3 py-2">
+                          {item.memberType || "N/A"}
+                        </td> */}
+
                         <td className="px-3 py-2">
-                          {getRoleLabel(item.memberRole)}
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                              item.memberType
+                            )}`}
+                          >
+                            {item.memberType || "N/A"}
+                          </span>
                         </td>
+
                         <td className="px-3 py-2 break-words">
                           {Array.isArray(item.address)
                             ? item.address.filter(Boolean).join(", ")
@@ -271,9 +298,19 @@ export default function MembersPage() {
                           : `${item.firstName} ${item.lastName}`}
                       </p>
 
+                      {/* <p className="text-sm text-gray-600">
+                        {item.memberType || "N/A"}
+                      </p> */}
+
                       <p className="text-sm text-gray-600">
-                        {getRoleLabel(item.memberRole)}
-                      </p>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                            item.memberType
+                          )}`}
+                        >
+                          {item.memberType || "N/A"}
+                        </span>
+                      </p>                      
 
                       <p className="text-sm text-gray-600">
                         {item.memberId} {item.mobile}
@@ -348,6 +385,7 @@ export default function MembersPage() {
             <table className="w-full text-sm">
               <tbody>
                 {[
+                  ["Member Type", activeRecord.memberType],
                   ["Member ID", activeRecord.memberId],
                   [
                     "Name",
