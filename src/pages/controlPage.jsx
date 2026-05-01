@@ -31,6 +31,7 @@ import MemberReceiptPage from "./control/memberReceiptPage";
 
 import MushroomProcessMenu from "./control/mushroomProcessMenu";
 import MakeSubstrateBagPage from "./control/makeSubstrateBagPage";
+import MakeSterilizedBagPage from "./control/makeSterilizedBagPage";
 import BatchListPage from "./control/batchListPage";
 import ViewBatchPage from "./control/viewBatchPage";
 
@@ -131,6 +132,7 @@ export default function ControlPage() {
 
         <Route path="mushroom-process" element={<MushroomProcessMenu />} />
         <Route path="make-substrate-bag" element={<MakeSubstrateBagPage />} />
+        <Route path="make-sterilized-bag" element={<MakeSterilizedBagPage />} />
         <Route path="batch-list" element={<BatchListPage />} />
         <Route path="view-batch/:batchNo" element={<ViewBatchPage />} />
 

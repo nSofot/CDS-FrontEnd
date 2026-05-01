@@ -132,7 +132,7 @@ export default function PurchaseEntryPage() {
         stockTrxPayload
       );
 
-      const savedTrxId = res.data.data.trxId || res.data.trxId;
+      const savedTrxId = res.data.data.issuedTrxId || res.data.issuedTrxId;
 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
