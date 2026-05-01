@@ -19,7 +19,7 @@ export default function MushroomProcessMenu() {
     {
       title: "Inoculated Substrate Bag",
       desc: "After adding mushroom spawn",
-      path: "/inoculated-substrate-bag",
+      path: "/make-inoculating-bag",
       color: "bg-orange-500",
     },
     {

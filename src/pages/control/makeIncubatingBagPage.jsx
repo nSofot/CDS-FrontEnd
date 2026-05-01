@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-export default function MakeSterilizedBagPage() {
+export default function MakeIncubatingBagPage() {
    
     const navigate = useNavigate();
 
@@ -63,7 +63,7 @@ export default function MakeSterilizedBagPage() {
         const allStocks = stockRes.data?.data || stockRes.data || [];
 
         const filteredSmStocks = allStocks
-          .filter((item) => item.stockCategory === "sterilizing material")
+          .filter((item) => item.stockCategory === "incubating material")
           .sort((a, b) => a.stockName.localeCompare(b.stockName));
 
         setSterilizingMmaterial(filteredSmStocks);
@@ -72,7 +72,7 @@ export default function MakeSterilizedBagPage() {
         const allBatches = batchRes.data?.data || batchRes.data || [];
 
         const filteredBatches = allBatches.filter(
-          (item) => item.status === "Substrate"
+          (item) => item.status === "Inoculated"
         );
 
         setBatchDetails(filteredBatches);
@@ -90,12 +90,12 @@ export default function MakeSterilizedBagPage() {
     }, []);
 
     const [otherExpenses, setOtherExpenses] = useState({
-      "9010": { expenseId: "9010", name: "Water for Sterilization", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9011": { expenseId: "9011", name: "Electricity for Sterilization", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9012": { expenseId: "9012", name: "Machine Depreciation for Sterilization", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9013": { expenseId: "9013", name: "Labor Cost for Sterilization", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9014": { expenseId: "9014", name: "Transport for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9015": { expenseId: "9015", name: "Other for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9030": { expenseId: "9030", name: "Water for Incubation", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9031": { expenseId: "9031", name: "Electricity for Incubation", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9032": { expenseId: "9032", name: "Machine Depreciation for Incubation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9033": { expenseId: "9033", name: "Labor Cost for Incubation", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9034": { expenseId: "9034", name: "Transport for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9035": { expenseId: "9035", name: "Other for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
 
 
@@ -344,19 +344,19 @@ export default function MakeSterilizedBagPage() {
       const selectedOther = Object.values(otherExpenses).filter((item) => item.isSelected);
       const materials = [...selectedSubstrate];
 
-      if (materials.length === 0) {
-        toast.error("No materials found");
-        setIsSubmitting(false);
-        return;
-      }
+    //   if (materials.length === 0) {
+    //     toast.error("No materials found");
+    //     setIsSubmitting(false);
+    //     return;
+    //   }
 
       try {  
           // 1. Create batch            
           const batchPayload = {
             batches: selectedBatch.map((item) => ({
               batchNo: item.batchNo,
-              status: "Sterilized",
-              sterilizationDate: trxDate,
+              status: "Incubating",
+              inoculationDate: trxDate,
               totalCostValue: totalCostValue,
               totalJobValue: totalJobValue,
               materials: materials,
@@ -376,42 +376,45 @@ export default function MakeSterilizedBagPage() {
 
 
           // 2. Update stock quantities
-          await axios.post(
-              `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
-              {
-                  items: materials.map((item) => ({
-                  stockId: item.stockId,
-                  quantity: Number(item.totalQty || 0),
-                  })),
-              },
-              {
-                  headers: getAuthHeaders(),
-              }
-          );
+          if (materials.length > 0) {
+
+            await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
+                {
+                    items: materials.map((item) => ({
+                    stockId: item.stockId,
+                    quantity: Number(item.totalQty || 0),
+                    })),
+                },
+                {
+                    headers: getAuthHeaders(),
+                }
+            );
 
 
-          // 3. Write stock movement logs - Issued
-          const stockTrxPayload = {       
-            referenceId: newBatchId,
-            trxDate: trxDate,
-            trxType: "GoodIssue",
-            description: "Sterilization Substrate Bag",
-            isAdded: false,
-            clientId: "",
-            items: materials.map((item) => ({
-              stockId: item.stockId,
-              stockName: item.stockName,
-              quantity: Number(item.totalQty || 0),
-              quantityBalance: Number(0),
-              stockUOM: item.stockUOM,
-              stockCost: Number(item.stockCost || 0),
-              stockPrice: Number(item.stockPrice || 0),
-            })),
-          };               
-          const issuedTrxResponse = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
-            stockTrxPayload
-          );
+            // 3. Write stock movement logs - Issued
+            const stockTrxPayload = {       
+                referenceId: newBatchId,
+                trxDate: trxDate,
+                trxType: "GoodIssue",
+                description: "Incubating Substrate Bag",
+                isAdded: false,
+                clientId: "",
+                items: materials.map((item) => ({
+                stockId: item.stockId,
+                stockName: item.stockName,
+                quantity: Number(item.totalQty || 0),
+                quantityBalance: Number(0),
+                stockUOM: item.stockUOM,
+                stockCost: Number(item.stockCost || 0),
+                stockPrice: Number(item.stockPrice || 0),
+                })),
+            };               
+            const issuedTrxResponse = await axios.post(
+                `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
+                stockTrxPayload
+            );
+          }
 
 
           // 4. Update Add Sterilized Bag stock
@@ -420,7 +423,7 @@ export default function MakeSterilizedBagPage() {
             {
               items: [
                 {
-                  stockId: "5001",
+                  stockId: "5003",
                   quantity: Number(numberOfBags || 0),
                 },
               ],
@@ -436,14 +439,14 @@ export default function MakeSterilizedBagPage() {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
             trxDate: new Date(trxDate),
-            trxType: "Sterilized",
-            description: "Sterilization Substrate Bag",
+            trxType: "Incubating",
+            description: "Incubating Substrate Bag",
             isAdded: true,
             clientId: "",
             items: [
               {
-                stockId: "5001",
-                stockName: "Sterilized Substrate Bag",
+                stockId: "5003",
+                stockName: "Inoculated Substrate Bag",
                 quantity: Number(numberOfBags || 0),
                 quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
@@ -469,7 +472,7 @@ export default function MakeSterilizedBagPage() {
             {
               items: [
                 {
-                  stockId: "5000",
+                  stockId: "5002",
                   quantity: Number(numberOfBags || 0),
                 },
               ],
@@ -485,14 +488,14 @@ export default function MakeSterilizedBagPage() {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
             trxDate: new Date(trxDate),
-            trxType: "Sterilized",
-            description: "Sterilization Substrate Bag",
+            trxType: "Incubating",
+            description: "Incubating Substrate Bag",
             isAdded: false,
             clientId: "",
             items: [
               {
-                stockId: "5000",
-                stockName: "Substrate Bag",
+                stockId: "5002",
+                stockName: "Inoculated Substrate Bag",
                 quantity: Number(numberOfBags || 0),
                 quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
@@ -512,6 +515,8 @@ export default function MakeSterilizedBagPage() {
           );
 
 
+        if (materials.length > 0) {
+            
           // 8. Update stock quantity balance in GRN
           const payload = {
             items: materials,
@@ -546,6 +551,7 @@ export default function MakeSterilizedBagPage() {
               },
             }
           );
+        };
 
 
         setIsSubmitted(true);
@@ -564,11 +570,11 @@ export default function MakeSterilizedBagPage() {
                 <div className="flex justify-between gap-3 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
-                          Substrate Bag Sterilization Process
+                          Incubation of Substrate Bags
                         </h1>
 
                         <p className="text-sm text-gray-500">
-                            Monitoring sterilization status and progress of substrate bags                        </p>
+                            Monitoring and managing substrate bag incubation process                     </p>
                     </div>
                     <button
                       onClick={() => navigate("/mushroom-process")}

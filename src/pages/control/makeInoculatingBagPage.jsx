@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-export default function MakeSterilizedBagPage() {
+export default function MakeInoculatingBagPage() {
    
     const navigate = useNavigate();
 
@@ -63,7 +63,7 @@ export default function MakeSterilizedBagPage() {
         const allStocks = stockRes.data?.data || stockRes.data || [];
 
         const filteredSmStocks = allStocks
-          .filter((item) => item.stockCategory === "sterilizing material")
+          .filter((item) => item.stockCategory === "inoculating material")
           .sort((a, b) => a.stockName.localeCompare(b.stockName));
 
         setSterilizingMmaterial(filteredSmStocks);
@@ -72,7 +72,7 @@ export default function MakeSterilizedBagPage() {
         const allBatches = batchRes.data?.data || batchRes.data || [];
 
         const filteredBatches = allBatches.filter(
-          (item) => item.status === "Substrate"
+          (item) => item.status === "Sterilized"
         );
 
         setBatchDetails(filteredBatches);
@@ -90,12 +90,12 @@ export default function MakeSterilizedBagPage() {
     }, []);
 
     const [otherExpenses, setOtherExpenses] = useState({
-      "9010": { expenseId: "9010", name: "Water for Sterilization", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9011": { expenseId: "9011", name: "Electricity for Sterilization", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9012": { expenseId: "9012", name: "Machine Depreciation for Sterilization", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9013": { expenseId: "9013", name: "Labor Cost for Sterilization", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9014": { expenseId: "9014", name: "Transport for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9015": { expenseId: "9015", name: "Other for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9020": { expenseId: "9020", name: "Water for Inoculation", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9021": { expenseId: "9021", name: "Electricity for Inoculation", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9022": { expenseId: "9022", name: "Machine Depreciation for Inoculation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9023": { expenseId: "9023", name: "Labor Cost for Inoculation", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9024": { expenseId: "9024", name: "Transport for Inoculation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+      "9025": { expenseId: "9025", name: "Other for Inoculation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
 
 
@@ -355,8 +355,8 @@ export default function MakeSterilizedBagPage() {
           const batchPayload = {
             batches: selectedBatch.map((item) => ({
               batchNo: item.batchNo,
-              status: "Sterilized",
-              sterilizationDate: trxDate,
+              status: "Inoculated",
+              inoculationDate: trxDate,
               totalCostValue: totalCostValue,
               totalJobValue: totalJobValue,
               materials: materials,
@@ -395,7 +395,7 @@ export default function MakeSterilizedBagPage() {
             referenceId: newBatchId,
             trxDate: trxDate,
             trxType: "GoodIssue",
-            description: "Sterilization Substrate Bag",
+            description: "Inoculating Substrate Bag",
             isAdded: false,
             clientId: "",
             items: materials.map((item) => ({
@@ -420,7 +420,7 @@ export default function MakeSterilizedBagPage() {
             {
               items: [
                 {
-                  stockId: "5001",
+                  stockId: "5002",
                   quantity: Number(numberOfBags || 0),
                 },
               ],
@@ -436,14 +436,14 @@ export default function MakeSterilizedBagPage() {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
             trxDate: new Date(trxDate),
-            trxType: "Sterilized",
-            description: "Sterilization Substrate Bag",
+            trxType: "Inoculated",
+            description: "Inoculating Substrate Bag",
             isAdded: true,
             clientId: "",
             items: [
               {
-                stockId: "5001",
-                stockName: "Sterilized Substrate Bag",
+                stockId: "5002",
+                stockName: "Inoculated Substrate Bag",
                 quantity: Number(numberOfBags || 0),
                 quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
@@ -469,7 +469,7 @@ export default function MakeSterilizedBagPage() {
             {
               items: [
                 {
-                  stockId: "5000",
+                  stockId: "5001",
                   quantity: Number(numberOfBags || 0),
                 },
               ],
@@ -485,14 +485,14 @@ export default function MakeSterilizedBagPage() {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
             trxDate: new Date(trxDate),
-            trxType: "Sterilized",
-            description: "Sterilization Substrate Bag",
+            trxType: "Inoculated",
+            description: "Inoculating Substrate Bag",
             isAdded: false,
             clientId: "",
             items: [
               {
-                stockId: "5000",
-                stockName: "Substrate Bag",
+                stockId: "5001",
+                stockName: "Sterilized Substrate Bag",
                 quantity: Number(numberOfBags || 0),
                 quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
@@ -564,11 +564,11 @@ export default function MakeSterilizedBagPage() {
                 <div className="flex justify-between gap-3 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
-                          Substrate Bag Sterilization Process
+                          Inoculation of Substrate Bags
                         </h1>
 
                         <p className="text-sm text-gray-500">
-                            Monitoring sterilization status and progress of substrate bags                        </p>
+                            Managing and tracking substrate bag inoculation activities                       </p>
                     </div>
                     <button
                       onClick={() => navigate("/mushroom-process")}
