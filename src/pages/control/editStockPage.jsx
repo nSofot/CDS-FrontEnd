@@ -211,6 +211,7 @@ export default function EditStockPage() {
           <div>
             <label className="text-sm font-medium">Quantity</label>
             <input
+              disabled
               type="number"
               value={stockQuantity}
               onChange={(e) => setStockQuantity(e.target.value)}
@@ -250,6 +251,7 @@ export default function EditStockPage() {
           <div>
             <label className="text-sm font-medium">Cost Price</label>
             <input
+              disabled
               type="number"
               value={stockCost}
               onChange={(e) => setStockCost(e.target.value)}
