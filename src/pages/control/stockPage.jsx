@@ -49,6 +49,25 @@ export default function StockPage() {
     "pcs": "Piece",
   };
 
+  const getTypeStyle = (category) => {
+    switch (category) {
+      case "Packing Material":
+        return "bg-blue-100 text-blue-700";
+      case "Substrate Material":
+        return "bg-yellow-100 text-yellow-700";
+      case "Sterilizing Material":
+        return "bg-purple-100 text-purple-700";
+      case "Inoculating Material":
+        return "bg-indigo-100 text-indigo-700";
+      case "Incubating Material":
+        return "bg-pink-100 text-pink-700";
+      case "Finished Products":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   // 🔄 FETCH STOCKS
   const fetchStocks = async () => {
     try {
@@ -164,8 +183,14 @@ export default function StockPage() {
                   {item.stockName}
                 </div>
 
-                <div className="text-sm text-gray-600">
-                  {categoryMap[item.stockCategory]}
+                <div className="py-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                      categoryMap[item.stockCategory]
+                    )}`}
+                  >
+                    {categoryMap[item.stockCategory] || "N/A"}
+                  </span>
                 </div>
 
                 <div className="text-sm">
@@ -235,7 +260,17 @@ export default function StockPage() {
                       <td className="px-3 py-2 text-center">{index + 1}</td>
                       <td className="px-3 py-2 text-left">{item.stockId}</td>
                       <td className="px-3 py-2 text-left">{item.stockName}</td>
-                      <td className="px-3 py-2 text-left">{categoryMap[item.stockCategory] || "—"}</td>
+
+                      <td className="px-3 py-2 text-left">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                            categoryMap[item.stockCategory]
+                          )}`}
+                        >
+                          {categoryMap[item.stockCategory] || "N/A"}
+                        </span>
+                      </td>
+
                       <td className="px-3 py-2 text-right">{item.stockQuantity?.toFixed(3) || "—"}</td>
                       <td className="px-3 py-2 text-left">{uomMap[item.stockUOM] || item.stockUOM}</td>
                       <td className="px-3 py-2 text-right">

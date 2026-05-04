@@ -10,7 +10,7 @@ export default function VendorPaymentPage() {
   const [form, setForm] = useState({
     referenceId: "",
     trxType: "Payment",
-    trxDate: "",
+    trxDate: new Date().toISOString().split("T")[0],
     vendorId: "",
     vendorName: "",
     accountId: "",
