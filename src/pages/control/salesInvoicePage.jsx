@@ -83,13 +83,18 @@ const uomMap = {
 
   const updateItem = (index, field, value) => {
     const updated = [...items];
+
+    if (field === "qty") {
+      const max = Number(updated[index].inStock || 0);
+      value = Math.min(Math.max(Number(value || 0), 0), max);
+    }
+
     updated[index][field] = value;
 
     const qty = Number(updated[index].qty || 0);
     const rate = Number(updated[index].rate || 0);
-    const cost = Number(updated[index].cost || 0);
+
     updated[index].amount = qty * rate;
-    updated[index].rowCost = qty * cost;
 
     setItems(updated);
   };
@@ -144,14 +149,13 @@ const uomMap = {
   )
 
   const pdfPage = {
-    width: "760px",        // slightly reduced from 794px
-    minHeight: "1123px",
-    padding: "30px 40px",  // 👈 more RIGHT padding
+    width: "760px",
+    padding: "30px 40px",
     fontFamily: "Arial",
     fontSize: "12px",
     color: "#000",
     background: "#fff",
-    boxSizing: "border-box", // 👈 IMPORTANT FIX
+    boxSizing: "border-box",
   };
 
   const center = {
@@ -186,6 +190,7 @@ const uomMap = {
     width: "100%",
     borderCollapse: "collapse",
     marginTop: "10px",
+    pageBreakInside: "auto",
   };
 
   const th = {
@@ -205,26 +210,31 @@ const uomMap = {
     try {
       const element = reportRef.current;
 
-      await html2pdf().set({
-        margin: 0.3,
-        filename: `Invoice_${invoiceNumber}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          backgroundColor: "#ffffff",
-        },
-        jsPDF: {
-          unit: "in",
-          format: "a4",
-          orientation: "portrait",
-        },
-      }).from(element).save();
-
+      await html2pdf()
+        .set({
+          margin: 0.3,
+          filename: `Invoice_${invoiceNumber}.pdf`,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            backgroundColor: "#ffffff",
+          },
+          jsPDF: {
+            unit: "in",
+            format: "a4",
+            orientation: "portrait",
+          },
+          pagebreak: {
+            mode: ["avoid-all", "css", "legacy"],
+          },
+        })
+        .from(element)
+        .save();
     } catch (err) {
       console.error("PDF ERROR:", err);
       toast.error("PDF failed");
     }
-  };  
+  };
 
   // ---------------- SUBMIT ----------------
   const handleSubmit = async () => {
@@ -474,12 +484,29 @@ const uomMap = {
 
                     {/* QTY */}
                     <td className="p-2 text-right">
-                    <input
+                      <input
                         type="number"
+                        max={item.inStock}
+                        min={0}                      
                         value={item.qty}
-                        onChange={(e) => updateItem(i, "qty", e.target.value)}
+                        onChange={(e) => {
+                          let value = Number(e.target.value);
+
+                          const max = Number(item.inStock || 0);
+
+                          // prevent negative
+                          if (value < 0) value = 0;
+
+                          // prevent exceeding stock
+                          if (value > max) {
+                            toast.error(`Max available stock is ${max}`);
+                            value = max;
+                          }
+
+                          updateItem(i, "qty", value);
+                        }}
                         className="w-20 text-right border rounded px-2 py-1"
-                    />
+                      />
                     </td>
 
                     {/* AVAILABLE */}
@@ -558,9 +585,28 @@ const uomMap = {
       {/* ================= PDF LAYOUT ================= */}
       {/* ⚠️ NO TAILWIND HERE */}
       <div style={{ display: "none" }}>
-        <div ref={reportRef}>
+        <div ref={reportRef} style={{ pageBreakInside: "avoid" }}>
           <div style={pdfPage}>
 
+            <h2
+              style={{
+                ...center,
+                fontWeight: "bold",
+                fontSize: "14px",
+              }}
+            >
+              Collective Development Society
+            </h2>
+            <h2
+              style={{
+                ...center,
+                fontWeight: "normal",
+                fontSize: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              Malmaduwa, Kotiyakumbura. Tel: 022-2222222
+            </h2>
             <h2
               style={{
                 ...center,
@@ -583,7 +629,13 @@ const uomMap = {
                       `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
                     : "N/A"}
                 </p>
-                <p>{selectedCustomer?.address || "N/A"}</p>
+                <p>
+                  {selectedCustomer?.address
+                    ? Object.values(selectedCustomer.address)
+                        .filter(Boolean)
+                        .join(", ")
+                    : "N/A"}
+                </p>
               </div>
 
               {/* COLUMN 2 */}
@@ -601,28 +653,40 @@ const uomMap = {
                   <th style={th}>Item DEscription</th>
                   <th style={th}>Qty</th>
                   <th style={th}>UOM</th>
-                  <th style={th}>Rate</th>
-                  <th style={th}>Amount</th>
+                  <th style={{ ...th, textAlign: "right" }}>Rate</th>
+                  <th style={{ ...th, textAlign: "right" }}>Amount</th>
                 </tr>
               </thead>
 
               <tbody>
-                {items?.map((m, i) => {
-                  return (
-                    <Fragment key={i}>
-                      <tr>
-                        <td style={td}>{m.productName}</td>
-                        <td style={td}>{m.qty}</td>
-                        <td style={td}>{m.unit}</td>
-                        <td style={td}>{formatCurrency(m.rate)}</td>
-                        <td style={td}>{formatCurrency(m.amount)}</td>
-                      </tr>
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                {items?.map((m, i) => (
+                  <Fragment key={i}>
+                    <tr style={{ pageBreakInside: "avoid" }}>
+                      <td style={td}>{m.productName}</td>
+                      <td style={td}>{m.qty}</td>
+                      <td style={td}>{m.unit}</td>
+                      <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.rate)}</td>
+                      <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.amount)}</td>
+                    </tr>
+                  </Fragment>
+                ))}
 
+                {/* 🔽 TOTAL ROW */}
+                <tr>
+                  <td style={{ ...td, fontWeight: "bold" }} colSpan="4">
+                    Total
+                  </td>
+                  <td style={{ ...td, fontWeight: "bold", textAlign: "right" }}>
+                    {formatCurrency(totalAmount)}
+                  </td>
+                </tr>
+              </tbody>
+
+            </table>
+            {/* <hr style={{ marginTop: "30px", marginBottom: "10px", borderColor: "#ddd" }} /> */}
+            <div style={{ marginTop: "5px", textAlign: "center", fontSize: "11px", color: "#555" }}>
+              This is a system generated invoice. No signature is required.
+            </div>
           </div>
         </div>
       </div>
