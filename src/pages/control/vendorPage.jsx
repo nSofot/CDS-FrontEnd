@@ -18,6 +18,22 @@ export default function VendorListPage() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  const getAuthHeaders = () => {
+    if (!token) return null;
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  const handleAuthError = (err) => {
+    if (err.response?.status === 403) {
+      toast.error("Session expired. Please login again.");
+      localStorage.removeItem("token");
+      navigate("/login");
+    } else {
+      toast.error("Something went wrong");
+    }
+  };
+  
+  
   // 🔄 Fetch vendors
   const fetchVendors = async () => {
     try {
