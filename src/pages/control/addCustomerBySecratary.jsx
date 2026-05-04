@@ -45,19 +45,22 @@ export default function AddCustomerBySecratary() {
 			const finalImages = uploadedImages.length > 0 ? uploadedImages : [];
 
 			const newMember = {
-				memberId: memberId || undefined, // let backend assign if empty
+				memberId: memberId || undefined,			
+				memberType,
 				title,
 				firstName,
 				lastName,
-				nameInSinhala,
-				memberRole,
-				memberType,
+				nameInSinhala: nameInSinhala || null,
 				address: address ? address.split(",").map(n => n.trim()).filter(Boolean) : [], 
-				notes: notes || "",
-				image: image.length > 0 ? await Promise.all(image.map(img => mediaUpload(img))) : [],
 				mobile,
 				phone: phone || null,
+				email: email?.trim() || null,
+				image: image.length > 0 ? await Promise.all(image.map(img => mediaUpload(img))) : [],
+				joinDate: new Date(),
+				notes: notes || "",
+				memberRole,
 				dueAmount: dueAmount || 0,
+				password: "password",
 			};
 			if (email) newMember.email = email.trim();  // only include if non-empty
 

@@ -542,6 +542,25 @@ export default function ViewBatchPage() {
               style={{
                 ...center,
                 fontWeight: "bold",
+                fontSize: "14px",
+              }}
+            >
+              Collective Development Society
+            </h2>
+            <h2
+              style={{
+                ...center,
+                fontWeight: "normal",
+                fontSize: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              Malmaduwa, Kotiyakumbura. Tel: 022-2222222
+            </h2>
+            <h2
+              style={{
+                ...center,
+                fontWeight: "bold",
                 fontSize: "18px",
                 marginBottom: "20px",
               }}
