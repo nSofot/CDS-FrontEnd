@@ -364,7 +364,7 @@ export default function MakeInoculatingBagPage() {
             })),
             materials: selectedSubstrate,
             otherExpenses: selectedOther,
-          };
+          };         
           const response = await axios.put(
             `${import.meta.env.VITE_BACKEND_URL}/api/batch/bulk-update`,
             batchPayload
