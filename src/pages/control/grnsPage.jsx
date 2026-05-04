@@ -34,7 +34,8 @@ export default function PurchaseEntryPage() {
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`
       );
-      setProducts(res.data.data || res.data);
+      const filteredProducts = res.data.filter((p) => p.stockCategory !== "finished products");    
+      setProducts(filteredProducts);
     } catch {
       toast.error("Failed to load products");
     }

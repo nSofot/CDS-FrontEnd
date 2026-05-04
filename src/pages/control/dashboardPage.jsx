@@ -52,6 +52,7 @@ export default function DashboardPage() {
         // setActiveMembers(list.filter((m) => m.status === "active"));
         setActiveMembers(membersRes.data.length);
 
+
         const financeRes = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
         );
@@ -67,35 +68,31 @@ export default function DashboardPage() {
           accounts.find((a) => a.accountId === "115-0002")?.accountBalance || 0
         );
 
+
         const batchRes = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/batch`
         );
         const batches = batchRes.data;
 
         setTodayProductionBags(
-          batches
-            .filter(
-              (b) =>
-                b.status === "Substrate" &&
-                new Date(b.batchDate).toDateString() === new Date().toDateString()
-            )
-            .reduce(
-              (sum, b) => sum + Number(b.numberOfBags || 0),
-              0
-            )
+          batches.filter((b) =>b.status === "Substrate" && new Date(b.batchDate).toDateString() === new Date().toDateString()).
+          reduce((sum, b) => sum + Number(b.numberOfBags || 0),0)
         );
-
         setTodaySterilizedBags(
-          batches.filter((b) => b.status === "Sterilized" && b.sterilizationDate === new Date().toDateString())
+          batches.filter((b) => b.status === "Sterilized" && new Date(b.sterilizationDate).toDateString() === new Date().toDateString()).
+          reduce((sum, b) => sum + Number(b.numberOfBags || 0), 0)
         );
         setTodayInoculatedBags(
-          batches.filter((b) => b.status === "Inoculated" && b.inoculationDate === new Date().toDateString())
+          batches.filter((b) => b.status === "Inoculated" && new Date(b.inoculationDate).toDateString() === new Date().toDateString()).
+          reduce((sum, b) => sum + Number(b.numberOfBags || 0), 0)
         );
         setCurrentIcubatingBags(
-          batches.filter((b) => b.status === "Incubating")
+          batches.filter((b) => b.status === "Incubating").
+          reduce((sum, b) => sum + Number(b.numberOfBags || 0), 0)
         );
         setTodaySoldBags(
-          batches.filter((b) => b.status === "Sold" && b.soldDate === new Date().toDateString())
+          batches.filter((b) => b.status === "Sold" && new Date(b.soldDate).toDateString() === new Date().toDateString()).
+          reduce((sum, b) => sum + Number(b.numberOfBags || 0), 0)
         );
 
       } catch (err) {
@@ -126,15 +123,11 @@ export default function DashboardPage() {
         >
           <div className="grid grid-cols-2 gap-4">
             <Stat label="Active Members" value={activeMembers} color="text-blue-600" />
-<Stat
-  label="Today Produced Bags"
-  value={todayProductionBags}
-  color="text-blue-600"
-/>
-            <Stat label="Today Sterilized Bags" value={todaySterilizedBags.length} color="text-green-600" />
-            <Stat label="Today Inoculated Bags" value={todayInoculatedBags.length} color="text-purple-600" />
-            <Stat label="Current Incubating Bags" value={currentIcubatingBags.length} color="text-orange-600" />
-            <Stat label="Today Sold Bags" value={todaySoldBags.length} color="text-red-600" />
+            <Stat label="Today Produced Bags" value={todayProductionBags} color="text-blue-600"/>
+            <Stat label="Today Sterilized Bags" value={todaySterilizedBags} color="text-green-600" />
+            <Stat label="Today Inoculated Bags" value={todayInoculatedBags} color="text-purple-600" />
+            <Stat label="Current Incubating Bags" value={currentIcubatingBags} color="text-orange-600" />
+            <Stat label="Today Sold Bags" value={todaySoldBags} color="text-red-600" />
           </div>
         </DashboardCard>
 

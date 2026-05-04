@@ -67,78 +67,95 @@ export default function StockBinCardPage() {
 
   // ---------------- GENERATE BIN CARD ----------------
   const generateBinCard = (stock) => {
-    // ✅ IMPORTANT FIX: remove focus BEFORE opening modal
+    // Remove focus before opening modal (accessibility fix)
     document.activeElement?.blur();
 
     setSelectedStock(stock);
     setLoading(true);
 
-    const flat = [];
+    try {
+      // ---------------- FLATTEN TRANSACTIONS ----------------
+      const flat = [];
 
-    transactions.forEach((trx) => {
-      trx.items.forEach((item) => {
-        if (item.stockId === stock.stockId) {
-          flat.push({
-            trxDate: trx.trxDate,
-            trxType: trx.trxType,
-            referenceId: trx.referenceId,
-            quantity: item.quantity,
-            isAdded: trx.isAdded,
-          });
-        }
+      transactions.forEach((trx) => {
+        if (!trx?.items) return;
+
+        trx.items.forEach((item) => {
+          if (item.stockId === stock.stockId) {
+            flat.push({
+              trxDate: new Date(trx.trxDate),
+              trxType: trx.trxType,
+              referenceId: trx.referenceId,
+              quantity: Number(item.quantity || 0),
+              isAdded: trx.isAdded,
+            });
+          }
+        });
       });
-    });
 
-    let filtered = [...flat];
+      // ---------------- SORT ALL TRANSACTIONS FIRST ----------------
+      flat.sort((a, b) => a.trxDate - b.trxDate);
 
-    if (fromDate) {
-      filtered = filtered.filter(
-        (t) => new Date(t.trxDate) >= new Date(fromDate)
-      );
-    }
+      // ---------------- FILTER BY DATE ----------------
+      const from = fromDate ? new Date(fromDate) : null;
+      const to = toDate ? new Date(toDate) : null;
 
-    if (toDate) {
-      filtered = filtered.filter(
-        (t) => new Date(t.trxDate) <= new Date(toDate)
-      );
-    }
+      const filtered = flat.filter((t) => {
+        if (from && t.trxDate < from) return false;
+        if (to && t.trxDate > to) return false;
+        return true;
+      });
 
-    filtered.sort((a, b) => new Date(a.trxDate) - new Date(b.trxDate));
+      // ---------------- OPENING BALANCE ----------------
+      let openingBalance = 0;
 
-    let openingBalance = 0;
-
-    flat.forEach((t) => {
-      if (!fromDate || new Date(t.trxDate) < new Date(fromDate)) {
-        openingBalance += t.isAdded ? t.quantity : -t.quantity;
-      }
-    });
-
-    let balance = openingBalance;
-    let totalIn = 0;
-    let totalOut = 0;
-
-    const computed = filtered.map((t) => {
-      let qtyIn = 0;
-      let qtyOut = 0;
-
-      if (t.isAdded) {
-        qtyIn = t.quantity;
-        balance += qtyIn;
-        totalIn += qtyIn;
-      } else {
-        qtyOut = t.quantity;
-        balance -= qtyOut;
-        totalOut += qtyOut;
+      if (from) {
+        flat.forEach((t) => {
+          if (t.trxDate < from) {
+            openingBalance += t.isAdded ? t.quantity : -t.quantity;
+          }
+        });
       }
 
-      return { ...t, qtyIn, qtyOut, balance };
-    });
+      // ---------------- RUNNING BALANCE ----------------
+      let balance = openingBalance;
+      let totalIn = 0;
+      let totalOut = 0;
 
-    setTotals({ inQty: totalIn, outQty: totalOut });
-    setBinCard(computed);
+      const computed = filtered.map((t) => {
+        let qtyIn = 0;
+        let qtyOut = 0;
 
-    setIsModalOpen(true);
-    setLoading(false);
+        if (t.isAdded) {
+          qtyIn = t.quantity;
+          balance += qtyIn;
+          totalIn += qtyIn;
+        } else {
+          qtyOut = t.quantity;
+          balance -= qtyOut;
+          totalOut += qtyOut;
+        }
+
+        return {
+          ...t,
+          trxDate: t.trxDate.toISOString(), // keep consistent for UI
+          qtyIn,
+          qtyOut,
+          balance,
+        };
+      });
+
+      // ---------------- SET STATE ----------------
+      setTotals({ inQty: totalIn, outQty: totalOut });
+      setBinCard(computed);
+      setIsModalOpen(true);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Error generating bin card");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ---------------- UI ----------------

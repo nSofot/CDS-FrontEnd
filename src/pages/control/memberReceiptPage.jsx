@@ -96,7 +96,7 @@ export default function MemberReceiptPage() {
         memberId: form.memberId,
         memberName: form.memberName,
         description: `${form.accountName} - ${form.description}`,
-        isCredit: false,
+        isCredit: true,
         amount: amount,
         dueAmount: 0,
       };
