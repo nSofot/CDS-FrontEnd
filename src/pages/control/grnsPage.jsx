@@ -11,7 +11,7 @@ export default function PurchaseEntryPage() {
     referenceId: "",
     trxType: "Purchase",
     isAdded: true,
-    trxDate: "",
+    trxDate: new Date().toISOString().split("T")[0],
     clientId: "",
     description: "",
     items: [],

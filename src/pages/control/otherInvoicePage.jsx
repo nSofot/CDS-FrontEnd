@@ -9,7 +9,7 @@ export default function OtherInvoicePage() {
   const [form, setForm] = useState({
     referenceId: "",
     trxType: "Invoice",
-    trxDate: "",
+    trxDate: new Date().toISOString().split("T")[0],
     vendorId: "",
     vendorName: "",
     description: "",
