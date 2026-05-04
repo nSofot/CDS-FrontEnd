@@ -114,6 +114,16 @@ export default function ControlHomePage() {
     },
 
     {
+      label: "Sales Invoices",
+      to: "/sales-invoice",
+      icon: <FaMoneyCheckAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
       label: "GRNs & Purchases",
       to: "/grns",
       icon: <FaReceipt />,

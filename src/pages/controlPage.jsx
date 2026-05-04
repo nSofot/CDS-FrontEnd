@@ -28,6 +28,7 @@ import GRNsPage from "./control/grnsPage";
 import OtherInvoicePage from "./control/otherInvoicePage";
 import VendorPaymentPage from "./control/vendorPayment";
 import MemberReceiptPage from "./control/memberReceiptPage";
+import SalesInvoicePage from "./control/salesInvoicePage";
 
 import MushroomProcessMenu from "./control/mushroomProcessMenu";
 import MakeSubstrateBagPage from "./control/makeSubstrateBagPage";
@@ -131,6 +132,7 @@ export default function ControlPage() {
         <Route path="other-invoice" element={<OtherInvoicePage />} />
         <Route path="vendor-payment" element={<VendorPaymentPage />} />
         <Route path="member-receipt" element={<MemberReceiptPage />} />
+        <Route path="sales-invoice" element={<SalesInvoicePage />} />
 
         <Route path="mushroom-process" element={<MushroomProcessMenu />} />
         <Route path="make-substrate-bag" element={<MakeSubstrateBagPage />} />
@@ -139,7 +141,6 @@ export default function ControlPage() {
         <Route path="incubated-substrate-bag" element={<MakeIncubatingBagPage />} />
         <Route path="batch-list" element={<BatchListPage />} />
         <Route path="view-batch/:batchNo" element={<ViewBatchPage />} />
-
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>
