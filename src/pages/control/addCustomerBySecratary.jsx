@@ -99,7 +99,7 @@ export default function AddCustomerBySecratary() {
 						{isAdding ? "Adding..." : "Add Member"}
 					</button>
 
-					<Link to="/members" className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-2 rounded-md text-sm font-medium shadow">
+					<Link to="/control/members" className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-2 rounded-md text-sm font-medium shadow">
 						Cancel
 					</Link>
 				</div>

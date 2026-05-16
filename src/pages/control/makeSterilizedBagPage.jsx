@@ -19,6 +19,8 @@ export default function MakeSterilizedBagPage() {
     const [batchDetails, setBatchDetails] = useState([]);
     const [sterilizingMmaterial, setSterilizingMmaterial] = useState([]);
     const [materials, setMaterials] = useState([]);
+    const [substrateStock, setSubstrateStock] = useState([]);
+    const [batchTrx, setBatchTrx] = useState([]);
    
     const [numberOfBags, setNumberOfBags] = useState("");
     const [batchNumber, setBatchNumber] = useState("");
@@ -49,12 +51,16 @@ export default function MakeSterilizedBagPage() {
       try {
         setLoading(true);
 
-        const [stockRes, batchRes] = await Promise.all([
+        const [stockRes, batchRes, batchTrxRes] = await Promise.all([
           axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/stock`, {
             headers: getAuthHeaders(),
           }),
 
           axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/batch`, {
+            headers: getAuthHeaders(),
+          }),
+
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/batch-transaction`, {
             headers: getAuthHeaders(),
           }),
         ]);
@@ -66,7 +72,13 @@ export default function MakeSterilizedBagPage() {
           .filter((item) => item.stockCategory === "sterilizing material")
           .sort((a, b) => a.stockName.localeCompare(b.stockName));
 
+        const filteredSubstrateStock = allStocks.filter(
+          (item) => item.stockId === "5001"
+        );
+
         setSterilizingMmaterial(filteredSmStocks);
+        setSubstrateStock(filteredSubstrateStock[0]);
+
 
         /* ---------------- BATCHES ---------------- */
         const allBatches = batchRes.data?.data || batchRes.data || [];
@@ -76,6 +88,16 @@ export default function MakeSterilizedBagPage() {
         );
 
         setBatchDetails(filteredBatches);
+
+        setBatchTrx(batchTrxRes.data || []);
+
+        /* ---------------- BATCH TRANSACTIONS ---------------- */
+        const allBatchTransactions =
+          batchTrxRes.data?.data || batchTrxRes.data || [];
+
+        const filteredBatchTrx = allBatchTransactions.filter(
+          (trx) => trx.bagStatus === "Substrate"
+        );
 
       } catch (error) {
         console.error(error);
@@ -98,6 +120,21 @@ export default function MakeSterilizedBagPage() {
       "9015": { expenseId: "9015", name: "Other for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
 
+    const uomMap = {
+      "kg": "Kg",
+      "g": "Gram",
+      "L": "Liter",
+      "ml": "Milliliter",
+      "m": "Meter",
+      "cm": "Centimeter",
+      "pcs": "Piece",
+      "pack": "Pack",
+      "pkt": "Packet",
+      "btl": "Bottle",
+      "box": "Box",
+      "set": "Set",
+      "bag": "Bag",
+    };    
 
     useEffect(() => {
       const bagCount = Number(numberOfBags || 0);
@@ -230,7 +267,7 @@ export default function MakeSterilizedBagPage() {
 
           const selected = updated.find((item) => item.isSelected);
 
-          setNumberOfBags(selected ? Number(selected.numberOfBags || 0) : 0);
+          setNumberOfBags(selected ? Number(selected.balanceBags || 0) : 0);
 
           return updated;
         });
@@ -364,7 +401,7 @@ export default function MakeSterilizedBagPage() {
             })),
             materials: selectedSubstrate,
             otherExpenses: selectedOther,
-          };
+          };        
           const response = await axios.put(
             `${import.meta.env.VITE_BACKEND_URL}/api/batch/bulk-update`,
             batchPayload
@@ -422,6 +459,10 @@ export default function MakeSterilizedBagPage() {
                 {
                   stockId: "5001",
                   quantity: Number(numberOfBags || 0),
+                  stockCost: Number(totalCostValue || 0) / Number(numberOfBags || 0),
+                  stockPrice: substrateStock?.stockPrice || 
+                              ((Number(totalJobValue || 0) / Number(numberOfBags || 0)) 
+                              || 0),                     
                 },
               ],
             },
@@ -571,7 +612,7 @@ export default function MakeSterilizedBagPage() {
                             Monitoring sterilization status and progress of substrate bags                        </p>
                     </div>
                     <button
-                      onClick={() => navigate("/mushroom-process")}
+                      onClick={() => navigate("/control/mushroom-process")}
                       className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
                     >
                       <ArrowLeft size={20} />
@@ -669,7 +710,8 @@ export default function MakeSterilizedBagPage() {
                             <th className="p-3 text-left">Use</th>
                             <th className="p-3 text-left">Batch Number</th>
                             <th className="p-3 text-left">Date</th>
-                            <th className="p-3 text-right">Bags</th>
+                            <th className="p-3 text-right">Total Bags</th>
+                            <th className="p-3 text-right">Remain Bags</th>
                             <th className="p-3 text-right">Total Cost</th>
                             <th className="p-3 text-right">Total Value</th>
                             <th>  </th>
@@ -702,6 +744,11 @@ export default function MakeSterilizedBagPage() {
                               {/* Bags */}
                               <td className="p-3 text-right">
                                 {Number(item.numberOfBags || 0)}
+                              </td>
+
+                              {/* BALNCE Bags */}
+                              <td className="p-3 text-right">
+                                {Number(item.balanceBags || 0)}
                               </td>
 
                               {/* Total Cost */}
@@ -768,7 +815,7 @@ export default function MakeSterilizedBagPage() {
 
                               <td className="p-3">{item.stockName}</td>
                               <td className="p-3 text-right">{item.baseQuantity}</td>
-                              <td className="p-3">{item.stockUOM}</td>
+                              <td className="p-3">{uomMap[item.stockUOM] || "N/A"}</td>
 
                               <td className="p-3">
                                 <input

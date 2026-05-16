@@ -7,25 +7,25 @@ export default function MushroomProcessMenu() {
     {
       title: "Substrate Bag Production",
       desc: "Filled with sawdust / straw / coco coir mix",
-      path: "/make-substrate-bag",
+      path: "/control/make-substrate-bag",
       color: "bg-green-500",
     },
     {
       title: "Sterilized Substrate Bag",
       desc: "After heat treatment in boiler / autoclave",
-      path: "/make-sterilized-bag",
+      path: "/control/make-sterilized-bag",
       color: "bg-blue-500",
     },
     {
       title: "Inoculated Substrate Bag",
       desc: "After adding mushroom spawn",
-      path: "/make-inoculating-bag",
+      path: "/control/make-inoculating-bag",
       color: "bg-orange-500",
     },
     {
       title: "Incubated Substrate Bag",
       desc: "After colonization (mycelium growth stage)",
-      path: "/incubated-substrate-bag",
+      path: "/control/incubated-substrate-bag",
       color: "bg-purple-500",
     },
   ];

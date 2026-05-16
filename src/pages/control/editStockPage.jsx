@@ -107,7 +107,7 @@ export default function EditStockPage() {
       );
 
       toast.success("Stock updated successfully!");
-      navigate("/stock");
+      navigate("/control/stock");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Update failed");
     } finally {
@@ -140,7 +140,7 @@ export default function EditStockPage() {
           </button>
 
           <Link
-            to="/stock"
+            to="/control/stock"
             className="px-5 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm md:text-base"
           >
             Cancel
@@ -180,6 +180,7 @@ export default function EditStockPage() {
               <option value="inoculating material">Inoculating Material</option>
               <option value="incubating material">Incubating Material</option>
               <option value="finished products">Finished Products</option>
+              <option value="harvested products">Harvested Products</option>
             </select>
           </div>
 
@@ -236,11 +237,19 @@ export default function EditStockPage() {
               onChange={(e) => setStockUOM(e.target.value)}
               className="w-full p-2 border rounded-lg"
             >
-              <option value="pcs">PCS</option>
-              <option value="kg">KG</option>
-              <option value="g">G</option>
-              <option value="L">L</option>
-              <option value="ml">ML</option>
+              <option value="">Select UOM</option>
+                <option value="kg">Kilogram</option>
+                <option value="g">Gram</option>
+                <option value="L">Liter</option>
+                <option value="ml">Milliliter</option>
+                <option value="m">Meter</option>
+                <option value="cm">Centimeter</option>
+                <option value="pack">Pack</option>
+                <option value="pkt">Packet</option>
+                <option value="btl">Bottle</option>
+                <option value="box">Box</option>
+                <option value="set">Set</option>
+                <option value="bag">Bag</option>
             </select>
           </div>
         </div>

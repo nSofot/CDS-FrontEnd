@@ -143,21 +143,21 @@ export default function MembersPage() {
 
           <div className="flex md:flex-row flex-col gap-4">
             <button
-              onClick={() => navigate("/add-member")}
+              onClick={() => navigate("/control/add-member")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               + Add Member
             </button>
 
             <button
-              onClick={() => navigate("/member-ledger")}
+              onClick={() => navigate("/control/member-ledger")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ⌕ Member Ledger
             </button>
 
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/control")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ← Go Back
@@ -249,7 +249,7 @@ export default function MembersPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate("/edit-member", { state: { member: item } });
+                              navigate("/control/edit-member", { state: { member: item } });
                             }}
                             className="text-lg text-blue-600 hover:text-blue-800"
                           >
@@ -326,7 +326,7 @@ export default function MembersPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation(); // prevent card click
-                              navigate("/edit-member", { state: { member: item } });
+                              navigate("/control/edit-member", { state: { member: item } });
                             }}
                             className="text-lg text-blue-600 hover:text-blue-800"
                           >

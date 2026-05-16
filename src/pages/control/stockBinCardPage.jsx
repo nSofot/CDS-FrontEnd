@@ -174,7 +174,7 @@ export default function StockBinCardPage() {
         </div>
 
         <button
-          onClick={() => navigate("/stock")}
+          onClick={() => navigate("/control/stock")}
           className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
         >
           ← Back

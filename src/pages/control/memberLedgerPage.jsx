@@ -112,7 +112,7 @@ export default function MemberLedgerPage() {
         </div>
 
         <button
-          onClick={() => navigate("/members")}
+          onClick={() => navigate("/control/members")}
           className="px-4 py-2 border border-orange-400 text-orange-500 rounded hover:bg-orange-400 hover:text-white"
         >
           ← Back

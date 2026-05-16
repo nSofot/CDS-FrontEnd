@@ -14,17 +14,18 @@ export default function ViewBatchPage() {
   const [batch, setBatch] = useState(null);
   const [issueInfo, setIssueInfo] = useState(null);
   const [vendors, setVendors] = useState([]);
+  const [batchTrx, setBatchTrx] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
-
+  
   /* ---------------- FETCH DATA ---------------- */
 
   const fetchBatch = async () => {
     try {
       setLoading(true);
 
-      const [batchRes, infoRes, vendorRes] = await Promise.all([
+      const [batchRes, infoRes, vendorRes, batchTrxRes] = await Promise.all([
         axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/batch/${batchNo}`
         ),
@@ -41,11 +42,15 @@ export default function ViewBatchPage() {
             },
           }
         ),
-      ]);
 
+        axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/batch-transaction/${batchNo}`
+        )
+      ]);
       setBatch(batchRes.data || null);
       setIssueInfo(infoRes.data || null);
       setVendors(vendorRes.data || []);
+      setBatchTrx(batchTrxRes.data || []);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load batch details");
@@ -202,7 +207,7 @@ export default function ViewBatchPage() {
             </button>
 
             <button
-              onClick={() => navigate("/batch-list")}
+              onClick={() => navigate("/control/batch-list")}
               className="flex items-center gap-2 px-5 py-3 rounded-xl text-white"
               style={{ backgroundColor: "#000000" }}
             >
@@ -231,13 +236,13 @@ export default function ViewBatchPage() {
             <div className="space-y-3 text-sm">
               <Row label="Batch No" value={batch.batchNo} />
               <Row
-                label="Batch Date"
-                value={formatDate(batch.batchDate)}
-              />
-              <Row
                 label="Number of Bags"
                 value={batch.numberOfBags}
-              />
+              />   
+              <Row
+                label="Available Bags"
+                value={batch.balanceBags}
+              />             
               <Row label="Status" value={batch.status} />
             </div>
           </div>
@@ -252,25 +257,25 @@ export default function ViewBatchPage() {
             }}
           >
             <h2 className="text-lg font-semibold mb-4">
-              Batch Lifecycle Dates
+              Bag Lifecycle Dates
             </h2>
 
             <div className="space-y-3 text-sm">
+              <Row
+                label="Substrate Date"
+                value={formatDate(batch.batchDate)}
+              />
               <Row
                 label="Sterilized Date"
                 value={formatDate(batch.sterilizationDate)}
               />
               <Row
-                label="Inoculation Date"
+                label="Inoculated Date"
                 value={formatDate(batch.inoculationDate)}
               />
               <Row
-                label="Incubation Date"
+                label="Incubating Date"
                 value={formatDate(batch.incubationDate)}
-              />
-              <Row
-                label="Sold Date"
-                value={formatDate(batch.soldDate)}
               />
             </div>
           </div>
@@ -530,6 +535,99 @@ export default function ViewBatchPage() {
             </div>
           )}
         </div>
+
+
+        {/* BAG SELLING DETAILS */}
+
+        <div
+          className="rounded-2xl shadow-sm p-6 mt-6"
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          <h2 className="text-lg font-semibold mb-4">
+            Bag Sales Details
+          </h2>
+
+          {!batchTrx?.length ? (
+            <p className="text-gray-500">
+              No Sales Details Found
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead
+                  style={{
+                    backgroundColor: "#f3f4f6",
+                  }}
+                >
+                  <tr>
+                    <th className="px-4 py-3 text-left">
+                      Reference Id
+                    </th>
+                    <th className="px-4 py-3 text-left">
+                      Date
+                    </th>
+                    <th className="px-4 py-3 text-left">
+                      Bag Status
+                    </th>
+                    <th className="px-4 py-3 text-left">
+                      Trx Type
+                    </th>    
+                    <th className="px-4 py-3 text-right">
+                      Quantity
+                    </th>    
+                    <th className="px-4 py-3 text-left">
+                      Description
+                    </th>                                                       
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {batchTrx.map(
+                    (item, index) => (
+                      <tr
+                        key={`batchTrx-${
+                          item.trxId || index
+                        }`}
+                        style={{
+                          borderTop:
+                            "1px solid #e5e7eb",
+                        }}
+                      >
+                        <td className="px-4 py-3">
+                          {item.trxId}
+                        </td>
+
+                        <td className="px-4 py-3 font-medium">
+                          {formatDate(item.trxDate)}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {item.bagStatus}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {item.trxType}
+                        </td>
+
+                        <td className="px-4 py-3 text-right">
+                          {item.bagQuantity}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {item.clientName}
+                        </td>                        
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* ================= PDF LAYOUT ================= */}

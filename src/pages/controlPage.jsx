@@ -28,6 +28,7 @@ import GRNsPage from "./control/grnsPage";
 import OtherInvoicePage from "./control/otherInvoicePage";
 import VendorPaymentPage from "./control/vendorPayment";
 import MemberReceiptPage from "./control/memberReceiptPage";
+import BagSaleInvoicePage from "./control/bagSaleInvoicePage"
 import SalesInvoicePage from "./control/salesInvoicePage";
 
 import MushroomProcessMenu from "./control/mushroomProcessMenu";
@@ -132,6 +133,7 @@ export default function ControlPage() {
         <Route path="other-invoice" element={<OtherInvoicePage />} />
         <Route path="vendor-payment" element={<VendorPaymentPage />} />
         <Route path="member-receipt" element={<MemberReceiptPage />} />
+        <Route path="bagSale-invoice" element={<BagSaleInvoicePage />} />
         <Route path="sales-invoice" element={<SalesInvoicePage />} />
 
         <Route path="mushroom-process" element={<MushroomProcessMenu />} />
