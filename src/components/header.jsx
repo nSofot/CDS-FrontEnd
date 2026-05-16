@@ -69,7 +69,7 @@ export default function Header() {
   // Base nav links
   const navLinks = [
     { to: "/", label: "Home", icon: FaHome },
-    { to: "/gallery", label: "Gallery", icon: FaImage },
+    { to: "/products", label: "Products", icon: FaImage },
     { to: "/about", label: "About Us", icon: FaInfoCircle },
     { to: "/contact", label: "Contact Us", icon: FaPhone },
   ];
@@ -87,26 +87,33 @@ export default function Header() {
 
 
   return (
-    <header className="w-full h-[64px] shadow-lg flex justify-end items-center px-4 bg-white z-50">
+    <header className="w-full h-[64px] shadow-lg flex justify-between items-center px-4 bg-white z-50">
       {/* Hamburger (Mobile) */}
       <GiHamburgerMenu
         className="text-3xl text-blue-600 md:hidden cursor-pointer"
         onClick={() => setSideDrawerOpened(true)}
       />
 
-      {/* <div className="md:hidden flex items-center">
-        <h1 className="text-1xl text-green-700 font-bold">
-          තෙවන ශක්ති සංවර්ධන පදනම
-        </h1>
-      </div> */}
+      <div className="flex items-center gap-2 sm:gap-6">
+        {/* Logo */}
+        <img
+          src="/CDSLogo.png"
+          alt="Logo"
+          className="md:flex w-[50px] h-[50px] object-cover cursor-pointer"
+          onClick={() => navigate("/")}
+        />      
 
-      {/* Logo */}
-      {/* <img
-        src="/NewLogoPng.png"
-        alt="Logo"
-        className="hidden md:flex w-[50px] h-[50px] object-cover cursor-pointer"
-        onClick={() => navigate("/")}
-      /> */}
+        <div className="flex flex-col items-center">
+          <h1 className="text-1xl text-green-700 font-bold">
+            Collective Development Society
+          </h1>
+          <h1 className="text-1xl text-green-700 font-bold">
+            සාමූහික සංවර්ධන සංගමය
+          </h1>        
+        </div>
+      </div>
+
+
 
       {/* Desktop Nav */}
       <div>
@@ -119,11 +126,11 @@ export default function Header() {
 
           {isLoggedIn ? (
             <>
-              {authLinks.map(({ to, label }) => (
+              {/* {authLinks.map(({ to, label }) => (
                 <Link key={to} to={to} className="hover:border-b-2 border-yellow-400 hover:text-yellow-600">
                   {label}
                 </Link>
-              ))}
+              ))} */}
               <button
                 onClick={handleLogout}
                 className="hover:border-b-2 border-red-400 hover:text-red-600 text-red-600 font-bold"
@@ -138,13 +145,13 @@ export default function Header() {
           )}
 
           {isCommittee && (
-            <Link to="/control" className="hover:border-b-2 border-orange-400 text-orange-400">
-              Control Panel
+            <Link to="/member" className="hover:border-b-2 border-orange-400 text-orange-400">
+              Member Portal
             </Link>
           )}
           {isAdmin && (
-            <Link to="/admin" className="hover:border-b-2 border-orange-400 text-orange-600">
-              Admin Panel
+            <Link to="/control" className="hover:border-b-2 border-orange-400 text-orange-600">
+              Admin Portal
             </Link>
           )}
         </nav>

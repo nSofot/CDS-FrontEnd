@@ -17,6 +17,23 @@ export default function PurchaseEntryPage() {
     items: [],
   });
 
+  const uomMap = {
+    "kg": "Kg",
+    "g": "Gram",
+    "L": "Liter",
+    "ml": "Milliliter",
+    "m": "Meter",
+    "cm": "Centimeter",
+    "pcs": "Piece",
+    "pack": "Pack",
+    "pkt": "Packet",
+    "btl": "Bottle",
+    "box": "Box",
+    "set": "Set",
+    "bag": "Bag",
+  };
+  
+  
   // ================= FETCH =================
   const fetchVendors = async () => {
     try {
@@ -304,7 +321,7 @@ export default function PurchaseEntryPage() {
                     />
                   </td>
 
-                  <td>{item.productUOM || "-"}</td>
+                  <td>{uomMap[item.productUOM] ||  "-"}</td>
 
                   <td>
                     <input

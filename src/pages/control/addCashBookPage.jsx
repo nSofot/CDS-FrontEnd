@@ -185,7 +185,7 @@ export default function AddCashBookPage() {
         <div className="flex justify-end gap-3">
           <button
             type="button"
-            onClick={() => navigate("/cash-book")}
+            onClick={() => navigate("/control/cash-book")}
             className="px-4 py-2 border rounded"
           >
             Cancel

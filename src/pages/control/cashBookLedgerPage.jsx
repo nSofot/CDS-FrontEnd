@@ -129,7 +129,7 @@ export default function CashBookLedgerPage() {
         </div>
 
         <button
-          onClick={() => navigate("/cash-book")}
+          onClick={() => navigate("/control/cash-book")}
           className="px-6 h-12 border border-orange-400 text-orange-400 rounded-lg hover:bg-orange-400 hover:text-white"
         >
           ← Back

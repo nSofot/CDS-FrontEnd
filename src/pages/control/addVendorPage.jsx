@@ -86,7 +86,7 @@ export default function AddVendorPage() {
           </button>
 
           <Link
-            to="/vendors"
+            to="/control/vendors"
             className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg"
           >
             Cancel

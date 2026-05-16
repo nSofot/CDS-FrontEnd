@@ -69,7 +69,7 @@ export default function BatchListPage() {
         return "bg-green-100 text-green-700";
       case "Rejected":
         return "bg-red-100 text-red-700";
-      case "Sold":
+      case "bagSold":
         return "bg-emerald-100 text-emerald-700";
       default:
         return "bg-gray-100 text-gray-700";
@@ -88,7 +88,7 @@ export default function BatchListPage() {
           </div>
 
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/control")}
             className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
           >
             <ArrowLeft size={20} />
@@ -125,7 +125,7 @@ export default function BatchListPage() {
               <option value="Fruiting">Fruiting</option>
               <option value="Completed">Completed</option>
               <option value="Rejected">Rejected</option>
-              <option value="Sold">Sold</option>
+              <option value="bagSold">Bag Sold</option>
             </select>
 
             <button
@@ -200,7 +200,7 @@ export default function BatchListPage() {
                         <div className="flex justify-center">
                           <button
                             onClick={() =>
-                              navigate(`/view-batch/${batch.batchNo}`)
+                              navigate(`/control/view-batch/${batch.batchNo}`)
                             }
                             className="flex items-center gap-2 px-4 py-2 rounded-lg border hover:bg-gray-100"
                           >

@@ -19,6 +19,7 @@ export default function MakeSubstrateBagPage() {
     const [substrateMaterials, setSubstrateMaterials] = useState([]);
     const [packingMaterials, setPackingMaterials] = useState([]);
     const [materials, setMaterials] = useState([]);
+    const [substrateStock, setSubstrateStock] = useState([]);
    
     const [numberOfBags, setNumberOfBags] = useState("");
     const [batchNumber, setBatchNumber] = useState("");
@@ -66,6 +67,10 @@ export default function MakeSubstrateBagPage() {
           (item) => item.stockCategory === "packing material"
         );
 
+        const filteredSubstrateStock = allStocks.filter(
+          (item) => item.stockId === "5000"
+        );
+
         filteredSmStocks.sort((a, b) =>
           a.stockName.localeCompare(b.stockName)
         );
@@ -76,6 +81,7 @@ export default function MakeSubstrateBagPage() {
         
         setSubstrateMaterials(filteredSmStocks);
         setPackingMaterials(filteredPmStocks);
+        setSubstrateStock(filteredSubstrateStock[0]);
 
       } catch (error) {
         console.error(error);
@@ -96,6 +102,22 @@ export default function MakeSubstrateBagPage() {
       "9004": { expenseId: "9004", name: "Transport", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
       "9005": { expenseId: "9005", name: "Other", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
+
+    const uomMap = {
+      "kg": "Kg",
+      "g": "Gram",
+      "L": "Liter",
+      "ml": "Milliliter",
+      "m": "Meter",
+      "cm": "Centimeter",
+      "pcs": "Piece",
+      "pack": "Pack",
+      "pkt": "Packet",
+      "btl": "Bottle",
+      "box": "Box",
+      "set": "Set",
+      "bag": "Bag",
+    };
 
 
     useEffect(() => {
@@ -372,11 +394,11 @@ export default function MakeSubstrateBagPage() {
           const batchPayload = {
             batchDate: trxDate,
             numberOfBags: Number(numberOfBags),
+            balanceBags: Number(numberOfBags),
             status: "Substrate",
             sterilizationDate: "",
             inoculationDate: "",
             incubationDate: "",
-            soldDate: "",
             materials: materials,
             otherExpenses: selectedOther,
             totalCostValue: totalCostValue,
@@ -432,6 +454,8 @@ export default function MakeSubstrateBagPage() {
 
 
           // 4. Update add Substrate Bag stock
+          const costPrice = Number(totalCostValue || 0) / Number(numberOfBags || 0);
+
           await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
             {
@@ -439,6 +463,10 @@ export default function MakeSubstrateBagPage() {
                 {
                   stockId: "5000",
                   quantity: Number(numberOfBags || 0),
+                  stockCost: Number(totalCostValue || 0) / Number(numberOfBags || 0),
+                  stockPrice: substrateStock?.stockPrice || 
+                              ((Number(totalJobValue || 0) / Number(numberOfBags || 0)) 
+                              || 0),                  
                 },
               ],
             },
@@ -465,9 +493,9 @@ export default function MakeSubstrateBagPage() {
                 quantityBalance: Number(numberOfBags || 0),
                 stockUOM: "pcs",
                 stockCost:
-                  Number(totalCostValue || 0) / Number(numberOfBags || 1),
+                  Number(totalCostValue || 0) / Number(numberOfBags || 0),
                 stockPrice:
-                  Number(totalJobValue || 0) / Number(numberOfBags || 1),
+                  Number(totalJobValue || 0) / Number(numberOfBags || 0),
               },
             ],
           };
@@ -547,7 +575,7 @@ export default function MakeSubstrateBagPage() {
                         </p>
                     </div>
                     <button
-                      onClick={() => navigate("/mushroom-process")}
+                      onClick={() => navigate("/control/mushroom-process")}
                       className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
                     >
                       <ArrowLeft size={20} />
@@ -670,7 +698,7 @@ export default function MakeSubstrateBagPage() {
 
                               <td className="p-3">{item.stockName}</td>
                               <td className="p-3 text-right">{item.baseQuantity}</td>
-                              <td className="p-3">{item.stockUOM}</td>
+                              <td className="p-3">{uomMap[item.stockUOM] || "N/A"}</td>
 
                               <td className="p-3">
                                 <input
@@ -747,7 +775,7 @@ export default function MakeSubstrateBagPage() {
 
                               <td className="p-3">{item.stockName}</td>
                               <td className="p-3 text-right">{item.baseQuantity}</td>
-                              <td className="p-3">{item.stockUOM}</td>
+                              <td className="p-3">{uomMap[item.stockUOM] || "N/A"}</td>
 
                               <td className="p-3">
                                 <input

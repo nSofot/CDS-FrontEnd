@@ -39,6 +39,7 @@ export default function StockPage() {
     "inoculating material": "Inoculating Material",
     "incubating material": "Incubating Material",
     "finished products": "Finished Products",
+    "harvested products": "Harvested Products",
   };
 
   const uomMap = {
@@ -46,7 +47,15 @@ export default function StockPage() {
     "g": "Gram",
     "L": "Liter",
     "ml": "Milliliter",
+    "m": "Meter",
+    "cm": "Centimeter",
     "pcs": "Piece",
+    "pack": "Pack",
+    "pkt": "Packet",
+    "btl": "Bottle",
+    "box": "Box",
+    "set": "Set",
+    "bag": "Bag",
   };
 
   const getTypeStyle = (category) => {
@@ -63,6 +72,8 @@ export default function StockPage() {
         return "bg-pink-100 text-pink-700";
       case "Finished Products":
         return "bg-green-100 text-green-700";
+      case "Harvested Products":
+        return "bg-red-100 text-red-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -138,21 +149,21 @@ export default function StockPage() {
 
           <div className="flex flex-row gap-4">
             <button
-              onClick={() => navigate("/add-stock")}
+              onClick={() => navigate("/control/add-stock")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               + Add Stock
             </button>
 
             <button
-              onClick={() => navigate("/stock-bin-card")}
+              onClick={() => navigate("/control/stock-bin-card")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ⌕ Bin Card
             </button>
 
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/control")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ← Go Back
@@ -205,7 +216,7 @@ export default function StockPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); // ✅ FIX
-                      navigate("/edit-stock", { state: { stock: item } });
+                      navigate("/control/edit-stock", { state: { stock: item } });
                     }}
                     className="text-blue-600"
                   >
@@ -281,7 +292,7 @@ export default function StockPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate("/edit-stock", {
+                            navigate("/control/edit-stock", {
                               state: { stock: item },
                             });
                           }}
@@ -354,7 +365,7 @@ export default function StockPage() {
 
       {/* FOOTER */}
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/control")}
         className="h-12 rounded-lg bg-orange-100 hover:bg-orange-200 font-semibold"
       >
         Close

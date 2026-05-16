@@ -19,6 +19,7 @@ export default function MakeIncubatingBagPage() {
     const [batchDetails, setBatchDetails] = useState([]);
     const [sterilizingMmaterial, setSterilizingMmaterial] = useState([]);
     const [materials, setMaterials] = useState([]);
+    const [substrateStock, setSubstrateStock] = useState([]);
    
     const [numberOfBags, setNumberOfBags] = useState("");
     const [batchNumber, setBatchNumber] = useState("");
@@ -66,7 +67,12 @@ export default function MakeIncubatingBagPage() {
           .filter((item) => item.stockCategory === "incubating material")
           .sort((a, b) => a.stockName.localeCompare(b.stockName));
 
+        const filteredSubstrateStock = allStocks.filter(
+          (item) => item.stockId === "5003"
+        );
+
         setSterilizingMmaterial(filteredSmStocks);
+        setSubstrateStock(filteredSubstrateStock[0]);
 
         /* ---------------- BATCHES ---------------- */
         const allBatches = batchRes.data?.data || batchRes.data || [];
@@ -76,6 +82,7 @@ export default function MakeIncubatingBagPage() {
         );
 
         setBatchDetails(filteredBatches);
+        
 
       } catch (error) {
         console.error(error);
@@ -97,6 +104,22 @@ export default function MakeIncubatingBagPage() {
       "9034": { expenseId: "9034", name: "Transport for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
       "9035": { expenseId: "9035", name: "Other for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
     });
+
+    const uomMap = {
+      "kg": "Kg",
+      "g": "Gram",
+      "L": "Liter",
+      "ml": "Milliliter",
+      "m": "Meter",
+      "cm": "Centimeter",
+      "pcs": "Piece",
+      "pack": "Pack",
+      "pkt": "Packet",
+      "btl": "Bottle",
+      "box": "Box",
+      "set": "Set",
+      "bag": "Bag",
+    };
 
 
     useEffect(() => {
@@ -425,6 +448,10 @@ export default function MakeIncubatingBagPage() {
                 {
                   stockId: "5003",
                   quantity: Number(numberOfBags || 0),
+                  stockCost: Number(totalCostValue || 0) / Number(numberOfBags || 0),
+                  stockPrice: substrateStock?.stockPrice || 
+                              ((Number(totalJobValue || 0) / Number(numberOfBags || 0)) 
+                              || 0),                     
                 },
               ],
             },
@@ -577,7 +604,7 @@ export default function MakeIncubatingBagPage() {
                             Monitoring and managing substrate bag incubation process                     </p>
                     </div>
                     <button
-                      onClick={() => navigate("/mushroom-process")}
+                      onClick={() => navigate("/control/mushroom-process")}
                       className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
                     >
                       <ArrowLeft size={20} />
@@ -774,7 +801,7 @@ export default function MakeIncubatingBagPage() {
 
                               <td className="p-3">{item.stockName}</td>
                               <td className="p-3 text-right">{item.baseQuantity}</td>
-                              <td className="p-3">{item.stockUOM}</td>
+                              <td className="p-3">{uomMap[item.stockUOM] || "N/A"}</td>
 
                               <td className="p-3">
                                 <input

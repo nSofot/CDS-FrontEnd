@@ -103,21 +103,21 @@ export default function CashBookPage() {
 
           <div className="flex md:flex-row flex-col gap-4">
             <button
-              onClick={() => navigate("/add-cash-account")}
+              onClick={() => navigate("/control/add-cash-account")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               + Add Account
             </button>
 
             <button
-              onClick={() => navigate("/cash-book-ledger")}
+              onClick={() => navigate("/control/cash-book-ledger")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ⌕ View Account
             </button>
 
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/control")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ← Go Back

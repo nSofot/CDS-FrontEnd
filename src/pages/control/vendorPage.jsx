@@ -102,21 +102,21 @@ export default function VendorListPage() {
 
         <div className="flex md:flex-row flex-col gap-4">
             <button
-              onClick={() => navigate("/add-vendor")}
+              onClick={() => navigate("/control/add-vendor")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               + Add Vendor
             </button>    
 
             <button
-              onClick={() => navigate("/vendor-ledger")}
+              onClick={() => navigate("/control/vendor-ledger")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ⌕ Vendor Ledger
             </button>
 
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/control")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
               ← Go Back
@@ -180,7 +180,7 @@ export default function VendorListPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/edit-vendor`, { state: { vendor: v } });
+                        navigate(`/control/edit-vendor`, { state: { vendor: v } });
                       }}
                       className="text-blue-600 hover:bg-blue-600 hover:text-white px-2 py-1 rounded"
                     >
@@ -239,7 +239,7 @@ export default function VendorListPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/edit-vendor`, { state: { vendor: v } });
+                    navigate(`/control/edit-vendor`, { state: { vendor: v } });
                   }}
                   className="flex-1 bg-blue-500 text-white py-1 rounded"
                 >

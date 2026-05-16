@@ -59,7 +59,7 @@ export default function AddStockPage() {
       );
 
       toast.success("Stock added successfully!");
-      navigate("/stock", { replace: true });
+      navigate("/control/stock", { replace: true });
     } catch (err) {
       console.error(err);
       toast.error(
@@ -97,7 +97,7 @@ export default function AddStockPage() {
             </button>
 
             <Link
-              to="/stock"
+              to="/control/stock"
               className="px-6 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white transition"
             >
               Cancel
@@ -127,6 +127,7 @@ export default function AddStockPage() {
                 <option value="inoculating material">Inoculating Material</option>
                 <option value="incubating material">Incubating Material</option>
                 <option value="finished products">Finished Products</option>
+                <option value="harvested products">Harvested Products</option>
               </select>
             </div>
 
@@ -204,11 +205,18 @@ export default function AddStockPage() {
                 required
               >
                 <option value="">Select UOM</option>
-                <option value="pcs">PCS</option>
-                <option value="kg">KG</option>
-                <option value="g">G</option>
-                <option value="L">L</option>
-                <option value="ml">ML</option>
+                <option value="kg">Kilogram</option>
+                <option value="g">Gram</option>
+                <option value="L">Liter</option>
+                <option value="ml">Milliliter</option>
+                <option value="m">Meter</option>
+                <option value="cm">Centimeter</option>
+                <option value="pack">Pack</option>
+                <option value="pkt">Packet</option>
+                <option value="btl">Bottle</option>
+                <option value="box">Box</option>
+                <option value="set">Set</option>
+                <option value="bag">Bag</option>
               </select>
             </div>
           </div>
