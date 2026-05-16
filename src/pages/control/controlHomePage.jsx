@@ -47,7 +47,7 @@ export default function ControlHomePage() {
   const menuItems = [
     {
       label: "Home",
-      to: "*",
+      to: "/",
       icon: <FaHome />,
       roles: [
         "admin",
@@ -56,7 +56,7 @@ export default function ControlHomePage() {
     },
     {
       label: "Dashboard",
-      to: "/",
+      to: "/control/",
       icon: <FaAtom />,
       roles: [
         "admin",
@@ -65,7 +65,7 @@ export default function ControlHomePage() {
     },
     {
       label: "Members",
-      to: "/members",
+      to: "/control/members",
       icon: <FaUsers />,
       roles: [
         "admin",
@@ -75,7 +75,7 @@ export default function ControlHomePage() {
 
     {
       label: "Stock",
-      to: "/stock",
+      to: "/control/stock",
       icon: <FaSackDollar />,
       roles: [
         "admin",
@@ -85,7 +85,7 @@ export default function ControlHomePage() {
 
     {
       label: "Vendors",
-      to: "/vendors",
+      to: "/control/vendors",
       icon: <FaMoneyBillTransfer />,
       roles: [
         "admin",
@@ -95,7 +95,7 @@ export default function ControlHomePage() {
 
     {
       label: "Batch Records",
-      to: "/batch-list",
+      to: "/control/batch-list",
       icon: <FaFileAlt />,
       roles: [
         "admin",
@@ -105,7 +105,17 @@ export default function ControlHomePage() {
 
     {
       label: "Cashbook",
-      to: "/cash-book",
+      to: "/control/cash-book",
+      icon: <FaMoneyCheckAlt />,
+      roles: [
+        "admin",
+        "president",
+      ],
+    },
+
+    {
+      label: "Bag Sale Invoices",
+      to: "/control/bagSale-invoice",
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
@@ -115,7 +125,7 @@ export default function ControlHomePage() {
 
     {
       label: "Sales Invoices",
-      to: "/sales-invoice",
+      to: "/control/sales-invoice",
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
@@ -125,7 +135,7 @@ export default function ControlHomePage() {
 
     {
       label: "GRNs & Purchases",
-      to: "/grns",
+      to: "/control/grns",
       icon: <FaReceipt />,
       roles: [
         "admin",
@@ -135,7 +145,7 @@ export default function ControlHomePage() {
 
     {
       label: "Other Invoices",
-      to: "/other-invoice",
+      to: "/control/other-invoice",
       icon: <FaFileAlt />,
       roles: [
         "admin",
@@ -145,7 +155,7 @@ export default function ControlHomePage() {
 
     {
       label: "Vendor Payments",
-      to: "/vendor-payment",
+      to: "/control/vendor-payment",
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
@@ -155,7 +165,7 @@ export default function ControlHomePage() {
 
     {
       label: "Member Receipts",
-      to: "/member-receipt",
+      to: "/control/member-receipt",
       icon: <FaUserClock />,
       roles: [
         "admin",
@@ -165,7 +175,7 @@ export default function ControlHomePage() {
       
     {
       label: "Stock Adjustments",
-      to: "/stock-adjustments",
+      to: "/control/stock-adjustments",
       icon: <TbReport />,
       roles: [
         "admin",
@@ -175,7 +185,7 @@ export default function ControlHomePage() {
 
     {
       label: "Production Process",
-      to: "/mushroom-process",
+      to: "/control/mushroom-process",
       icon: <FaUsersCog />,
       roles: [
         "admin",

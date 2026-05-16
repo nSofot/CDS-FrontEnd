@@ -1,14 +1,14 @@
-import { useEffect, useState, useRef, Fragment } from "react";
+import { useEffect, useState, useRef, Fragment, use } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
 import { FaRegFilePdf } from "react-icons/fa";
-import html2pdf from "html2pdf.js/dist/html2pdf.bundle";
+import html2pdf, { f } from "html2pdf.js/dist/html2pdf.bundle";
 
 Modal.setAppElement("#root");
 
-export default function SaleInvoicePage() {
+export default function BagSaleInvoicePage() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
@@ -16,6 +16,7 @@ export default function SaleInvoicePage() {
   // ---------------- STATE ----------------
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [items, setItems] = useState([]);
   const [invoiceDate, setInvoiceDate] = useState(
@@ -51,6 +52,7 @@ export default function SaleInvoicePage() {
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
+    featchBatches();
   }, []);
 
   const fetchCustomers = async () => {
@@ -72,7 +74,7 @@ export default function SaleInvoicePage() {
         { headers }
       );
       const filteredProducts = res.data.filter(
-        (item) => item.stockCategory !=="finished products"
+        (item) => item.stockCategory ==="finished products"
         );     
         
       setProducts(filteredProducts || []);
@@ -81,11 +83,36 @@ export default function SaleInvoicePage() {
     }
   };
 
+  const featchBatches = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/batch`
+      );
+      const filteredBatches = res.data.filter((item) => item.status ==="finished products");
+      setBatches(res.data || []);
+    } catch {
+      toast.error("Failed to load batches");
+    }
+  }
+  
   // ---------------- ITEMS ----------------
   const addItemRow = () => {
     setItems([
       ...items,
-      { productId: "", productName: "", qty: 0, inStock: 0, unit: "", rate: 0, amount: 0, cost: 0, rowCost: 0 },
+      { productId: "", 
+        productName: "", 
+        qty: 0, 
+        inStock: 0, 
+        unit: "", 
+        rate: 0, 
+        amount: 0, 
+        cost: 0, 
+        rowCost: 0, 
+        batchNo: "", 
+        batchDate: "", 
+        batchStatus: "",
+        statusDate: ""
+      },
     ]);
   };
 
@@ -117,18 +144,25 @@ export default function SaleInvoicePage() {
 
     const updated = [...items];
 
-    updated[selectedRowIndex] = {
-      ...updated[selectedRowIndex],
-      productId: product.stockId,
-      productName: product.stockName,
-      cost: product.stockCost || 0,
-      rate: product.stockPrice || 0,
-      qty: 0,
-      inStock: product.stockQuantity,
-      unit: uomMap[product.stockUOM] || product.stockUOM,
-      amount: product.stockPrice || 0,
-      rowCost: product.stockCost || 0,
-    };
+      updated[selectedRowIndex] = {
+        ...updated[selectedRowIndex],
+
+        productId: product.stockId,
+        productName: product.stockName,
+        cost: product.stockCost || 0,
+        rate: product.stockPrice || 0,
+        qty: 0,
+        inStock: 0,
+        unit: uomMap[product.stockUOM] || product.stockUOM,
+        amount: product.stockPrice || 0,
+        rowCost: product.stockCost || 0,
+
+        // ✅ preserve existing batch data
+        batchNo: updated[selectedRowIndex].batchNo || "",
+        batchDate: updated[selectedRowIndex].batchDate || "",
+        batchStatus: updated[selectedRowIndex].batchStatus || "",
+        statusDate: updated[selectedRowIndex].statusDate || "",
+      };
 
     setItems(updated);
     setProductModalOpen(false);
@@ -159,6 +193,35 @@ export default function SaleInvoicePage() {
     (sum, item) => sum + Number(item.rowCost || 0),
     0
   )
+
+  const selectBatch = (rowIndex, batch) => {
+    const updated = [...items];
+
+    const statusDateMap = {
+      Substrate: batch.batchDate || "",
+      Sterilized: batch.sterilizationDate || "",
+      Inoculated: batch.inoculationDate || "",
+      Incubating: batch.incubationDate || "",
+    };
+
+    updated[rowIndex] = {
+      ...updated[rowIndex],
+
+      batch: batch.batchNo,
+      batchId: batch._id,
+
+      batchNo: batch.batchNo || "",
+      batchDate: batch.batchDate || batch.createdAt || "",
+      batchStatus: batch.status || "",
+
+      inStock: batch.balanceBags || 0,
+
+      statusDate: statusDateMap[batch.status] || "",
+    };
+
+    setItems(updated);
+  };
+
 
   const pdfPage = {
     width: "760px",
@@ -253,6 +316,7 @@ export default function SaleInvoicePage() {
     if (!selectedCustomer) return toast.error("Select a member/customer");
     if (orderNumber === "") return toast.error("Enter order number");
     if (items.length === 0) return toast.error("Add items");
+    if (totalAmount === 0) return toast.error("Enter at least one item");
 
     try {
       setLoading(true);
@@ -362,6 +426,41 @@ export default function SaleInvoicePage() {
         }
       );
 
+      // 7. Write batch transaction record
+      await Promise.all(
+        items.map(async (i) => {
+          if (!i.batchNo || !i.qty) return;
+
+          const batchTrxPayload = {
+            trxId: String(newTrxId),
+            trxDate: new Date(invoiceDate).toLocaleDateString(),
+            trxType: "Sold",
+            batchNo: i.batchNo,
+            bagStatus: i.batchStatus,
+            bagQuantity: Number(i.qty || 0),
+            balanceQuantity: 0,
+            clientId: selectedCustomer.memberId,
+            clientName:
+              selectedCustomer.nameInSinhala ||
+              `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/batch-transaction`,
+            batchTrxPayload
+          );
+
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/batch/reduce-batch-balance-bags`,
+            {
+              batchNo: i.batchNo,
+              bags: Number(i.qty || 0),
+            }
+          );
+        })
+      );  
+
+
       toast.success("Invoice created successfully");
 
     } catch (err) {
@@ -379,8 +478,8 @@ export default function SaleInvoicePage() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-orange-600">🧾 Sale Invoice</h1>
-          <p className="text-sm text-gray-500">Create sales invoice</p>
+          <h1 className="text-2xl font-bold text-orange-600">🧾 Bag Sale Invoice</h1>
+          <p className="text-sm text-gray-500">Create bag sales invoice</p>
         </div>
 
         <div className="flex gap-3 no-print">
@@ -458,8 +557,13 @@ export default function SaleInvoicePage() {
           <h2 className="font-semibold">Items</h2>
 
           <button
+            disabled={items.length !== 0}
             onClick={addItemRow}
-            className="bg-orange-500 text-white px-3 py-1 rounded"
+            className={`text-white px-3 py-1 rounded ${
+              items.length !== 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
           >
             + Add Item
           </button>
@@ -478,94 +582,230 @@ export default function SaleInvoicePage() {
                 </tr>
             </thead>
 
-            <tbody>
-                {items.map((item, i) => (
-                <tr key={i} className="border-t">
-                    {/* PRODUCT */}
-                    <td className="p-2">
-                    <button
-                        onClick={() => {
-                        setSelectedRowIndex(i);
-                        setProductModalOpen(true);
-                        }}
-                        className="text-orange-600 hover:underline"
-                    >
-                        {item.productName || "Select Product"}
-                    </button>
-                    </td>
+              <tbody>
+                {items.map((item, rowIndex) => {
 
-                    {/* QTY */}
-                    <td className="p-2 text-right">
-                      <input
-                        type="number"
-                        max={item.inStock}
-                        min={0}                      
-                        value={item.qty}
-                        onChange={(e) => {
-                          let value = Number(e.target.value);
+                  // FILTER BATCHES FOR PRODUCT
+                  const productBatches = batches.filter((b) => {
 
-                          const max = Number(item.inStock || 0);
+                    let requiredStatus = "";
 
-                          // prevent negative
-                          if (value < 0) value = 0;
+                    switch (Number(item.productId)) {
+                      case 5000:
+                        requiredStatus = "Substrate";
+                        break;
 
-                          // prevent exceeding stock
-                          if (value > max) {
-                            toast.error(`Max available stock is ${max}`);
-                            value = max;
-                          }
+                      case 5001:
+                        requiredStatus = "Sterilized";
+                        break;
 
-                          updateItem(i, "qty", value);
-                        }}
-                        className="w-20 text-right border rounded px-2 py-1"
-                      />
-                    </td>
+                      case 5002:
+                        requiredStatus = "Inoculated";
+                        break;
 
-                    {/* AVAILABLE */}
-                    <td className="p-2 text-right">
-                    {item.inStock ?? "N/A"}
-                    </td>
+                      case 5003:
+                        requiredStatus = "Incubating";
+                        break;
 
-                    {/* UOM */}
-                    <td className="p-2 text-left">
-                    {item.unit || "N/A"}
-                    </td>
+                      default:
+                        requiredStatus = "";
+                    }
 
-                    {/* RATE */}
-                    <td className="p-2 text-right">
-                    <input
-                        type="number"
-                        value={item.rate}
-                        onChange={(e) => updateItem(i, "rate", e.target.value)}
-                        className="w-24 text-right border rounded px-2 py-1"
-                    />
-                    </td>
+                    const isStatusMatch =
+                      (b.status || "").toLowerCase() ===
+                      requiredStatus.toLowerCase();
 
-                    {/* AMOUNT */}
-                    <td className="p-2 text-right font-medium">
-                    {Number(item.amount || 0).toFixed(2)}
-                    </td>
+                    const hasBalance =
+                      Number(b.balanceBags || 0) > 0;
 
-                    {/* ACTION */}
-                    <td className="p-2 text-center">
-                    <button
-                        onClick={() => removeItem(i)}
-                        className="text-red-500 hover:text-red-700"
-                    >
-                        ✖
-                    </button>
-                    </td>
-                </tr>
-                ))}
+                    return isStatusMatch && hasBalance;
+                  });
+
+                  return (
+                    <Fragment key={rowIndex}>
+                      {/* MAIN ROW */}
+                      <tr className="border-t">
+
+                        {/* PRODUCT */}
+                        <td className="p-2">
+                          <button
+                            onClick={() => {
+                              setSelectedRowIndex(rowIndex);
+                              setProductModalOpen(true);
+                            }}
+                            className="text-orange-600 hover:underline"
+                          >
+                            {item.productName || "Select Product"}
+                          </button>
+
+                          {item.batch && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              Batch: {item.batch}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* QTY */}
+                        <td className="p-2 text-right">
+                          <input
+                          disabled = {productBatches.length === 0}
+                            type="number"
+                            max={item.inStock}
+                            min={0}
+                            value={item.qty}
+                            onChange={(e) => {
+                              let value = Number(e.target.value);
+
+                              const max = Number(item.inStock || 0);
+
+                              if (value < 0) value = 0;
+
+                              if (value > max) {
+                                toast.error(`Max available stock is ${max}`);
+                                value = max;
+                              }
+
+                              updateItem(rowIndex, "qty", value);
+                            }}
+                            className="w-20 text-right border rounded px-2 py-1"
+                          />
+                        </td>
+
+                        {/* AVAILABLE */}
+                        <td className="p-2 text-right">
+                          {item.inStock ?? "N/A"}
+                        </td>
+
+                        {/* UOM */}
+                        <td className="p-2 text-left">
+                          {item.unit || "N/A"}
+                        </td>
+
+                        {/* RATE */}
+                        <td className="p-2 text-right">
+                          <input
+                            type="number"
+                            value={item.rate}
+                            onChange={(e) =>
+                              updateItem(rowIndex, "rate", e.target.value)
+                            }
+                            className="w-24 text-right border rounded px-2 py-1"
+                          />
+                        </td>
+
+                        {/* AMOUNT */}
+                        <td className="p-2 text-right font-medium">
+                          {Number(item.amount || 0).toFixed(2)}
+                        </td>
+
+                        {/* ACTION */}
+                        <td className="p-2 text-center">
+                          <button
+                            onClick={() => removeItem(rowIndex)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            ✖
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* BATCH ROW */}
+                      {productBatches.length > 0 ? (
+                        <tr>
+                          <td colSpan="7" className="bg-gray-50 p-3">
+
+                            <table className="sm:w-[50%] w-full  text-xs border">
+                              <thead className="bg-orange-100">
+                                <tr>
+                                  <th className="p-2 text-left">Select</th>
+                                  <th className="p-2 text-left">Batch No</th>
+                                  <th className="p-2 text-left">Status</th>
+                                  <th className="p-2 text-right">Available</th>
+                                  <th className="p-2 text-right">Price</th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                        
+                                {productBatches.map((batch, batchIndex) => (
+                                  <tr
+                                    key={batchIndex}
+                                    className={
+                                      item.batchId === batch._id
+                                        ? "bg-orange-50"
+                                        : ""
+                                    }
+                                  >
+                                    {/* RADIO */}
+                                    <td className="p-2">
+                                      <input
+                                        type="radio"
+                                        name={`batch-${rowIndex}`}
+                                        checked={item.batchId === batch._id}
+                                        onChange={() =>
+                                          selectBatch(rowIndex, batch)
+                                        }
+                                      />
+                                    </td>
+
+                                    {/* BATCH NO */}
+                                    <td className="p-2">
+                                      {batch.batchNo}
+                                    </td>
+
+                                   {/* BAG STATUS */}
+                                    <td className="p-2">
+                                      {batch.status}
+                                    </td>
+
+                                    {/* AVAILABLE */}
+                                    <td className="p-2 text-right">
+                                      {batch.balanceBags || 0}
+                                    </td>
+
+                                    {/* PRICE */}
+                                    <td className="p-2 text-right">
+                                      {formatNumber(
+                                        (Number(batch.totalJobValue || 0)) /
+                                        (Number(batch.numberOfBags || 1))
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+
+                          </td>
+                        </tr>
+                      ) : (
+                        item.productId && (
+                          <tr>
+                            <td
+                              colSpan="7"
+                              className="bg-gray-50 p-3 text-center text-gray-500"
+                            >
+                              No batches available
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    
+                    </Fragment>
+                  );
+                })}
 
                 {items.length === 0 && (
-                <tr>
-                    <td colSpan="7" className="text-center py-4 text-gray-400">
-                    No items added
+                  <tr>
+                    <td
+                      colSpan="7"
+                      className="text-center py-4 text-gray-400"
+                    >
+                      No items added
                     </td>
-                </tr>
+                  </tr>
                 )}
-            </tbody>
+              </tbody>
+
         </table>
       </div>
 
@@ -662,7 +902,7 @@ export default function SaleInvoicePage() {
             <table style={table}>
               <thead>
                 <tr>
-                  <th style={th}>Item DEscription</th>
+                  <th style={th}>Item Description</th>
                   <th style={th}>Qty</th>
                   <th style={th}>UOM</th>
                   <th style={{ ...th, textAlign: "right" }}>Rate</th>
@@ -680,6 +920,29 @@ export default function SaleInvoicePage() {
                       <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.rate)}</td>
                       <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.amount)}</td>
                     </tr>
+
+                    {m.batch && (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          style={{
+                            ...td,
+                            fontSize: "10px",
+                            background: "#f9f9f9",
+                            color: "#555",
+                            paddingLeft: "15px",
+                          }}
+                        >
+                          <strong>Batch No:</strong> {m.batchNo}
+                          {"  |  "}
+                          <strong>Batch Date:</strong> {formatDate(m.batchDate)}
+                          {"  |  "}
+                          <strong>Status:</strong> {m.batchStatus}
+                          {"  |  "}
+                          <strong>Date:</strong> {formatDate(m.statusDate)}
+                        </td>
+                      </tr>
+                    )}
                   </Fragment>
                 ))}
 
@@ -742,7 +1005,7 @@ export default function SaleInvoicePage() {
             className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50 flex justify-between"
           >
             <span>{p.stockName}</span>
-            <span>{p.stockPrice}</span>
+            <span>{p.stockQuantity}</span>
           </div>
         ))}
       </Modal>

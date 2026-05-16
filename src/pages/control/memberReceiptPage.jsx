@@ -348,7 +348,7 @@ export default function MemberReceiptPage() {
             </button>
 
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/control")}
               className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
             >
               ← Back

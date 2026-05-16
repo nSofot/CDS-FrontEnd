@@ -123,7 +123,7 @@ export default function VendorLedgerPage() {
         </div>
 
         <button
-          onClick={() => navigate("/vendors")}
+          onClick={() => navigate("/control/vendors")}
           className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
         >
           ← Back
