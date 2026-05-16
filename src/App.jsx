@@ -25,8 +25,7 @@ export default function App() {
             <Route path="/forget" element={<ForgetPasswordPage />} />
             <Route path="/admin/*" element={<AdminPage />} />
             <Route path="/control/*" element={<ControlPage />} />
-            <Route path="*" element={<HomePage />} />
-       
+            {/* <Route path="*" element={<HomePage />} /> */}
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>
