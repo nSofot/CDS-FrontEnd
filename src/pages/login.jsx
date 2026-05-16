@@ -22,12 +22,17 @@ export default function LoginPage() {
         );
 
         toast.success("Login Successful");
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data));
+        localStorage.setItem("token", res.data.token);      
+        localStorage.setItem("user", JSON.stringify(res.data));       
         // 🔥 SAVE GOOGLE TOKEN
         localStorage.setItem("google_token", res.data.googleAccessToken);
 
-        navigate("/");
+        if (res.data.memberRole === "admin") {
+          navigate("/control");
+        } else {
+          navigate("/");
+        }
+
       } catch (error) {
         toast.error(error?.response?.data?.message || "Google login failed");
       }
@@ -52,7 +57,12 @@ export default function LoginPage() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
 
-      navigate("/");
+      if (res.data.memberRole === "admin") {
+        navigate("/control");
+      } else {
+        navigate("/");
+      }
+
     } catch (error) {
       toast.error(error?.response?.data?.message || "Login failed");
     }
