@@ -2,18 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
+import mediaUpload from "../../utils/mediaUpload";
 
 export default function EditStockPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
 
-  // Stock states
-  const [stock, setStock] = useState({});
+  // STOCK STATES
   const [stockId, setStockId] = useState("");
   const [stockCategory, setStockCategory] = useState("");
   const [stockName, setStockName] = useState("");
@@ -23,42 +21,27 @@ export default function EditStockPage() {
   const [stockUOM, setStockUOM] = useState("pcs");
   const [stockCost, setStockCost] = useState("");
   const [stockPrice, setStockPrice] = useState("");
+  const [labelledPrice, setLabelledPrice] = useState("");
 
-  // 🔍 Fetch stock by ID
-  const fetchStock = async (id) => {
-    if (!id) return;
+  // IMAGE STATES (FIXED)
+  const [stockImage, setStockImage] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
 
-    setIsLoading(true);
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock/${id}`
-      );
+  // 🔥 FIXED SUPABASE NORMALIZER
+  const normalizeImage = (img) => {
+    if (!img) return "";
 
-      const data = res.data;
+    if (img.startsWith("http")) return img;
 
-      setStock(data);
-      setStockId(data.stockId || "");
-      setStockName(data.stockName || "");
-      setStockDescription(data.stockDescription || "");
-      setStockCategory(data.stockCategory || "");
-      setStockQuantity(data.stockQuantity || "");
-      setBaseQuantity(data.baseQuantity || "");
-      setStockUOM(data.stockUOM || "pcs");
-      setStockCost(data.stockCost || "");
-      setStockPrice(data.stockPrice || "");
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to load stock");
-    } finally {
-      setIsLoading(false);
-    }
+    return `https://fqchfixofctbyywmfdnr.supabase.co/storage/v1/object/public/images/${img}`;
   };
 
-  // ✅ Load from navigation OR fallback
+  // LOAD DATA
   useEffect(() => {
     if (location.state?.stock) {
       const data = location.state.stock;
 
-      setStock(data);
       setStockId(data.stockId || "");
       setStockName(data.stockName || "");
       setStockDescription(data.stockDescription || "");
@@ -68,13 +51,44 @@ export default function EditStockPage() {
       setStockUOM(data.stockUOM || "pcs");
       setStockCost(data.stockCost || "");
       setStockPrice(data.stockPrice || "");
-    } else {
-      const idFromUrl = window.location.search.split("=")[1];
-      if (idFromUrl) fetchStock(idFromUrl);
+      setLabelledPrice(data.labelledPrice || "");
+
+      setExistingImages(
+        (data.stockImage || []).map(normalizeImage)
+      );
     }
   }, [location.state]);
 
-  // ✏️ Update stock
+  // HANDLE NEW IMAGES
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+
+    setStockImage(files);
+
+    setPreviewImages(
+      files.map((file) => URL.createObjectURL(file))
+    );
+  };
+
+  // REMOVE EXISTING IMAGE
+  const removeExistingImage = (index) => {
+    setExistingImages((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  };
+
+  // REMOVE NEW IMAGE
+  const removeNewImage = (index) => {
+    setStockImage((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+
+    setPreviewImages((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  };
+
+  // UPDATE STOCK
   const updateStock = async () => {
     if (!stockName || !stockCategory || !stockUOM) {
       toast.error("Please fill all required fields");
@@ -84,21 +98,36 @@ export default function EditStockPage() {
     try {
       setIsUpdating(true);
 
-      const updatedStock = {
-        stockId,
-        stockName,
-        stockDescription,
-        stockCategory,
-        stockQuantity: Number(stockQuantity),
-        baseQuantity: Number(baseQuantity),
-        stockUOM,
-        stockCost: Number(stockCost),
-        stockPrice: Number(stockPrice),
-      };
+      // upload new images
+      let uploadedNewImages = [];
+
+      if (stockImage.length > 0) {
+        uploadedNewImages = await Promise.all(
+          stockImage.map((img) => mediaUpload(img))
+        );
+      }
+
+      // FINAL IMAGE ARRAY
+      const finalImages = [
+        ...existingImages,
+        ...uploadedNewImages,
+      ];
 
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/${stockId}`,
-        updatedStock,
+        {
+          stockId,
+          stockName,
+          stockDescription,
+          stockCategory,
+          stockQuantity: Number(stockQuantity),
+          baseQuantity: Number(baseQuantity),
+          stockUOM,
+          stockCost: Number(stockCost),
+          stockPrice: Number(stockPrice),
+          labelledPrice: Number(labelledPrice),
+          stockImage: finalImages,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -115,14 +144,16 @@ export default function EditStockPage() {
     }
   };
 
+
   return (
     <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6">
 
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold">✏️ Edit Stock</h1>
+          <h1 className="text-xl md:text-2xl font-semibold">
+            ✏️ Edit Stock
+          </h1>
           <p className="text-sm text-gray-500">
             Update existing stock details
           </p>
@@ -133,7 +164,9 @@ export default function EditStockPage() {
             onClick={updateStock}
             disabled={isUpdating}
             className={`px-5 py-2 rounded-lg text-white text-sm md:text-base ${
-              isUpdating ? "bg-gray-500" : "bg-blue-600 hover:bg-blue-700"
+              isUpdating
+                ? "bg-gray-500"
+                : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
             {isUpdating ? "Updating..." : "Update Stock"}
@@ -151,10 +184,9 @@ export default function EditStockPage() {
       {/* FORM CARD */}
       <div className="bg-white rounded-xl shadow border p-4 md:p-6 space-y-5">
 
-        {/* Row 1 */}
+        {/* ROW 1 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-          {/* Stock ID */}
           <div>
             <label className="text-sm font-medium">Stock ID</label>
             <input
@@ -165,14 +197,13 @@ export default function EditStockPage() {
             />
           </div>
 
-          {/* Category */}
           <div>
             <label className="text-sm font-medium">Category *</label>
             <select
               value={stockCategory}
               onChange={(e) => setStockCategory(e.target.value)}
               className="w-full p-2 border rounded-lg"
-            >            
+            >
               <option value="">Select category</option>
               <option value="packing material">Packing Material</option>
               <option value="substrate material">Substrate Material</option>
@@ -184,7 +215,6 @@ export default function EditStockPage() {
             </select>
           </div>
 
-          {/* Stock Name */}
           <div>
             <label className="text-sm font-medium">Stock Name *</label>
             <input
@@ -194,9 +224,10 @@ export default function EditStockPage() {
               className="w-full p-2 border rounded-lg"
             />
           </div>
+
         </div>
 
-        {/* Description */}
+        {/* DESCRIPTION */}
         <div>
           <label className="text-sm font-medium">Description</label>
           <textarea
@@ -206,7 +237,64 @@ export default function EditStockPage() {
           />
         </div>
 
-        {/* Row 2 */}
+        {/* IMAGE SECTION (FIXED - SINGLE BLOCK) */}
+        <div>
+
+          <label className="text-sm font-medium block mb-2">
+            Stock Images
+          </label>
+
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageChange}
+            className="w-full border p-2 rounded"
+          />
+
+          {/* EXISTING IMAGES */}
+          {existingImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {existingImages.map((img, i) => (
+                <div key={i} className="relative">
+                  <img
+                    src={img}
+                    className="h-full w-full object-cover rounded"
+                  />
+                  <button
+                    onClick={() => removeExistingImage(i)}
+                    className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* NEW PREVIEWS */}
+          {previewImages.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {previewImages.map((img, i) => (
+                <div key={i} className="relative">
+                  <img
+                    src={img}
+                    className="h-full w-full object-cover rounded"
+                  />
+                  <button
+                    onClick={() => removeNewImage(i)}
+                    className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 rounded"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+
+        {/* ROW 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
           <div>
@@ -215,7 +303,6 @@ export default function EditStockPage() {
               disabled
               type="number"
               value={stockQuantity}
-              onChange={(e) => setStockQuantity(e.target.value)}
               className="w-full p-2 border rounded-lg"
             />
           </div>
@@ -238,24 +325,25 @@ export default function EditStockPage() {
               className="w-full p-2 border rounded-lg"
             >
               <option value="">Select UOM</option>
-                <option value="kg">Kilogram</option>
-                <option value="g">Gram</option>
-                <option value="L">Liter</option>
-                <option value="ml">Milliliter</option>
-                <option value="m">Meter</option>
-                <option value="cm">Centimeter</option>
-                <option value="pack">Pack</option>
-                <option value="pkt">Packet</option>
-                <option value="btl">Bottle</option>
-                <option value="box">Box</option>
-                <option value="set">Set</option>
-                <option value="bag">Bag</option>
+              <option value="kg">Kilogram</option>
+              <option value="g">Gram</option>
+              <option value="L">Liter</option>
+              <option value="ml">Milliliter</option>
+              <option value="m">Meter</option>
+              <option value="cm">Centimeter</option>
+              <option value="pack">Pack</option>
+              <option value="pkt">Packet</option>
+              <option value="btl">Bottle</option>
+              <option value="box">Box</option>
+              <option value="set">Set</option>
+              <option value="bag">Bag</option>
             </select>
           </div>
+
         </div>
 
-        {/* Row 3 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* ROW 3 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
           <div>
             <label className="text-sm font-medium">Cost Price</label>
@@ -263,7 +351,6 @@ export default function EditStockPage() {
               disabled
               type="number"
               value={stockCost}
-              onChange={(e) => setStockCost(e.target.value)}
               className="w-full p-2 border rounded-lg"
             />
           </div>
@@ -277,15 +364,27 @@ export default function EditStockPage() {
               className="w-full p-2 border rounded-lg"
             />
           </div>
+
+          <div>
+            <label className="text-sm font-medium">Labelled Price</label>
+            <input
+              type="number"
+              value={labelledPrice}
+              onChange={(e) => setLabelledPrice(e.target.value)}
+              className="w-full p-2 border rounded-lg"
+            />
+          </div>
+
         </div>
 
-        {/* Profit Box */}
+        {/* PROFIT */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
           Profit:{" "}
           <span className="font-semibold text-green-600">
             {(Number(stockPrice || 0) - Number(stockCost || 0)).toFixed(2)}
           </span>
         </div>
+
       </div>
     </div>
   );

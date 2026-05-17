@@ -1,151 +1,167 @@
 import { Fragment } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { motion } from "framer-motion";
-import { FiUsers, FiHeart, FiCalendar } from "react-icons/fi";
+// import { Helmet } from "react-helmet-async";         // optional—remove if you’re not using Helmet
+import { motion } from "framer-motion";              // framer‑motion already available per style‑guide
+import {
+  FaHandsHelping,
+  FaLeaf,
+  FaRocket,
+  FaUsers,
+  FaGlobeAsia,
+} from "react-icons/fa";
 
-export default function AboutUs() {
-
-  const navClass = ({ isActive }) =>
-  isActive
-    ? "text-yellow-400 border-b-2 border-yellow-400"
-    : "hover:text-yellow-400";
-
+export default function About() {
   return (
     <Fragment>
-      {/* ---------- HERO ---------- */}
-      <section className="relative w-full min-h-[60vh] flex items-center bg-black overflow-hidden">
+      {/* ---------- SEO / meta ---------- */}
+      <title>
+        <title>About | CDS</title>
+        <meta
+          name="description"
+          content="Learn about CDS Store’s history, mission, and the values that drive us."
+        />
+      </title>
+
+      {/* ---------- Hero ---------- */}
+      <section className="relative w-full h-[50vh] bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center overflow-hidden">
         <motion.img
-          src="/LandingPage4.png"
-          alt="About Us Banner"
-          className="absolute inset-0 w-full h-full object-cover opacity-70"
-          initial={{ scale: 1.05 }}
+          src="/aboutBanner.jpg"               /* <-- put any hero image in /public */
+          alt="Our team at work"
+          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50"
+          initial={{ scale: 1.2 }}
           animate={{ scale: 1 }}
           transition={{ duration: 1 }}
         />
-
-        <div className="relative z-10 px-8 max-w-6xl mx-auto text-white">
-          <motion.h1
-            className="text-4xl sm:text-5xl font-extrabold drop-shadow-lg"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            About Us
-          </motion.h1>
-
-          <motion.p
-            className="mt-4 text-lg max-w-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Tholangamuwa Central College Past Students Colombo Group
-          </motion.p>
-        </div>
+        <motion.h1
+          className="relative text-4xl md:text-6xl font-extrabold text-white drop-shadow-lg"
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          CDS ගැන
+        </motion.h1>
       </section>
 
-      {/* ---------- INTRO ---------- */}
-      <section className="py-16 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto text-center">
-          <motion.h2
-            className="text-3xl font-bold mb-6"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            Who We Are
-          </motion.h2>
-
-          <p className="text-gray-700 text-lg leading-relaxed max-w-4xl mx-auto">
-            The Tholangamuwa Central College Past Students Colombo Group is a
-            united community of former students currently living in and around
-            Colombo. Our group was formed to strengthen lifelong friendships,
-            preserve school traditions, and support one another through social,
-            educational, and community-based initiatives.
+      {/* ---------- Mission & vision ---------- */}
+      <section className="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10">
+        <div>
+          <h2 className="text-3xl font-bold mb-4">අපගේ මෙහෙවර</h2>
+          <p className="text-lg leading-relaxed text-gray-700">
+            සාමූහික සංවර්ධන සංගමයේ (CDS) මෙහෙවර වන්නේ සාමූහික උත්සාහය, 
+            නවෝත්පාදනය සහ බෙදාගත් දැනුම තුළින් තිරසාර හතු වගාව ප්‍රවර්ධනය කිරීම, 
+            ජීවනෝපායන් වැඩිදියුණු කරන අතරම උසස් තත්ත්වයේ, කාබනික හතු නිෂ්පාදනය 
+            කිරීමට දේශීය ප්‍රජාවන්ට බලය ලබා දීම සහ පරිසර හිතකාමී කෘෂිකර්මාන්තයට සහාය වීමයි. 
+            CDS කැපවී සිටින්නේ: ප්‍රජා පාදක හතු වගාව සහ සහයෝගීතාවය දිරිමත් කිරීම 
+            වෙළඳපොළ සඳහා ආරක්ෂිත, පෝෂ්‍යදායී සහ උසස් තත්ත්වයේ හතු නිෂ්පාදනය කිරීම 
+            තිරසාර හා පරිසර හිතකාමී කෘෂිකාර්මික පිළිවෙත් ප්‍රවර්ධනය කිරීම වගාකරුවන්ට පුහුණුව, 
+            සම්පත් සහ තාක්ෂණික සහාය ලබා දීම සාමාජිකයින්ට සහ ග්‍රාමීය ප්‍රජාවන්ට ස්ථාවර 
+            ආදායම් අවස්ථා නිර්මාණය කිරීම නිෂ්පාදනයේ සිට වෙළඳපොළ දක්වා හතු 
+            සැපයුම් දාමය ශක්තිමත් කිරීම.
+          </p>
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold mb-4">අපගේ දැක්ම</h2>
+          <p className="text-lg leading-relaxed text-gray-700">
+            තිරසාර කෘෂිකර්මාන්තය, නවෝත්පාදනය සහ සාමූහික වර්ධනය තුළින් 
+            ග්‍රාමීය ගොවීන් සවිබල ගන්වන ප්‍රමුඛ ප්‍රජා පාදක හතු නිෂ්පාදන ජාලයක් 
+            බවට පත්වීම - ජීවනෝපායන් සහ පාරිසරික යහපැවැත්ම වැඩිදියුණු කරමින් 
+            දේශීය හා කලාපීය වෙළඳපොළට උසස් තත්ත්වයේ හතු ලබා දෙන ස්වයංපෝෂිත 
+            පරිසර පද්ධතියක් නිර්මාණය කිරීම.
           </p>
         </div>
       </section>
 
-      {/* ---------- MISSION / VISION ---------- */}
-      <section className="py-16 px-6 max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-10">
-          <motion.div
-            className="bg-white rounded-2xl shadow-md p-8"
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <h3 className="text-2xl font-bold mb-4">Our Mission</h3>
-            <p className="text-gray-600 leading-relaxed">
-              To build a strong and active alumni network that promotes unity,
-              friendship, mutual support, and meaningful engagement among past
-              students while contributing positively to society.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="bg-white rounded-2xl shadow-md p-8"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <h3 className="text-2xl font-bold mb-4">Our Vision</h3>
-            <p className="text-gray-600 leading-relaxed">
-              To become a model alumni organization that nurtures lifelong
-              connections, supports future generations, and upholds the values
-              and heritage of Tholangamuwa Central College.
-            </p>
-          </motion.div>
+      {/* ---------- Stats ---------- */}
+      <section className="bg-gray-50 py-12">
+        <div className="max-w-5xl mx-auto grid sm:grid-cols-3 text-center gap-8">
+          {[
+            { value: "30+", label: "Years in Business" },
+            { value: "500K+", label: "Happy Customers" },
+            { value: "8", label: "Regional Warehouses" },
+          ].map(({ value, label }) => (
+            <div key={label}>
+              <p className="text-4xl font-extrabold text-blue-700">{value}</p>
+              <p className="mt-2 text-gray-600">{label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ---------- VALUES ---------- */}
-      <section className="py-16 px-6 bg-gray-50">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Our Core Values
-        </h2>
+      {/* ---------- Core values ---------- */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <h2 className="text-3xl font-bold text-center mb-10">Our Core Values</h2>
 
-        <div className="grid sm:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <motion.div
-            className="bg-white rounded-2xl shadow p-6 text-center"
-            whileHover={{ y: -5 }}
-          >
-            <FiUsers className="mx-auto text-4xl text-indigo-600 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Unity</h3>
-            <p className="text-gray-600 text-sm">
-              Strengthening bonds among alumni through togetherness and respect.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="bg-white rounded-2xl shadow p-6 text-center"
-            whileHover={{ y: -5 }}
-          >
-            <FiHeart className="mx-auto text-4xl text-indigo-600 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Service</h3>
-            <p className="text-gray-600 text-sm">
-              Giving back to society and supporting meaningful causes.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="bg-white rounded-2xl shadow p-6 text-center"
-            whileHover={{ y: -5 }}
-          >
-            <FiCalendar className="mx-auto text-4xl text-indigo-600 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Engagement</h3>
-            <p className="text-gray-600 text-sm">
-              Organizing events and activities that keep our alumni connected.
-            </p>
-          </motion.div>
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            {
+              icon: <FaHandsHelping size={40} />,
+              title: "Integrity",
+              desc: "We do what’s right—even when no one’s watching.",
+            },
+            {
+              icon: <FaLeaf size={40} />,
+              title: "Sustainability",
+              desc: "We invest in eco‑friendly processes that protect our island home.",
+            },
+            {
+              icon: <FaUsers size={40} />,
+              title: "People First",
+              desc: "Employees and customers sit at the heart of every decision.",
+            },
+            {
+              icon: <FaRocket size={40} />,
+              title: "Innovation",
+              desc: "We embrace change and constantly iterate to serve you better.",
+            },
+            {
+              icon: <FaGlobeAsia size={40} />,
+              title: "Community",
+              desc: "Giving back to Sri Lanka is woven into our DNA.",
+            },
+          ].map(({ icon, title, desc }) => (
+            <motion.div
+              key={title}
+              className="bg-white rounded-2xl p-8 shadow-md text-center"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="flex justify-center mb-4 text-blue-700">{icon}</div>
+              <h3 className="text-xl font-semibold mb-2">{title}</h3>
+              <p className="text-gray-600">{desc}</p>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* ---------- FOOTER ---------- */}
-      <footer className="w-full bg-gray-900 text-white py-8 px-4 text-center text-sm">
-        <p>© 2025 Tholangamuwa Central College Past Students Colombo Group</p>
-        <p className="opacity-75">Powered by nSoft Technologies</p>
-      </footer>
+      {/* ---------- Call‑to‑action ---------- */}
+      <section className="w-full bg-indigo-600 text-white py-16">
+        <div className="max-w-full mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            CDS ආහාරවල ගුණාත්මකභාවය අත්විඳීමට සූදානම්ද?
+          </h2>
+          <p className="mb-8 text-lg">
+            අපගේ නවතම එකතුව පිරික්සන්න හෝ අප හා සම්බන්ධ වන්න—අපගේ 
+            කණ්ඩායම ඔබට උදව් කිරීමට මෙහි සිටී.
+          </p>
+          <div className="flex justify-center gap-4">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-3 rounded-2xl font-semibold bg-white text-indigo-600 shadow"
+              onClick={() => (window.location.href = "/products")}
+            >
+              Shop Now
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-3 rounded-2xl font-semibold border border-white shadow"
+              onClick={() => (window.location.href = "/contact")}
+            >
+              Contact Us
+            </motion.button>
+          </div>
+        </div>
+      </section>
     </Fragment>
   );
 }

@@ -54,51 +54,6 @@ function Layout() {
 }
 
 export default function ControlPage() {
-  // const [status, setStatus] = useState("loading");
-  // const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   const controller = new AbortController();
-  //   const token = localStorage.getItem("token");
-
-  //   if (!token) {
-  //     setStatus("unauthenticated");
-  //     toast.error("Please login");
-  //     navigate("/login", { replace: true });
-  //     return;
-  //   }
-
-  //   axios
-  //     .get(`${import.meta.env.VITE_BACKEND_URL}/api/user/`, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //       signal: controller.signal,
-  //     })     
-  //     .then((res) => {
-  //       const role = res.data.memberRole?.toLowerCase();
-  //       const allowedRoles = ["president", "secretary", "treasurer", "vice-president", "assistant-secretary", "assistant-treasurer","activity-coordinator","committee-member","internal-auditor"];
-        
-  //       if (!allowedRoles.includes(role)) {
-  //         setStatus("unauthorized");
-  //         toast.error("Unauthorized access");
-  //         navigate("/", { replace: true });
-  //       } else {
-  //         setStatus("authenticated");
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       if (!axios.isCancel(err)) {
-  //         setStatus("unauthenticated");
-  //         toast.error("Session expired. Please login again");
-  //         navigate("/login", { replace: true });
-  //       }
-  //     });
-
-  //   return () => controller.abort();
-  // }, [navigate]);
-
-  // if (status === "loading") {
-  //   return <p className="text-center mt-10 text-lg font-semibold">Loading...</p>;
-  // }
 
   return (
     <Routes>
