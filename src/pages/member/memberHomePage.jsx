@@ -154,7 +154,7 @@ export default function MemberHomePage() {
 
             <div className="leading-tight">
               <h1 className="text-base md:text-lg font-semibold text-gray-800">
-                සාමූහික සංවර්ධන සංගමය (CDS)
+                සාමූහික සංවර්ධන සමිතිය (CDS)
               </h1>
               <p className="text-xs text-gray-500">
                 සාමාජික නිෂ්පාදන සහ විකුණුම් කළමනාකරණ පද්ධතිය
