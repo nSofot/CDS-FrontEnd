@@ -90,12 +90,12 @@ export default function Header() {
           onClick={() => navigate("/")}
         />      
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-left">
           <h1 className="text-1xl text-green-700 font-bold">
             Collective Development Society
           </h1>
           <h1 className="text-1xl text-green-700 font-bold">
-            සාමූහික සංවර්ධන සංගමය
+            සාමූහික සංවර්ධන සමිතිය
           </h1>        
         </div>
       </div>

@@ -140,7 +140,8 @@ export default function Contact() {
             <iframe
               title="CW Foods Ceylon (Pvt) Ltd. HQ map"
               // src="https://maps.google.com/maps?q=colombo%2007&t=&z=13&ie=UTF8&iwloc=&output=embed"
-              src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1468.2150791711329!2d80.3833100205428!3d7.288392804487054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2slk!4v1754668664888!5m2!1sen!2slk"
+              // src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1468.2150791711329!2d80.3833100205428!3d7.288392804487054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2slk!4v1754668664888!5m2!1sen!2slk"
+              src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d720.3858114549289!2d80.27390926943457!3d7.137538330266953!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2s!5e1!3m2!1sen!2slk!4v1779035872417!5m2!1sen!2slk" 
               loading="lazy"
               className="w-full h-64 border-0"
             />
