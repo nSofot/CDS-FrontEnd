@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import LoadingSpinner from "../../components/loadingSpinner";
-import { FaUsersCog, FaUserClock, FaChevronUp, FaChevronDown } from "react-icons/fa";
+import { FaUsersCog, FaUserClock, FaChevronUp, FaChevronDown, FaReceipt  } from "react-icons/fa";
 import { FaSackDollar } from "react-icons/fa6";
 import { m } from "framer-motion";
 import { t } from "i18next";
@@ -10,6 +10,13 @@ import { t } from "i18next";
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
+
+  const [totalPendingOrders, setTotalPendingOrders] = useState(0);
+  const [totalCompletedOrders, setTotalCompletedOrders] = useState(0);
+  const [totalSubstrateBagsOrders, setTotalSubstrateBagsOrders] = useState(0);
+  const [totalSterilizedBagsOrders, setTotalSterilizedBagsOrders] = useState(0);
+  const [totalInoculatedBagsOrders, setTotalInoculatedBagsOrders] = useState(0);
+  const [totalIncubatingBagsOrders, setTotalIncubatingBagsOrders] = useState(0);
 
   const [activeMembers, setActiveMembers] = useState([]);
   const [todayProductionBags, setTodayProductionBags] = useState(0);
@@ -27,6 +34,7 @@ export default function DashboardPage() {
   const [currentAccounts, setCurrentAccounts] = useState(0);
 
   const [openSections, setOpenSections] = useState({
+    orders: true,
     exco: true,
     sales: true,
     finance: true,
@@ -45,6 +53,69 @@ export default function DashboardPage() {
       try {
         setIsLoading(true);
 
+        // Fetch orders
+        const ordersRes = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`
+        );
+        const orders = ordersRes.data;
+        setTotalPendingOrders(orders.filter((o) => o.orderStatus === "Pending").length);
+        setTotalCompletedOrders(orders.filter((o) => o.orderStatus === "Completed").length);
+        setTotalSubstrateBagsOrders(
+          orders
+            .filter(
+              (o) =>
+                (o.orderStatus === "Approved" || o.orderStatus === "Pending") &&
+                o.orderBagStatus === "Substrate"
+            )
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+        setTotalSterilizedBagsOrders(
+          orders
+            .filter(
+              (o) =>
+                (o.orderStatus === "Approved" || o.orderStatus === "Pending") &&
+                o.orderBagStatus === "Sterilized"
+            )
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+        setTotalSubstrateBagsOrders(
+          orders            
+            .filter(
+              (o) =>
+                (o.orderStatus === "Approved" || o.orderStatus === "Pending") &&
+                o.orderBagStatus === "Inoculated"
+            )
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+        setTotalSterilizedBagsOrders(
+          orders            
+            .filter(
+              (o) =>
+                (o.orderStatus === "Approved" || o.orderStatus === "Pending") &&
+                o.orderBagStatus === "Incubating"
+            )
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+        setTotalInoculatedBagsOrders(
+          orders            
+            .filter(
+              (o) =>
+                (o.orderStatus === "Approved" || o.orderStatus === "Pending") &&
+                o.orderBagStatus === "Inoculated"
+            )
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+        setTotalIncubatingBagsOrders(
+          orders            
+            .filter(
+              (o) =>
+                (o.orderStatus === "Approved" || o.orderStatus === "Pending") &&
+                o.orderBagStatus === "Incubating"
+            )
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+
+        // Production summary
         const membersRes = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/member`
         );
@@ -112,6 +183,24 @@ export default function DashboardPage() {
 
       {/* DASHBOARD GRID */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+        {/* ORDERS */}
+        <DashboardCard
+          title="Order Summary"
+          icon={<FaReceipt />}
+          collapsible
+          open={openSections.orders}
+          onToggle={() => toggleSection("orders")}
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Stat label="Pending Orders" value={totalPendingOrders} color="text-red-600" />
+            <Stat label="Completed Orders" value={totalCompletedOrders} color="text-green-600" />
+            <Stat label="Pending Orders - Substrate Bags" value={totalSubstrateBagsOrders} color="text-orange-600" />
+            <Stat label="Pending Orders - Sterilized Bags" value={totalSterilizedBagsOrders} color="text-yellow-600" />
+            <Stat label="Pending Orders - Inoculated Bags" value={totalInoculatedBagsOrders} color="text-purple-600" />
+            <Stat label="Pending Orders - Incubating Bags" value={totalIncubatingBagsOrders} color="text-blue-500" />
+          </div>
+        </DashboardCard>
 
         {/* MEMBERS */}
         <DashboardCard

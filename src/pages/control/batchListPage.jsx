@@ -81,9 +81,9 @@ export default function BatchListPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Batch List</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Batch Management</h1>
             <p className="text-sm text-gray-500">
-              Manage and monitor all production batches
+              Manage, track, and monitor all production batches
             </p>
           </div>
 

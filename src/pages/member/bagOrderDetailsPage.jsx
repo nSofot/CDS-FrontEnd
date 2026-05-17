@@ -7,6 +7,8 @@ export default function BagOrderDetailsPage() {
     const [orders, setOrders] = useState([]);
     const [member, setMember] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
     const [filterStatus, setFilterStatus] = useState("All");
 
