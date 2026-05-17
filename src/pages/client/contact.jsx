@@ -1,160 +1,195 @@
-import { Fragment } from "react";
-import { motion } from "framer-motion";
-import { NavLink } from "react-router-dom";
-import { FiMapPin, FiPhone, FiMail } from "react-icons/fi";
+import { useState } from "react";
+import {
+  FiMail,
+  FiPhone,
+  FiMapPin,
+  FiSend,
+  FiCheckCircle,
+} from "react-icons/fi";
 
-export default function ContactUs() {
+export default function Contact() {
+  /* ---------------------- state ---------------------- */
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const navClass = ({ isActive }) =>
-  isActive
-    ? "text-yellow-400 border-b-2 border-yellow-400"
-    : "hover:text-yellow-400";
+  /* -------------------- handlers --------------------- */
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
-  return (
-    <Fragment>
-      {/* ---------- HERO ---------- */}
-      <section className="relative w-full min-h-[60vh] flex items-center bg-black overflow-hidden">
-        <motion.img
-          src="/LandingPage4.png"
-          alt="Contact Us Banner"
-          className="absolute inset-0 w-full h-full object-cover opacity-70"
-          initial={{ scale: 1.05 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1 }}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      /* === REPLACE with your real API endpoint === */
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Network response was not ok");
+      setSuccess(true);
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* -------------- reusable field component ----------- */
+  const Field = ({ label, name, type = "text", textarea = false }) => (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={name} className="font-medium">
+        {label}
+      </label>
+      {textarea ? (
+        <textarea
+          id={name}
+          name={name}
+          rows={5}
+          className="p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring focus:ring-indigo-300"
+          value={form[name]}
+          onChange={handleChange}
+          required
         />
+      ) : (
+        <input
+          id={name}
+          name={name}
+          type={type}
+          className="p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring focus:ring-indigo-300"
+          value={form[name]}
+          onChange={handleChange}
+          required
+        />
+      )}
+    </div>
+  );
 
-        <div className="relative z-10 px-8 max-w-6xl mx-auto text-white">
-          <motion.h1
-            className="text-4xl sm:text-5xl font-extrabold drop-shadow-lg"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            Contact Us
-          </motion.h1>
-
-          <motion.p
-            className="mt-4 text-lg max-w-3xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Get in touch with Tholangamuwa Central College Past Students – Colombo Group
-          </motion.p>
-        </div>
+  /* --------------------- render ---------------------- */
+  return (
+    <main className="min-h-screen flex flex-col">
+      {/* ------------ hero banner ------------ */}
+      <section className="relative h-[40vh] bg-indigo-600 flex items-center justify-center overflow-hidden">
+        <img
+          src="/contactBanner.jpg" /* place any wide hero in /public */
+          alt="Contact us"
+          className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-overlay"
+        />
+        <h1 className="relative text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">
+          අප හා සම්බන්ධ වන්න
+        </h1>
       </section>
 
-      {/* ---------- CONTACT INFO ---------- */}
-      <section className="py-16 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <motion.h2
-            className="text-3xl font-bold text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            We’d Love to Hear From You
-          </motion.h2>
+      {/* ---------- main content grid ---------- */}
+      <section className="flex-1 max-w-6xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-12">
+        {/* ====== contact information ====== */}
+        <div className="flex flex-col gap-8">
+          <h2 className="text-3xl font-bold">අපි ඔබෙන් අසන්නට කැමතියි.</h2>
+          <p className="text-gray-700">
+            නිෂ්පාදනය, බෙදාහැරීම සහ ප්‍රතිලාභ පිළිබඳව ඔබට ප්‍රශ්නයක් තිබේද, 
+            නැතහොත් ඔබේ ප්‍රතිපෝෂණය බෙදා ගැනීමට අවශ්‍යද - අපගේ කණ්ඩායම ඔබට උදව් කිරීමට සූදානම්!
+          </p>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <motion.div
-              className="bg-white rounded-2xl shadow p-6 text-center"
-              whileHover={{ y: -5 }}
-            >
-              <FiMapPin className="mx-auto text-4xl text-indigo-600 mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Address</h3>
-              <p className="text-gray-600 text-sm">
-                Colombo, Sri Lanka
-              </p>
-            </motion.div>
+          <ul className="space-y-6">
+            <li className="flex items-start gap-4">
+              <FiMail className="text-2xl text-indigo-600 shrink-0" />
+              <div>
+                <p className="font-semibold">Email us</p>
+                <a
+                  href="mailto:support@cbcbeauty.lk"
+                  className="text-indigo-600 hover:underline"
+                >
+                  cdscommunity.lk@gmail.com
+                </a>
+              </div>
+            </li>
+            <li className="flex items-start gap-4">
+              <FiPhone className="text-2xl text-indigo-600 shrink-0" />
+              <div>
+                <p className="font-semibold">Call us</p>
+                <a href="tel:+94112345678" className="text-indigo-600 hover:underline">
+                  +94 77 075 4486
+                </a>
+                <p className="text-sm text-gray-500">Mon–Fri, 9 AM – 6 PM</p>
+              </div>
+            </li>
+            <li className="flex items-start gap-4">
+              <FiMapPin className="text-2xl text-indigo-600 shrink-0" />
+              <div>
+                <p className="font-semibold">Visit us</p>
+                <address className="not-italic">
+                  Malmaduwa,<br />
+                  Kotiyakumbura, Sri Lanka
+                </address>
+              </div>
+            </li>
+          </ul>
 
-            <motion.div
-              className="bg-white rounded-2xl shadow p-6 text-center"
-              whileHover={{ y: -5 }}
-            >
-              <FiPhone className="mx-auto text-4xl text-indigo-600 mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Phone</h3>
-              <p className="text-gray-600 text-sm">
-                +94 77 123 4567
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="bg-white rounded-2xl shadow p-6 text-center"
-              whileHover={{ y: -5 }}
-            >
-              <FiMail className="mx-auto text-4xl text-indigo-600 mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Email</h3>
-              <p className="text-gray-600 text-sm">
-                colombogrouptcc@gmail.com
-              </p>
-            </motion.div>
+          {/* optional embedded map */}
+          <div className="rounded-xl overflow-hidden shadow-lg">
+            <iframe
+              title="CW Foods Ceylon (Pvt) Ltd. HQ map"
+              // src="https://maps.google.com/maps?q=colombo%2007&t=&z=13&ie=UTF8&iwloc=&output=embed"
+              src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1468.2150791711329!2d80.3833100205428!3d7.288392804487054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2slk!4v1754668664888!5m2!1sen!2slk"
+              loading="lazy"
+              className="w-full h-64 border-0"
+            />
           </div>
         </div>
-      </section>
 
-      {/* ---------- CONTACT FORM ---------- */}
-      <section className="py-16 px-6 bg-gray-50">
-        <div className="max-w-8xl mx-auto"> {/* Form width optimized */}
-          <motion.h2
-            className="text-3xl font-bold text-center mb-10"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            Send Us a Message
-          </motion.h2>
+        {/* ============ contact form ============ */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <h2 className="text-2xl font-bold mb-6">Send us a message</h2>
 
-          <motion.form
-            className="bg-white rounded-2xl shadow-md p-8 space-y-6"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div>
-                <label className="block font-semibold mb-2">Full Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+          {success && (
+            <p className="flex items-center gap-2 mb-4 text-green-700 bg-green-50 border border-green-200 p-3 rounded-lg">
+              <FiCheckCircle className="text-xl" /> Thank you! We’ll get back to
+              you soon.
+            </p>
+          )}
 
-              <div>
-                <label className="block font-semibold mb-2">Email Address</label>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
+          {error && (
+            <p className="mb-4 text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg">
+              {error}
+            </p>
+          )}
 
-            <div>
-              <label className="block font-semibold mb-2">Message</label>
-              <textarea
-                rows="4"
-                placeholder="Write your message"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Field label="Name" name="name" />
+            <Field label="Email" name="email" type="email" />
+            <Field label="Subject" name="subject" />
+            <Field label="Message" name="message" textarea />
 
             <button
               type="submit"
-              className="w-full bg-indigo-700 text-white font-semibold py-3 rounded-lg hover:bg-indigo-800 transition"
+              disabled={submitting}
+              className="flex items-center justify-center gap-2 w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-xl shadow hover:bg-indigo-700 disabled:opacity-50"
             >
-              Send Message
+              {submitting ? (
+                <>
+                  Sending...
+                  <FiSend className="animate-pulse" />
+                </>
+              ) : (
+                <>
+                  Send Message
+                  <FiSend />
+                </>
+              )}
             </button>
-          </motion.form>
+          </form>
         </div>
       </section>
-
-      {/* ---------- FOOTER ---------- */}
-      <footer className="w-full bg-gray-900 text-white py-8 px-4 text-center text-sm">
-        <p>© 2025 Tholangamuwa Central College Past Students Colombo Group</p>
-        <p className="opacity-75">Powered by nSoft Technologies</p>
-      </footer>
-    </Fragment>
+    </main>
   );
 }
