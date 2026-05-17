@@ -2,6 +2,9 @@ import { Outlet, Routes, Route } from "react-router-dom";
 
 import MemberHomePage from "./member/memberHomePage";
 import MemberDashboardPage from "./member/memberDashboard";
+import MemberProfilePage from "./member/memberProfilePage";
+import BagOrderDetailsPage from "./member/bagOrderDetailsPage";
+
 import NotFoundPage from "./notFoundPage";
 
 function Layout() {
@@ -22,7 +25,8 @@ export default function MemberPortalPage() {
         {/* DEFAULT PAGE */}
         <Route index element={<MemberDashboardPage />} />
         {/* OTHER PAGES */}
-
+        <Route path="profile" element={<MemberProfilePage />} />
+        <Route path="bag-orders" element={<BagOrderDetailsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
