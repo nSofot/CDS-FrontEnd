@@ -21,11 +21,6 @@ export default function Header() {
   const isLoggedIn = Boolean(token);
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  // const isCommittee = ["admin", "executive", "manager", "chairman", "secretary", "treasurer"].includes(
-  //   user?.memberRole
-  // );
-  // const isCommittee = user && user?.memberRole !== "member" && user?.memberRole !== "guest";
-
   const isAdmin = user?.memberRole === "admin";
   const isMember = user?.memberRole === "member";
   const isGuest = user?.memberRole === "guest";

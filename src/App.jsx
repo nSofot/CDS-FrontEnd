@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast'
 
 // Pages
 import ControlPage from './pages/controlPage'
+import MemberPortalPage from './pages/memberPortalPage'
 import Home from './pages/home'
 import LoginPage from './pages/login'
 import ForgetPasswordPage from './pages/forgetPassword'
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forget" element={<ForgetPasswordPage />} />
             <Route path="/control/*" element={<ControlPage />} />
+            <Route path="/member/*" element={<MemberPortalPage />} />
             <Route path="*" element={<Home />} />
         </Routes>
       </BrowserRouter>
