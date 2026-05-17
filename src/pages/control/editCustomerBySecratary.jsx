@@ -263,7 +263,7 @@ export default function EditMember() {
 			);
 
 			toast.success("Member updated successfully");
-			navigate("/members", { replace: true });
+			navigate("/control/members", { replace: true });
 		} catch (error) {
 			console.error(error);
 			toast.error(error?.response?.data?.message || "Update failed");

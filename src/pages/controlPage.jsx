@@ -38,6 +38,7 @@ import MakeSterilizedBagPage from "./control/makeSterilizedBagPage";
 import MakeIncubatingBagPage from "./control/makeIncubatingBagPage";
 import BatchListPage from "./control/batchListPage";
 import ViewBatchPage from "./control/viewBatchPage";
+import BagOrderManagementPage from "./control/bagOrderManagementPage";
 
 
 import NotFoundPage from "./notFoundPage";
@@ -98,7 +99,7 @@ export default function ControlPage() {
         <Route path="incubated-substrate-bag" element={<MakeIncubatingBagPage />} />
         <Route path="batch-list" element={<BatchListPage />} />
         <Route path="view-batch/:batchNo" element={<ViewBatchPage />} />
-
+        <Route path="bag-orders-management" element={<BagOrderManagementPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

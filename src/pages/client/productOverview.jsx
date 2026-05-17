@@ -9,11 +9,9 @@ import { addToCart, getCart } from "../../utils/cart";
 export default function ProductOverview() {
     const params = useParams();
     const stockId = params.Id
+  
     const [status, setStatus] = useState("loading")
     const [product, setProduct] = useState(null)
-    const [categories, setCategories] = useState([]);
-    const [brands, setBrands] = useState([]);
-    const [uoms, setUoms] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -31,27 +29,11 @@ export default function ProductOverview() {
         fetchProduct();
     }, []);
 
-    function getCategoryName(categoryId) {  
-        const category = categories.find(p => p.categoryId === categoryId);
-        return category ? category.categoryName : categoryId;
-    }
-
-   function getBrandName(brandId) {      
-        const brand = brands.find(p => p.brandId === brandId);
-        return brand ? brand.brandName : brandId;
-    }
-
-    function getUomName(uomId) {      
-        const uom = uoms.find(p => p.uomId === uomId);
-        return uom ? uom.uomName : uomId;
-    }
-
-
     return (
         <>
             {status == "success" && (
                 <div className="w-full h-full flex flex-col md:flex-row">
-                    <h1 className="md:hidden my-8 w-full text-center text-2xl font-semibold text-secondary">{product.name}
+                    <h1 className="md:hidden my-8 w-full text-center text-2xl font-semibold text-secondary">{product.stockName}
                         {/* {
                             product.description.map((description, index) => {
                                 return (
@@ -59,15 +41,15 @@ export default function ProductOverview() {
                                 )
                             })
                         } */}
-                        {product.description}
+                        {product.stockDescription}
                     </h1>
                     <div className="w-full md:w-[50%] h-full flex justify-center items-center">
-                        <ImageSlider images={product.image}/>
+                        <ImageSlider images={product.stockImage}/>
                     </div>
                     <div className="w-full md:w-[50%] h-full flex justify-center items-center">
                         <div className="w-[400px] h-[400px] flex flex-col item-center">
-                            <h1 className="hidden md:block w-full text-center text-2xl font-semibold text-secondary">{getBrandName(product.brandId)} {getCategoryName(product.categoryId)}</h1>    
-                            <h1 className="hidden md:block w-full text-center text-2xl font-semibold text-secondary">{product.name}</h1>
+                            {/* <h1 className="hidden md:block w-full text-center text-2xl font-semibold text-secondary">{getBrandName(product.brandId)} {getCategoryName(product.categoryId)}</h1>     */}
+                            <h1 className="hidden md:block w-full text-center text-2xl font-semibold text-secondary">{product.stockName}</h1>
                             <h1 className="hidden md:block w-full text-center text-xl font-semibold text-secondary">
                                 {/* {
                                     product.altName.map((altName, index) => {
@@ -76,19 +58,18 @@ export default function ProductOverview() {
                                         )
                                     })
                                 } */}
-                                {product.description}
+                                {product.stockDescription}
                             </h1>
                             {/* product Id*/}
-                            <h1 className="w-full text-center my-2 text-sm font-semibold text-gray-600">{product.productId}</h1>
+                            <h1 className="w-full text-center my-2 text-sm font-semibold text-gray-600">{product.stockId}</h1>
                             {/* product description*/}
                             <h1 className="w-full text-center my-2 text-md font-semibold text-gray-600">{product.description}</h1>
                             {/* product price*/}
                             {
-                                product.labelledPrice > product.price ? 
+                                product.labelledPrice > product.stockPrice ? 
                                 <div className="w-full flex justify-center items-center mt-4">
-                                     <span className="text-4xl text-gray-900">{"Rs." + product.price.toFixed(2)}</span>
                                     <span className="text-2xl text-gray-500 line-through ml-6">Rs.{product.labelledPrice.toFixed(2)}</span>
-                                   
+                                    <span className="text-4xl text-gray-900">{"Rs." + product.stockPrice.toFixed(2)}</span>
                                 </div>
                                 :<span className="text-4xl text-center text-gray-900 mt-4">{"Rs." + product.stockPrice.toFixed(2)}</span>
                             }
@@ -99,11 +80,11 @@ export default function ProductOverview() {
 											state: {
 												cart: [
 													{
-														productId: product.productId,
-														name: product.name,
-														image: product.image,
+														productId: product.stockId,
+														name: product.stockName,
+														image: product.stockImage,
                                                         // altName: product.altName,
-                                                        description: product.description,
+                                                        description: product.stockDescription,
 														price: product.stockPrice,
 														labelledPrice: product.labelledPrice,
 														qty: 1,

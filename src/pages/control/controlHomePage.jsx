@@ -51,7 +51,6 @@ export default function ControlHomePage() {
       icon: <FaHome />,
       roles: [
         "admin",
-        "president",
       ],
     },
     {
@@ -60,7 +59,6 @@ export default function ControlHomePage() {
       icon: <FaAtom />,
       roles: [
         "admin",
-        "president",
       ],
     },
     {
@@ -69,7 +67,6 @@ export default function ControlHomePage() {
       icon: <FaUsers />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -79,7 +76,6 @@ export default function ControlHomePage() {
       icon: <FaSackDollar />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -89,17 +85,24 @@ export default function ControlHomePage() {
       icon: <FaMoneyBillTransfer />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
     {
-      label: "Batch Records",
+      label: "Batch Management",
       to: "/control/batch-list",
       icon: <FaFileAlt />,
       roles: [
         "admin",
-        "president",
+      ],
+    },
+
+    {
+      label: "Order Management",
+      to: "/control/bag-orders-management",
+      icon: <FaFileAlt />,
+      roles: [
+        "admin",
       ],
     },
 
@@ -109,7 +112,6 @@ export default function ControlHomePage() {
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -119,7 +121,6 @@ export default function ControlHomePage() {
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -129,7 +130,6 @@ export default function ControlHomePage() {
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -139,7 +139,6 @@ export default function ControlHomePage() {
       icon: <FaReceipt />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -149,7 +148,6 @@ export default function ControlHomePage() {
       icon: <FaFileAlt />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -159,7 +157,6 @@ export default function ControlHomePage() {
       icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -169,7 +166,6 @@ export default function ControlHomePage() {
       icon: <FaUserClock />,
       roles: [
         "admin",
-        "president",
       ],
     },
       
@@ -179,7 +175,6 @@ export default function ControlHomePage() {
       icon: <TbReport />,
       roles: [
         "admin",
-        "president",
       ],
     },
 
@@ -189,7 +184,6 @@ export default function ControlHomePage() {
       icon: <FaUsersCog />,
       roles: [
         "admin",
-        "president",
       ],
     },
   ];
