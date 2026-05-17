@@ -51,7 +51,7 @@ export default function MemberHomePage() {
     },
     {
       label: "බෑග් ඇණවුම්",
-      to: "/member/orders",
+      to: "/member/bag-orders",
       icon: <FaShoppingCart />,
       roles: ["member", "admin"],
     },

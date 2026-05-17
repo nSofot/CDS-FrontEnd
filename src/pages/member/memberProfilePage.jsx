@@ -228,7 +228,7 @@ export default function MemberProfilePage() {
                 {/* ADDRESS */}
                 <div className="mt-8">
 
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <FaMapMarkerAlt className="text-emerald-600" />
                     ලිපිනය
                     </h3>
@@ -253,7 +253,7 @@ export default function MemberProfilePage() {
                 {/* NOTES */}
                 <div className="mt-8">
 
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                         <FaStickyNote className="text-emerald-600" />
                         සටහන්
                     </h3>
@@ -289,7 +289,7 @@ function ProfileCard({ icon, title, value }) {
           {icon}
         </div>
 
-        <h3 className="font-semibold text-gray-700">
+        <h3 className="text-sm font-semibold text-gray-700">
           {title}
         </h3>
 
