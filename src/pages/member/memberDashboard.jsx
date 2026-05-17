@@ -22,6 +22,11 @@ export default function MemberDashboardPage() {
     exco: true,
   });
 
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const memberId = user?.memberId;
+
+
   /* ───── HELPERS ───── */
   const formatCurrency = (num) =>
     new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(num || 0);
@@ -35,12 +40,27 @@ export default function MemberDashboardPage() {
       try {
         setIsLoading(true);
 
-        // const membersRes = await axios.get(
-        //   `${import.meta.env.VITE_BACKEND_URL}/api/member`
-        // );
-        // const list = membersRes.data;
-        // // setActiveMembers(list.filter((m) => m.status === "active"));
-        // setActiveMembers(membersRes.data.length);
+        const membersRes = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`
+        );
+        const list = membersRes.data;
+
+        const filteredOrders = list.filter(
+          (m) =>
+            (m.orderStatus === "Pending" ||
+              m.orderStatus === "Approved" ||
+              m.orderStatus === "Completed") &&
+            m.memberId === memberId
+        );
+
+        // Total orderQuantity
+        const totalOrderQuantity = filteredOrders.reduce(
+          (total, item) => total + Number(item.orderQuantity || 0),
+          0
+        );
+        setPendingOrders(totalOrderQuantity);
+
+    
 
 
         // const financeRes = await axios.get(
@@ -112,7 +132,7 @@ export default function MemberDashboardPage() {
           onToggle={() => toggleSection("exco")}
         >
           <div className="grid grid-cols-2 gap-4">
-            <Stat label="පොරොත්තු ඇණවු බෑග් ප්‍රමාණය" value={pendingOrders} color="text-blue-600" />
+            <Stat label="පොරොත්තු ඇණවුම් බෑග් ප්‍රමාණය" value={pendingOrders} color="text-blue-600" />
             <Stat label="වත්මන් ඉන්කියුබේෂන් බෑග් ප්‍රමාණය" value={currentIncubatingBags} color="text-blue-600"/>
             <Stat label="වත්මන් අස්වනු නෙළන බෑග් ප්‍රමාණය" value={currentFruitingBags} color="text-green-600" />
             <Stat label="අද අස්වනු නෙළන ලද පැකට් ප්‍රමාණය" value={todayHarvestedPacks} color="text-purple-600" />
