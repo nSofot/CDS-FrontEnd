@@ -24,19 +24,11 @@ export default function Header() {
   // const isCommittee = ["admin", "executive", "manager", "chairman", "secretary", "treasurer"].includes(
   //   user?.memberRole
   // );
-  const isCommittee = user && user?.memberRole !== "member" && user?.memberRole !== "guest";
+  // const isCommittee = user && user?.memberRole !== "member" && user?.memberRole !== "guest";
 
   const isAdmin = user?.memberRole === "admin";
-  const isPresident = user?.memberRole === "president";
-  const isSecretary = user?.memberRole === "secretary";
-  const isTreasurer = user?.memberRole === "treasurer";
-  const isVicePresident = user?.memberRole === "vice-president";
-  const isAssistantSecretary = user?.memberRole === "assistant-secretary";
-  const isAssistantTreasurer = user?.memberRole === "assistant-treasurer";
-  const isActivityCoordinator = user?.memberRole === "activity-coordinator";
-  const isCommitteeMember = user?.memberRole === "committee-member";
-  const isInternalAuditor = user?.memberRole === "internal-auditor";
   const isMember = user?.memberRole === "member";
+  const isGuest = user?.memberRole === "guest";
 
 
   const handleLogout = () => {
@@ -144,7 +136,7 @@ export default function Header() {
             </Link>
           )}
 
-          {isCommittee && (
+          {(isAdmin || isMember) && (
             <Link to="/member" className="hover:border-b-2 border-orange-400 text-orange-400">
               Member Portal
             </Link>
@@ -202,11 +194,12 @@ export default function Header() {
 
             {/* Role-based Links */}
             <div className="text-yellow-400 font-semibold">
-              {isCommittee && (
-                <NavItem to="/control" icon={FaGavel} label="Control Panel" />
+              {(isMember || isAdmin) && (
+                <NavItem to="/member" icon={FaGavel} label="Member Portal" />
               )}
+
               {isAdmin && (
-                <NavItem to="/admin" icon={FaGavel} label="Admin Panel" />
+                <NavItem to="/control" icon={FaGavel} label="Admin Portal" />
               )}
             </div>
           </div>
