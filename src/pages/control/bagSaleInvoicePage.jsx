@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef, Fragment, use } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
 import { FaRegFilePdf } from "react-icons/fa";
-import html2pdf, { f } from "html2pdf.js/dist/html2pdf.bundle";
+import html2pdf from "html2pdf.js/dist/html2pdf.bundle";
 
 Modal.setAppElement("#root");
 
@@ -17,7 +17,10 @@ export default function BagSaleInvoicePage() {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [fillteredOrders, setFillteredOrders] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [items, setItems] = useState([]);
   const [invoiceDate, setInvoiceDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -28,6 +31,7 @@ export default function BagSaleInvoicePage() {
 
   const [isCustomerModalOpen, setCustomerModalOpen] = useState(false);
   const [isProductModalOpen, setProductModalOpen] = useState(false);
+  const [isOrderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -52,7 +56,8 @@ export default function BagSaleInvoicePage() {
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
-    featchBatches();
+    fetchBatches();
+    fetchOrders();
   }, []);
 
   const fetchCustomers = async () => {
@@ -83,18 +88,38 @@ export default function BagSaleInvoicePage() {
     }
   };
 
-  const featchBatches = async () => {
+  const fetchBatches = async () => {
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/batch`
       );
-      const filteredBatches = res.data.filter((item) => item.status ==="finished products");
+
       setBatches(res.data || []);
     } catch {
       toast.error("Failed to load batches");
     }
-  }
+  };
   
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`,
+          {
+              headers: { Authorization: `Bearer ${token}` },
+          }
+      );
+      setOrders(res.data || []);
+    } catch {
+      toast.error("Failed to load orders");
+    }
+  }
+
+  const filteredOrders = orders.filter(
+    (o) =>
+      o.memberId === selectedCustomer?.memberId &&
+      o.orderStatus === "Completed"
+  );
+
   // ---------------- ITEMS ----------------
   const addItemRow = () => {
     setItems([
@@ -166,6 +191,14 @@ export default function BagSaleInvoicePage() {
 
     setItems(updated);
     setProductModalOpen(false);
+  };
+
+  const selectOrder = (order) => {
+    setSelectedOrder(order);
+
+    setOrderNumber(order.orderNo || "");
+
+    setOrderModalOpen(false);
   };
 
   const formatCurrency = (value) => {
@@ -529,26 +562,49 @@ export default function BagSaleInvoicePage() {
       </div>
 
       {/* DATE */}
-      <div className="flex bg-white p-4 rounded-xl shadow mb-6 gap-4">
-          <div>
-              <label className="text-sm font-medium">Invoice Date</label>
-              <input
-                type="date"
-                value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
-                className="ml-6 border p-2 mt-2 rounded-lg"
-              />
-          </div>
+      <div className="flex flex-col md:flex-row bg-white p-4 rounded-xl shadow mb-6 gap-4">
 
-          <div>
-              <label className="text-sm font-medium">Order No</label>
-              <input
-                type="orderNo"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                className="ml-6 border p-2 mt-2 rounded-lg"
-              />
-          </div>
+        {/* Invoice Date */}
+        <div className="flex flex-col w-full md:w-1/4">
+          <label htmlFor="invoiceDate" className="text-sm font-medium">
+            Invoice Date
+          </label>
+          <input
+            id="invoiceDate"
+            type="date"
+            value={invoiceDate}
+            onChange={(e) => setInvoiceDate(e.target.value)}
+            className="border p-2 mt-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+
+        {/* Order No */}
+        <div className="flex flex-col w-full md:w-3/4">
+          <label htmlFor="orderNumber" className="text-sm font-medium">
+            Order No
+          </label>
+          <button
+            disabled={!selectedCustomer || filteredOrders.length === 0}
+            onClick={() => setOrderModalOpen(true)}
+            className="w-full border p-2 mt-2 rounded-lg text-left flex flex-col md:flex-row md:items-center gap-2"
+          >
+            {selectedOrder ? (
+              <>
+                <p className="font-semibold">
+                  {selectedOrder.orderNo}
+                </p>
+                <p className="ml-2 text-gray-500">
+                  {formatDate(selectedOrder.orderDate)} | {" "}
+                  {selectedOrder.orderBagStatus} | {" "}
+                  {selectedOrder.orderQuantity} Bags
+                </p>
+              </>
+            ) : (
+              <span className="text-gray-400">Select an order</span>
+            )}
+          </button>          
+        </div>
+
       </div>
 
       {/* ITEMS */}
@@ -982,6 +1038,8 @@ export default function BagSaleInvoicePage() {
             onClick={() => {
               setSelectedCustomer(c);
               setCustomerModalOpen(false);
+              setSelectedOrder(null);
+              setOrderNumber("");
             }}
             className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50"
           >
@@ -1009,6 +1067,27 @@ export default function BagSaleInvoicePage() {
           </div>
         ))}
       </Modal>
+
+      {/* ORDER MODAL */}
+      <Modal
+        isOpen={isOrderModalOpen}
+        onRequestClose={() => setOrderModalOpen(false)}
+        className="bg-white p-4 max-w-md mx-auto mt-20 rounded-xl max-h-[70vh] overflow-y-auto"
+      >
+        <h2 className="font-bold mb-3">Select Order</h2>
+
+        {filteredOrders.map((o) => (
+          <div
+            key={o._id}
+            onClick={() => selectOrder(o)}
+            className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50 flex justify-between"
+          >
+            <span>
+              {o.orderNo} | {formatDate(o.orderDate)} | {o.orderBagStatus} | {o.orderQuantity} Bags
+            </span>
+          </div>
+        ))}
+      </Modal>      
     </div>
   );
 }

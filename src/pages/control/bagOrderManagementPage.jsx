@@ -5,9 +5,10 @@ import toast from "react-hot-toast";
 
 export default function BagOrderManagementPage() {
     const [orders, setOrders] = useState([]);
-    const [member, setMember] = useState(null);
+    const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    const [filterMember, setFilterMember] = useState("All");
     const [filterStatus, setFilterStatus] = useState("All");
     const [filterType, setFilterType] = useState("All");
 
@@ -18,6 +19,21 @@ export default function BagOrderManagementPage() {
     const user = JSON.parse(localStorage.getItem("user"));
     const memberId = user?.memberId;
 
+  const getAuthHeaders = () => {
+    if (!token) return null;
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  const handleAuthError = (err) => {
+    if (err.response?.status === 403) {
+      toast.error("Session expired. Please login again.");
+      localStorage.removeItem("token");
+      navigate("/login");
+    } else {
+      toast.error("Something went wrong");
+    }
+  };
+      
     // ---------------- LEAD TIME LOGIC ----------------
     const getDefaultDate = (bagStatus = "Substrate") => {
         const date = new Date();
@@ -80,20 +96,17 @@ export default function BagOrderManagementPage() {
                 }
             );
 
-            const filtered = res.data.filter(
-                (o) => o.memberId === memberId
-            );
-
-            setOrders(filtered);
+            setOrders(res.data);
 
             const memberRes = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/api/member/${memberId}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/member`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
 
-            setMember(memberRes.data);
+            setMembers(memberRes.data);
+
         } catch (err) {
             toast.error("Failed to load orders");
         } finally {
@@ -105,20 +118,6 @@ export default function BagOrderManagementPage() {
         fetchOrders();
     }, []);
 
-    // ---------------- AUTO SET MEMBER ----------------
-    useEffect(() => {
-        if (member) {
-            const fullName =
-                member.nameInSinhala?.trim() ||
-                `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim();
-
-            setForm((prev) => ({
-                ...prev,
-                memberId: member.memberId,
-                memberName: fullName,
-            }));
-        }
-    }, [member]);
 
     // ---------------- HANDLE INPUT ----------------
     const handleChange = (e) => {
@@ -137,11 +136,8 @@ export default function BagOrderManagementPage() {
             orderRequestedDate: getDefaultDate("Substrate"),
             orderBagStatus: "Substrate",
             orderQuantity: "",
-            memberId: member?.memberId || "",
-            memberName: member
-                ? member.nameInSinhala?.trim() ||
-                  `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim()
-                : "",
+            memberId: "",
+            memberName: "",
             orderStatus: "Pending",
             orderApprovedRejectedBy: "",
             orderApprovedRejectedDate: "",
@@ -220,13 +216,15 @@ export default function BagOrderManagementPage() {
 
     // ---------------- FILTER ----------------
     const filteredOrders = orders.filter((o) => {
+        const memberMatch =
+            filterMember === "All" || o.memberId === filterMember;
         const statusMatch =
             filterStatus === "All" || o.orderStatus === filterStatus;
 
         const typeMatch =
             filterType === "All" || o.orderBagStatus === filterType;
 
-        return statusMatch && typeMatch;
+        return memberMatch && statusMatch && typeMatch;
     });
 
     // ---------------- STATUS COLOR ----------------
@@ -285,6 +283,20 @@ export default function BagOrderManagementPage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+
+                        <select
+                            value={filterMember}
+                            onChange={(e) => setFilterMember(e.target.value)}
+                            className="border border-gray-300 rounded-xl px-3 py-2 bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                        >
+                            <option value="All">All Members</option>
+
+                            {members.map((m) => (
+                                <option key={m.memberId} value={m.memberId}>
+                                    {m.firstName} {m.lastName}
+                                </option>
+                            ))}
+                        </select>
 
                         <select
                             value={filterType}
@@ -358,6 +370,14 @@ export default function BagOrderManagementPage() {
                                 </span>
                             </div>
 
+                            <div>
+                                <p className="text-xs text-gray-500">
+                                    Member Name
+                                </p>
+                                <p className="font-medium">
+                                    {o.memberName}
+                                </p>
+                            </div>
                             <div className="grid grid-cols-2 gap-3 text-sm">
 
                                 <div>
@@ -436,6 +456,7 @@ export default function BagOrderManagementPage() {
                         <thead className="bg-gray-100 text-gray-700">
                             <tr className="text-left">
                                 <th className="p-4">Order Number</th>
+                                <th>Member Name</th>
                                 <th>Order Date</th>
                                 <th>Required Date</th>
                                 <th>Bag Type</th>
@@ -475,6 +496,8 @@ export default function BagOrderManagementPage() {
                                         <td className="p-4 font-semibold">
                                             {o.orderNo}
                                         </td>
+
+                                        <td>{o.memberName}</td>
 
                                         <td>
                                             {formatDate(o.orderDate)}

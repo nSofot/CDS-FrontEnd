@@ -545,7 +545,7 @@ export default function BagOrderDetailsPage() {
                                 onClick={() =>
                                     setIsModalOpen(false)
                                 }
-                                className="text-gray-500 hover:text-black text-2xl"
+                                className="text-red-500 border border-red-500 rounded-xl text-4xl px-2 flex items-center hover:bg-red-500 hover:text-white transition"
                             >
                                 ×
                             </button>
