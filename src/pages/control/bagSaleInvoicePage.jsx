@@ -9,50 +9,44 @@ import html2pdf from "html2pdf.js/dist/html2pdf.bundle";
 Modal.setAppElement("#root");
 
 export default function BagSaleInvoicePage() {
+
   const navigate = useNavigate();
+
   const token = localStorage.getItem("token");
-  const headers = { Authorization: `Bearer ${token}` };
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
 
   // ---------------- STATE ----------------
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [batches, setBatches] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [fillteredOrders, setFillteredOrders] = useState([]);
+
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
   const [items, setItems] = useState([]);
+
   const [invoiceDate, setInvoiceDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+
   const [orderNumber, setOrderNumber] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const reportRef = useRef();
 
-  const [isCustomerModalOpen, setCustomerModalOpen] = useState(false);
-  const [isProductModalOpen, setProductModalOpen] = useState(false);
-  const [isOrderModalOpen, setOrderModalOpen] = useState(false);
-  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const uomMap = {
-    "kg": "Kg",
-    "g": "Gram",
-    "L": "Liter",
-    "ml": "Milliliter",
-    "m": "Meter",
-    "cm": "Centimeter",
-    "pcs": "Piece",
-    "pack": "Pack",
-    "pkt": "Packet",
-    "btl": "Bottle",
-    "box": "Box",
-    "set": "Set",
-    "bag": "Bag",
-  };
+  const [isCustomerModalOpen, setCustomerModalOpen] = useState(false);
+  const [isOrderModalOpen, setOrderModalOpen] = useState(false);
+
+  const reportRef = useRef();
 
   // ---------------- FETCH ----------------
+
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
@@ -62,57 +56,69 @@ export default function BagSaleInvoicePage() {
 
   const fetchCustomers = async () => {
     try {
+
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/member`,
         { headers }
       );
+
       setCustomers(res.data || []);
+
     } catch {
-      toast.error("Failed to load members");
+      toast.error("Failed to load customers");
     }
   };
 
   const fetchProducts = async () => {
     try {
+
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
         { headers }
       );
-      const filteredProducts = res.data.filter(
-        (item) => item.stockCategory ==="finished products"
-        );     
-        
-      setProducts(filteredProducts || []);
+
+      const filtered = res.data.filter(
+        (item) =>
+          item.stockCategory === "finished products"
+      );
+
+      setProducts(filtered || []);
+
     } catch {
-      toast.error("Failed to load stock");
+      toast.error("Failed to load products");
     }
   };
 
   const fetchBatches = async () => {
     try {
+
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/batch`
       );
 
       setBatches(res.data || []);
+
     } catch {
       toast.error("Failed to load batches");
     }
   };
-  
+
   const fetchOrders = async () => {
     try {
+
       const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`,
-          {
-              headers: { Authorization: `Bearer ${token}` },
-          }
+        `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`,
+        { headers }
       );
+
       setOrders(res.data || []);
+
     } catch {
       toast.error("Failed to load orders");
     }
-  }
+  };
+
+  // ---------------- FILTERED ORDERS ----------------
 
   const filteredOrders = orders.filter(
     (o) =>
@@ -120,37 +126,135 @@ export default function BagSaleInvoicePage() {
       o.orderStatus === "Completed"
   );
 
-  // ---------------- ITEMS ----------------
-  const addItemRow = () => {
+  // ---------------- FILTERED BATCHES ----------------
+
+  const filteredBatches = batches.filter((batch) => {
+
+    if (!selectedOrder) return false;
+
+    const statusMatch =
+      (batch.status || "").toLowerCase() ===
+      (selectedOrder.orderBagStatus || "").toLowerCase();
+
+    const hasBalance =
+      Number(batch.balanceBags || 0) > 0;
+
+    return statusMatch && hasBalance;
+  });
+
+  // ---------------- FORMAT ----------------
+
+  const formatDate = (date) => {
+
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString();
+  };
+
+  const formatCurrency = (value) => {
+
+    return Number(value || 0).toFixed(2);
+  };
+
+  const formatNumber = (value) =>
+    `Rs. ${Number(value || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  // ---------------- SELECT ORDER ----------------
+
+  const selectOrder = (order) => {
+
+    setSelectedOrder(order);
+
+    setOrderNumber(order.orderNo || "");
+
+    setItems([]);
+
+    setOrderModalOpen(false);
+  };
+
+  // ---------------- SELECT BATCH ----------------
+
+  const selectBatch = (batch) => {
+    if (!selectedOrder) {
+      return toast.error("Select order first");
+    }
+
+    const statusToStockId = {
+      Substrate: "5000",
+      Sterilized: "5001",
+      Inoculated: "5002",
+      Incubating: "5003",
+    };
+
+    const requiredStatus = selectedOrder.orderBagStatus;
+    const requiredStockId = statusToStockId[requiredStatus];
+
+    if (!requiredStockId) {
+      return toast.error("Invalid order bag status");
+    }
+
+    // 1. FIND PRODUCT BY STOCK ID
+    const matchedProduct = products.find(
+      (p) => String(p.stockId) === String(requiredStockId)
+    );
+
+    if (!matchedProduct) {
+      return toast.error("No product matches stockId for this status");
+    }
+
+    // 2. RATE CALCULATION
+    const rate =
+      Number(batch.totalJobValue || 0) /
+      Number(batch.numberOfBags || 1);
+
+    // 3. SET ITEM
     setItems([
-      ...items,
-      { productId: "", 
-        productName: "", 
-        qty: 0, 
-        inStock: 0, 
-        unit: "", 
-        rate: 0, 
-        amount: 0, 
-        cost: 0, 
-        rowCost: 0, 
-        batchNo: "", 
-        batchDate: "", 
-        batchStatus: "",
-        statusDate: ""
+      {
+        productId: matchedProduct.stockId,
+        productName: matchedProduct.stockName,
+
+        qty: 0,
+        inStock: batch.balanceBags || 0,
+        unit: matchedProduct.stockUOM || "Bag",
+
+        rate,
+        amount: 0,
+
+        batch: batch.batchNo,
+        batchId: batch._id,
+
+        batchNo: batch.batchNo || "",
+        batchDate: batch.batchDate || "",
+
+        batchStatus: batch.status || "",
+
+        statusDate:
+          batch.incubationDate ||
+          batch.inoculationDate ||
+          batch.sterilizationDate ||
+          batch.batchDate ||
+          "",
       },
     ]);
   };
 
-  const removeItem = (index) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
+  // ---------------- UPDATE ITEM ----------------
 
   const updateItem = (index, field, value) => {
+
     const updated = [...items];
 
     if (field === "qty") {
+
       const max = Number(updated[index].inStock || 0);
-      value = Math.min(Math.max(Number(value || 0), 0), max);
+
+      value = Math.min(
+        Math.max(Number(value || 0), 0),
+        max
+      );
     }
 
     updated[index][field] = value;
@@ -163,166 +267,37 @@ export default function BagSaleInvoicePage() {
     setItems(updated);
   };
 
-  // ---------------- SELECT PRODUCT ----------------
-  const selectProduct = (product) => {
-    if (selectedRowIndex === null) return;
+  // ---------------- REMOVE ITEM ----------------
 
-    const updated = [...items];
+  const removeItem = (index) => {
 
-      updated[selectedRowIndex] = {
-        ...updated[selectedRowIndex],
-
-        productId: product.stockId,
-        productName: product.stockName,
-        cost: product.stockCost || 0,
-        rate: product.stockPrice || 0,
-        qty: 0,
-        inStock: 0,
-        unit: uomMap[product.stockUOM] || product.stockUOM,
-        amount: product.stockPrice || 0,
-        rowCost: product.stockCost || 0,
-
-        // ✅ preserve existing batch data
-        batchNo: updated[selectedRowIndex].batchNo || "",
-        batchDate: updated[selectedRowIndex].batchDate || "",
-        batchStatus: updated[selectedRowIndex].batchStatus || "",
-        statusDate: updated[selectedRowIndex].statusDate || "",
-      };
-
-    setItems(updated);
-    setProductModalOpen(false);
+    setItems(items.filter((_, i) => i !== index));
   };
-
-  const selectOrder = (order) => {
-    setSelectedOrder(order);
-
-    setOrderNumber(order.orderNo || "");
-
-    setOrderModalOpen(false);
-  };
-
-  const formatCurrency = (value) => {
-    return Number(value || 0).toFixed(2);
-  };
-    
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString();
-  };
-  
-  const formatNumber = (value) =>
-  `Rs. ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 
   // ---------------- TOTAL ----------------
+
   const totalAmount = items.reduce(
-    (sum, item) => sum + Number(item.amount || 0),
+    (sum, item) =>
+      sum + Number(item.amount || 0),
     0
   );
 
-  const totalCost = items.reduce(
-    (sum, item) => sum + Number(item.rowCost || 0),
-    0
-  )
+  // ---------------- PDF ----------------
 
-  const selectBatch = (rowIndex, batch) => {
-    const updated = [...items];
-
-    const statusDateMap = {
-      Substrate: batch.batchDate || "",
-      Sterilized: batch.sterilizationDate || "",
-      Inoculated: batch.inoculationDate || "",
-      Incubating: batch.incubationDate || "",
-    };
-
-    updated[rowIndex] = {
-      ...updated[rowIndex],
-
-      batch: batch.batchNo,
-      batchId: batch._id,
-
-      batchNo: batch.batchNo || "",
-      batchDate: batch.batchDate || batch.createdAt || "",
-      batchStatus: batch.status || "",
-
-      inStock: batch.balanceBags || 0,
-
-      statusDate: statusDateMap[batch.status] || "",
-    };
-
-    setItems(updated);
-  };
-
-
-  const pdfPage = {
-    width: "760px",
-    padding: "30px 40px",
-    fontFamily: "Arial",
-    fontSize: "12px",
-    color: "#000",
-    background: "#fff",
-    boxSizing: "border-box",
-  };
-
-  const center = {
-    textAlign: "center",
-  };
-
-  const twoCol = {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "15px",
-    marginTop: "10px",
-  };  
-
-  const colBox = {
-    width: "32%",
-    border: "1px solid #ddd",
-    padding: "10px",
-    borderRadius: "6px",
-  };
-  
-  const sectionBold = {
-    fontWeight: "bold",
-    fontSize: "14px",
-    marginBottom: "8px",
-  };
-
-  const section = {
-    marginTop: "20px",
-  };
-
-  const table = {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginTop: "10px",
-    pageBreakInside: "auto",
-  };
-
-  const th = {
-    border: "1px solid #ccc",
-    padding: "6px",
-    background: "#eee",
-    textAlign: "left",
-  };
-
-  const td = {
-    border: "1px solid #ccc",
-    padding: "6px",
-  };
-
-  /* ---------------- PDF DOWNLOAD ---------------- */
   const handleDownloadPDF = async () => {
+
     try {
+
       const element = reportRef.current;
 
       await html2pdf()
         .set({
           margin: 0.3,
           filename: `Invoice_${invoiceNumber}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
+          image: {
+            type: "jpeg",
+            quality: 0.98,
+          },
           html2canvas: {
             scale: 2,
             backgroundColor: "#ffffff",
@@ -332,196 +307,131 @@ export default function BagSaleInvoicePage() {
             format: "a4",
             orientation: "portrait",
           },
-          pagebreak: {
-            mode: ["avoid-all", "css", "legacy"],
-          },
         })
         .from(element)
         .save();
+
     } catch (err) {
-      console.error("PDF ERROR:", err);
+
+      console.error(err);
+
       toast.error("PDF failed");
     }
   };
 
   // ---------------- SUBMIT ----------------
+
   const handleSubmit = async () => {
-    if (!selectedCustomer) return toast.error("Select a member/customer");
-    if (orderNumber === "") return toast.error("Enter order number");
-    if (items.length === 0) return toast.error("Add items");
-    if (totalAmount === 0) return toast.error("Enter at least one item");
+    if (!selectedCustomer) {
+      return toast.error("Select customer");
+    }
+
+    if (!selectedOrder) {
+      return toast.error("Select order");
+    }
+
+    if (items.length === 0) {
+      return toast.error("No items added");
+    }
+
+    // VALIDATE ITEMS
+    const invalidItem = items.find(
+      (i) =>
+        !i.productId ||
+        !i.productName ||
+        !i.batchNo ||
+        Number(i.qty) <= 0
+    );
+
+    if (invalidItem) {
+      return toast.error(
+        "Each item must have product, batch and quantity"
+      );
+    }
 
     try {
       setLoading(true);
 
-      // 1. SALE INVOICE PAYLOAD
       const stockTrxPayload = {
-        referenceId: orderNumber,
+        referenceId: selectedOrder.orderNo,
         trxDate: invoiceDate,
         trxType: "SalesInvoice",
-        description: selectedCustomer.nameInSinhala ||
-              `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
+
+        description:
+          selectedCustomer.nameInSinhala ||
+          `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
+
         isAdded: false,
+
         clientId: selectedCustomer.memberId,
+
         items: items.map((i) => ({
-          stockId: i.productId,
+          stockId: Number(i.productId),
           stockName: i.productName,
-          quantity: i.qty,
+          quantity: Number(i.qty),
           quantityBalance: 0,
-          stockUOM: i.unit,
-          stockCost: i.cost,
-          stockPrice: i.rate,
+          stockUOM: i.unit || "Bag",
+          stockCost: Number(i.cost || 0),
+          stockPrice: Number(i.rate || 0),
         })),
       };
 
       const stockTrxRes = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
-        stockTrxPayload
-      );        
+        stockTrxPayload,
+        { headers }
+      );
 
       const newTrxId = stockTrxRes.data.data.issuedTrxId;
+
       setInvoiceNumber(newTrxId);
-     
-      // 2. STOCK UPDATE - SUBSTRACT
-      await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
-          {
-              items: items.map((item) => ({
-                stockId: item.productId,
-                quantity: Number(item.qty || 0),
-              })),
-          },
-      );  
 
-      // 3. Customer Transaction Write
-      const cusTrxPayload = {
-          trxId: newTrxId,
-          referenceId: orderNumber,
-          trxDate: invoiceDate,
-          trxType: "SalesInvoice",
-          memberId: selectedCustomer.memberId,
-          memberName: selectedCustomer.nameInSinhala ||
-                `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
-          description: "Sales Invoice",
-          isCredit: false,
-          amount: totalAmount,
-          dueAmount: totalAmount,
-      };
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
-        cusTrxPayload
-      )
-      
-      // 4. Member/Customer balance update
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member/${selectedCustomer.memberId}/due/add`,
-        {amount: totalAmount}
-      );
+      toast.success("Invoice Created");
 
-      // 5. Update stock quantity balance in GRN
-      const payload = {
-        items: items.map((i) => ({
-          stockId: i.productId,
-          stockName: i.productName,
-          quantity: i.qty,
-          quantityBalance: 0,
-          stockUOM: i.unit,
-          stockCost: i.cost,
-          stockPrice: i.rate,
-        })),
-      };
-      const detailsRes = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/updateQuantityBalance`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const updatedDetails = detailsRes?.data?.issueDetails || [];
-
-
-      // 6. Update Stock Issue Details      
-      const updatePayload = {
-        issueTrxId: newTrxId,
-        issueReferenceId: orderNumber,
-        issueDate: invoiceDate,
-        items: updatedDetails,
-      };         
-      const updateRes = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
-        updatePayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      // 7. Write batch transaction record
-      await Promise.all(
-        items.map(async (i) => {
-          if (!i.batchNo || !i.qty) return;
-
-          const batchTrxPayload = {
-            trxId: String(newTrxId),
-            trxDate: new Date(invoiceDate).toLocaleDateString(),
-            trxType: "Sold",
-            batchNo: i.batchNo,
-            bagStatus: i.batchStatus,
-            bagQuantity: Number(i.qty || 0),
-            balanceQuantity: 0,
-            clientId: selectedCustomer.memberId,
-            clientName:
-              selectedCustomer.nameInSinhala ||
-              `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
-          };
-
-          await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/batch-transaction`,
-            batchTrxPayload
-          );
-
-          await axios.put(
-            `${import.meta.env.VITE_BACKEND_URL}/api/batch/reduce-batch-balance-bags`,
-            {
-              batchNo: i.batchNo,
-              bags: Number(i.qty || 0),
-            }
-          );
-        })
-      );  
-
-
-      toast.success("Invoice created successfully");
+      setIsSaved(true);
 
     } catch (err) {
-        console.error("Invoice Error:", err);
-        toast.error(err?.response?.data?.message || "Error saving invoice");
+      console.error("FULL ERROR => ", err?.response?.data || err);
+
+      toast.error(
+        err?.response?.data?.message ||
+        "Failed to create invoice"
+      );
     } finally {
-        setIsSaved(true);
+      setLoading(false);
     }
   };
 
   // ---------------- UI ----------------
+
   return (
     <div className="max-w-6xl mx-auto p-4">
 
       {/* HEADER */}
+
       <div className="flex justify-between items-center mb-6">
+
         <div>
-          <h1 className="text-2xl font-bold text-orange-600">🧾 Bag Sale Invoice</h1>
-          <p className="text-sm text-gray-500">Create bag sales invoice</p>
+          <h1 className="text-2xl font-bold text-orange-600">
+            🧾 Bag Sale Invoice
+          </h1>
+
+          <p className="text-sm text-gray-500">
+            Create bag sales invoice
+          </p>
         </div>
 
-        <div className="flex gap-3 no-print">
+        <div className="flex gap-3">
+
           <button
             onClick={handleDownloadPDF}
-            disabled={isSaved === false}
+            disabled={!isSaved}
             className="flex gap-2 items-center px-5 py-3 rounded-xl text-white"
             style={{
-              backgroundColor: isSaved === false ? "#9ca3af" : "#ea580c",
+              backgroundColor:
+                !isSaved
+                  ? "#9ca3af"
+                  : "#ea580c",
             }}
           >
             <FaRegFilePdf size={20} />
@@ -530,564 +440,446 @@ export default function BagSaleInvoicePage() {
 
           <button
             onClick={() => navigate("/control")}
-            className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
+            className="bg-black text-white px-5 py-3 rounded-xl"
           >
             ← Back
           </button>
+
         </div>
       </div>
 
       {/* CUSTOMER */}
+
       <div className="bg-white p-4 rounded-xl shadow mb-6">
-        <label className="text-sm font-medium">Customer</label>
+
+        <label className="text-sm font-medium">
+          Customer
+        </label>
 
         <button
-          onClick={() => setCustomerModalOpen(true)}
+          onClick={() =>
+            setCustomerModalOpen(true)
+          }
           className="w-full border p-3 mt-2 rounded-lg text-left"
         >
+
           {selectedCustomer ? (
+
             <>
               <p className="font-semibold">
                 {selectedCustomer.nameInSinhala ||
                   `${selectedCustomer.firstName} ${selectedCustomer.lastName}`}
               </p>
+
               <p className="text-xs text-gray-500">
                 {selectedCustomer.memberId}
               </p>
             </>
+
           ) : (
-            <span className="text-gray-400">Select Customer</span>
+
+            <span className="text-gray-400">
+              Select Customer
+            </span>
           )}
         </button>
       </div>
 
-      {/* DATE */}
+      {/* DATE + ORDER */}
+
       <div className="flex flex-col md:flex-row bg-white p-4 rounded-xl shadow mb-6 gap-4">
 
-        {/* Invoice Date */}
+        {/* DATE */}
+
         <div className="flex flex-col w-full md:w-1/4">
-          <label htmlFor="invoiceDate" className="text-sm font-medium">
+
+          <label className="text-sm font-medium">
             Invoice Date
           </label>
+
           <input
-            id="invoiceDate"
             type="date"
             value={invoiceDate}
-            onChange={(e) => setInvoiceDate(e.target.value)}
-            className="border p-2 mt-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            onChange={(e) =>
+              setInvoiceDate(e.target.value)
+            }
+            className="border p-2 mt-2 rounded-lg"
           />
         </div>
 
-        {/* Order No */}
+        {/* ORDER */}
+
         <div className="flex flex-col w-full md:w-3/4">
-          <label htmlFor="orderNumber" className="text-sm font-medium">
+
+          <label className="text-sm font-medium">
             Order No
           </label>
+
           <button
-            disabled={!selectedCustomer || filteredOrders.length === 0}
-            onClick={() => setOrderModalOpen(true)}
-            className="w-full border p-2 mt-2 rounded-lg text-left flex flex-col md:flex-row md:items-center gap-2"
+            disabled={
+              !selectedCustomer ||
+              filteredOrders.length === 0
+            }
+            onClick={() =>
+              setOrderModalOpen(true)
+            }
+            className="w-full border p-2 mt-2 rounded-lg text-left"
           >
+
             {selectedOrder ? (
-              <>
+
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
                 <p className="font-semibold">
                   {selectedOrder.orderNo}
                 </p>
-                <p className="ml-2 text-gray-500">
-                  {formatDate(selectedOrder.orderDate)} | {" "}
-                  {selectedOrder.orderBagStatus} | {" "}
-                  {selectedOrder.orderQuantity} Bags
-                </p>
-              </>
-            ) : (
-              <span className="text-gray-400">Select an order</span>
-            )}
-          </button>          
-        </div>
 
+                <p className="text-gray-500">
+                   {formatDate(selectedOrder.orderDate)}{" "}|{" "}
+                  {formatDate(selectedOrder.orderRequestedDate)}{" "}|{" "}
+                  {selectedOrder.orderQuantity}{" "}
+                  {selectedOrder.orderBagStatus} Bags
+                </p>
+              </div>
+
+            ) : (
+
+              <span className="text-gray-400">
+                Select Order
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* BATCHES */}
+
+      <div className="bg-white p-4 rounded-xl shadow mb-6">
+
+        <h2 className="font-semibold mb-4">
+          Available Batches
+        </h2>
+
+        {!selectedOrder ? (
+
+          <div className="text-gray-400">
+            Select order to view batches
+          </div>
+
+        ) : filteredBatches.length === 0 ? (
+
+          <div className="text-red-500">
+            No available batches
+          </div>
+
+        ) : (
+
+          <table className="w-full text-sm border">
+
+            <thead className="bg-orange-100">
+              <tr>
+                <th className="p-2 text-left">
+                  Select
+                </th>
+
+                <th className="p-2 text-left">
+                  Batch No
+                </th>
+
+                <th className="p-2 text-left">
+                  Batch Date
+                </th>
+
+                <th className="p-2 text-left">
+                  Status
+                </th>
+
+                <th className="p-2 text-right">
+                  Available
+                </th>
+
+                <th className="p-2 text-right">
+                  Price
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {filteredBatches.map((batch) => (
+
+                <tr
+                  key={batch._id}
+                  className="border-t"
+                >
+
+                  <td className="p-2">
+
+                    <button
+                      onClick={() =>
+                        selectBatch(batch)
+                      }
+                      className="bg-orange-500 text-white px-3 py-1 rounded"
+                    >
+                      Select
+                    </button>
+                  </td>
+
+                  <td className="p-2">
+                    {batch.batchNo}
+                  </td>
+
+                  <td className="p-2">
+                    {formatDate(batch.batchDate)}
+                  </td>
+
+                  <td className="p-2">
+                    {batch.status}
+                  </td>
+
+                  <td className="p-2 text-right">
+                    {batch.balanceBags}
+                  </td>
+
+                  <td className="p-2 text-right">
+                    {formatNumber(
+                      Number(batch.totalJobValue || 0) /
+                        Number(batch.numberOfBags || 1)
+                    )}
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* ITEMS */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6">
-        <div className="flex justify-between mb-3">
-          <h2 className="font-semibold">Items</h2>
 
-          <button
-            disabled={items.length !== 0}
-            onClick={addItemRow}
-            className={`text-white px-3 py-1 rounded ${
-              items.length !== 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-orange-500 hover:bg-orange-600"
-            }`}
-          >
-            + Add Item
-          </button>
-        </div>
+      <div className="bg-white p-4 rounded-xl shadow mb-6">
 
         <table className="w-full text-sm">
-            <thead className="bg-orange-50">
-                <tr>
-                <th className="p-2 text-left">Product</th>
-                <th className="p-2 text-right">Qty</th>
-                <th className="p-2 text-right">Available</th>
-                <th className="p-2 text-left">UOM</th>
-                <th className="p-2 text-right">Rate</th>
-                <th className="p-2 text-right">Amount</th>
-                <th className="p-2 text-center"></th>
-                </tr>
-            </thead>
 
-              <tbody>
-                {items.map((item, rowIndex) => {
+          <thead className="bg-orange-50">
+            <tr>
 
-                  // FILTER BATCHES FOR PRODUCT
-                  const productBatches = batches.filter((b) => {
+              <th className="p-2 text-left">
+                Product
+              </th>
 
-                    let requiredStatus = "";
+              <th className="p-2 text-right">
+                Qty
+              </th>
 
-                    switch (Number(item.productId)) {
-                      case 5000:
-                        requiredStatus = "Substrate";
-                        break;
+              <th className="p-2 text-right">
+                Available
+              </th>
 
-                      case 5001:
-                        requiredStatus = "Sterilized";
-                        break;
+              <th className="p-2 text-left">
+                UOM
+              </th>
 
-                      case 5002:
-                        requiredStatus = "Inoculated";
-                        break;
+              <th className="p-2 text-right">
+                Rate
+              </th>
 
-                      case 5003:
-                        requiredStatus = "Incubating";
-                        break;
+              <th className="p-2 text-right">
+                Amount
+              </th>
 
-                      default:
-                        requiredStatus = "";
-                    }
+              <th className="p-2 text-center"></th>
 
-                    const isStatusMatch =
-                      (b.status || "").toLowerCase() ===
-                      requiredStatus.toLowerCase();
+            </tr>
+          </thead>
 
-                    const hasBalance =
-                      Number(b.balanceBags || 0) > 0;
+          <tbody>
 
-                    return isStatusMatch && hasBalance;
-                  });
+            {items.map((item, index) => (
 
-                  return (
-                    <Fragment key={rowIndex}>
-                      {/* MAIN ROW */}
-                      <tr className="border-t">
+              <Fragment key={index}>
 
-                        {/* PRODUCT */}
-                        <td className="p-2">
-                          <button
-                            onClick={() => {
-                              setSelectedRowIndex(rowIndex);
-                              setProductModalOpen(true);
-                            }}
-                            className="text-orange-600 hover:underline"
-                          >
-                            {item.productName || "Select Product"}
-                          </button>
+                <tr className="border-t">
 
-                          {item.batch && (
-                            <div className="text-xs text-blue-600 mt-1">
-                              Batch: {item.batch}
-                            </div>
-                          )}
-                        </td>
+                  <td className="p-2">
 
-                        {/* QTY */}
-                        <td className="p-2 text-right">
-                          <input
-                          disabled = {productBatches.length === 0}
-                            type="number"
-                            max={item.inStock}
-                            min={0}
-                            value={item.qty}
-                            onChange={(e) => {
-                              let value = Number(e.target.value);
+                    <div>
+                      {item.productName}
+                    </div>
 
-                              const max = Number(item.inStock || 0);
+                    <div className="text-xs text-blue-600">
+                      Batch: {item.batchNo}
+                    </div>
+                  </td>
 
-                              if (value < 0) value = 0;
+                  <td className="p-2 text-right">
 
-                              if (value > max) {
-                                toast.error(`Max available stock is ${max}`);
-                                value = max;
-                              }
-
-                              updateItem(rowIndex, "qty", value);
-                            }}
-                            className="w-20 text-right border rounded px-2 py-1"
-                          />
-                        </td>
-
-                        {/* AVAILABLE */}
-                        <td className="p-2 text-right">
-                          {item.inStock ?? "N/A"}
-                        </td>
-
-                        {/* UOM */}
-                        <td className="p-2 text-left">
-                          {item.unit || "N/A"}
-                        </td>
-
-                        {/* RATE */}
-                        <td className="p-2 text-right">
-                          <input
-                            type="number"
-                            value={item.rate}
-                            onChange={(e) =>
-                              updateItem(rowIndex, "rate", e.target.value)
-                            }
-                            className="w-24 text-right border rounded px-2 py-1"
-                          />
-                        </td>
-
-                        {/* AMOUNT */}
-                        <td className="p-2 text-right font-medium">
-                          {Number(item.amount || 0).toFixed(2)}
-                        </td>
-
-                        {/* ACTION */}
-                        <td className="p-2 text-center">
-                          <button
-                            onClick={() => removeItem(rowIndex)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            ✖
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* BATCH ROW */}
-                      {productBatches.length > 0 ? (
-                        <tr>
-                          <td colSpan="7" className="bg-gray-50 p-3">
-
-                            <table className="sm:w-[50%] w-full  text-xs border">
-                              <thead className="bg-orange-100">
-                                <tr>
-                                  <th className="p-2 text-left">Select</th>
-                                  <th className="p-2 text-left">Batch No</th>
-                                  <th className="p-2 text-left">Status</th>
-                                  <th className="p-2 text-right">Available</th>
-                                  <th className="p-2 text-right">Price</th>
-                                </tr>
-                              </thead>
-
-                              <tbody>
-                        
-                                {productBatches.map((batch, batchIndex) => (
-                                  <tr
-                                    key={batchIndex}
-                                    className={
-                                      item.batchId === batch._id
-                                        ? "bg-orange-50"
-                                        : ""
-                                    }
-                                  >
-                                    {/* RADIO */}
-                                    <td className="p-2">
-                                      <input
-                                        type="radio"
-                                        name={`batch-${rowIndex}`}
-                                        checked={item.batchId === batch._id}
-                                        onChange={() =>
-                                          selectBatch(rowIndex, batch)
-                                        }
-                                      />
-                                    </td>
-
-                                    {/* BATCH NO */}
-                                    <td className="p-2">
-                                      {batch.batchNo}
-                                    </td>
-
-                                   {/* BAG STATUS */}
-                                    <td className="p-2">
-                                      {batch.status}
-                                    </td>
-
-                                    {/* AVAILABLE */}
-                                    <td className="p-2 text-right">
-                                      {batch.balanceBags || 0}
-                                    </td>
-
-                                    {/* PRICE */}
-                                    <td className="p-2 text-right">
-                                      {formatNumber(
-                                        (Number(batch.totalJobValue || 0)) /
-                                        (Number(batch.numberOfBags || 1))
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-
-                          </td>
-                        </tr>
-                      ) : (
-                        item.productId && (
-                          <tr>
-                            <td
-                              colSpan="7"
-                              className="bg-gray-50 p-3 text-center text-gray-500"
-                            >
-                              No batches available
-                            </td>
-                          </tr>
+                    <input
+                      type="number"
+                      value={item.qty}
+                      max={item.inStock}
+                      min={0}
+                      onChange={(e) =>
+                        updateItem(
+                          index,
+                          "qty",
+                          e.target.value
                         )
-                      )}
-                    
-                    </Fragment>
-                  );
-                })}
+                      }
+                      className="w-20 text-right border rounded px-2 py-1"
+                    />
+                  </td>
 
-                {items.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan="7"
-                      className="text-center py-4 text-gray-400"
+                  <td className="p-2 text-right">
+                    {item.inStock}
+                  </td>
+
+                  <td className="p-2">
+                    {item.unit}
+                  </td>
+
+                  <td className="p-2 text-right">
+                    {formatCurrency(item.rate)}
+                  </td>
+
+                  <td className="p-2 text-right">
+                    {formatCurrency(item.amount)}
+                  </td>
+
+                  <td className="p-2 text-center">
+
+                    <button
+                      onClick={() =>
+                        removeItem(index)
+                      }
+                      className="text-red-500"
                     >
-                      No items added
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+                      ✖
+                    </button>
+                  </td>
+                </tr>
 
+              </Fragment>
+            ))}
+
+          </tbody>
         </table>
       </div>
 
       {/* TOTAL */}
+
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-4">
-        <span className="font-semibold">Total</span>
+
+        <span className="font-semibold">
+          Total
+        </span>
+
         <span className="text-xl font-bold text-green-600">
-          {totalAmount.toFixed(2)}
+          {formatCurrency(totalAmount)}
         </span>
       </div>
 
       {/* SUBMIT */}
+
       <button
         onClick={handleSubmit}
         disabled={loading || isSaved}
         className={`w-full py-3 rounded-xl text-white ${
-          loading || isSaved ? "bg-gray-400 cursor-not-allowed" : "bg-green-600"
+          loading || isSaved
+            ? "bg-gray-400"
+            : "bg-green-600"
         }`}
       >
-        {loading && !isSaved
+        {loading
           ? "Saving..."
           : isSaved
-          ? "Completed, Download PDF"
+          ? "Completed"
           : "Create Invoice"}
       </button>
 
+      {/* PDF */}
 
-
-      {/* ================= PDF LAYOUT ================= */}
-      {/* ⚠️ NO TAILWIND HERE */}
       <div style={{ display: "none" }}>
-        <div ref={reportRef} style={{ pageBreakInside: "avoid" }}>
-          <div style={pdfPage}>
+        <div ref={reportRef}>
 
-            <h2
-              style={{
-                ...center,
-                fontWeight: "bold",
-                fontSize: "14px",
-              }}
-            >
-              Collective Development Society
-            </h2>
-            <h2
-              style={{
-                ...center,
-                fontWeight: "normal",
-                fontSize: "10px",
-                marginBottom: "10px",
-              }}
-            >
-              Malmaduwa, Kotiyakumbura. Tel: 022-2222222
-            </h2>
-            <h2
-              style={{
-                ...center,
-                fontWeight: "bold",
-                fontSize: "18px",
-                marginBottom: "20px",
-              }}
-            >
-              Sales Invoice
-            </h2>
+          <h1>
+            Invoice #{invoiceNumber}
+          </h1>
 
-            <div style={twoCol}>
-              
-              {/* COLUMN 1 */}
-              <div style={colBox}>
-                <p>{selectedCustomer?.memberId || "N/A"}</p>
-                <p>
-                  {selectedCustomer
-                    ? selectedCustomer.nameInSinhala ||
-                      `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
-                    : "N/A"}
-                </p>
-                <p>
-                  {selectedCustomer?.address
-                    ? Object.values(selectedCustomer.address)
-                        .filter(Boolean)
-                        .join(", ")
-                    : "N/A"}
-                </p>
-              </div>
-
-              {/* COLUMN 2 */}
-              <div style={colBox}>
-                <p><b>Invoice No:</b> {invoiceNumber}</p>
-                <p><b>Date:</b> {formatDate(invoiceDate)}</p>
-                <p><b>Order Number:</b>{orderNumber}</p>
-              </div>
-
-            </div>
-
-            <table style={table}>
-              <thead>
-                <tr>
-                  <th style={th}>Item Description</th>
-                  <th style={th}>Qty</th>
-                  <th style={th}>UOM</th>
-                  <th style={{ ...th, textAlign: "right" }}>Rate</th>
-                  <th style={{ ...th, textAlign: "right" }}>Amount</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {items?.map((m, i) => (
-                  <Fragment key={i}>
-                    <tr style={{ pageBreakInside: "avoid" }}>
-                      <td style={td}>{m.productName}</td>
-                      <td style={td}>{m.qty}</td>
-                      <td style={td}>{m.unit}</td>
-                      <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.rate)}</td>
-                      <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.amount)}</td>
-                    </tr>
-
-                    {m.batch && (
-                      <tr>
-                        <td
-                          colSpan="5"
-                          style={{
-                            ...td,
-                            fontSize: "10px",
-                            background: "#f9f9f9",
-                            color: "#555",
-                            paddingLeft: "15px",
-                          }}
-                        >
-                          <strong>Batch No:</strong> {m.batchNo}
-                          {"  |  "}
-                          <strong>Batch Date:</strong> {formatDate(m.batchDate)}
-                          {"  |  "}
-                          <strong>Status:</strong> {m.batchStatus}
-                          {"  |  "}
-                          <strong>Date:</strong> {formatDate(m.statusDate)}
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-
-                {/* 🔽 TOTAL ROW */}
-                <tr>
-                  <td style={{ ...td, fontWeight: "bold" }} colSpan="4">
-                    Total
-                  </td>
-                  <td style={{ ...td, fontWeight: "bold", textAlign: "right" }}>
-                    {formatCurrency(totalAmount)}
-                  </td>
-                </tr>
-              </tbody>
-
-            </table>
-            {/* <hr style={{ marginTop: "30px", marginBottom: "10px", borderColor: "#ddd" }} /> */}
-            <div style={{ marginTop: "5px", textAlign: "center", fontSize: "11px", color: "#555" }}>
-              This is a system generated invoice. No signature is required.
-            </div>
-          </div>
         </div>
       </div>
 
-
-
       {/* CUSTOMER MODAL */}
+
       <Modal
         isOpen={isCustomerModalOpen}
-        onRequestClose={() => setCustomerModalOpen(false)}
+        onRequestClose={() =>
+          setCustomerModalOpen(false)
+        }
         className="bg-white p-4 max-w-md mx-auto mt-20 rounded-xl max-h-[70vh] overflow-y-auto"
       >
-        <h2 className="font-bold mb-3">Select Customer</h2>
+
+        <h2 className="font-bold mb-3">
+          Select Customer
+        </h2>
 
         {customers.map((c) => (
+
           <div
             key={c._id}
             onClick={() => {
+
               setSelectedCustomer(c);
-              setCustomerModalOpen(false);
+
               setSelectedOrder(null);
+
+              setItems([]);
+
               setOrderNumber("");
+
+              setCustomerModalOpen(false);
             }}
             className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50"
           >
-            {c.nameInSinhala || `${c.firstName} ${c.lastName}`}
-          </div>
-        ))}
-      </Modal>
 
-      {/* PRODUCT MODAL */}
-      <Modal
-        isOpen={isProductModalOpen}
-        onRequestClose={() => setProductModalOpen(false)}
-        className="bg-white p-4 max-w-md mx-auto mt-20 rounded-xl max-h-[70vh] overflow-y-auto"
-      >
-        <h2 className="font-bold mb-3">Select Product</h2>
-
-        {products.map((p) => (
-          <div
-            key={p._id}
-            onClick={() => selectProduct(p)}
-            className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50 flex justify-between"
-          >
-            <span>{p.stockName}</span>
-            <span>{p.stockQuantity}</span>
+            {c.nameInSinhala ||
+              `${c.firstName} ${c.lastName}`}
           </div>
         ))}
       </Modal>
 
       {/* ORDER MODAL */}
+
       <Modal
         isOpen={isOrderModalOpen}
-        onRequestClose={() => setOrderModalOpen(false)}
+        onRequestClose={() =>
+          setOrderModalOpen(false)
+        }
         className="bg-white p-4 max-w-md mx-auto mt-20 rounded-xl max-h-[70vh] overflow-y-auto"
       >
-        <h2 className="font-bold mb-3">Select Order</h2>
+
+        <h2 className="font-bold mb-3">
+          Select Order
+        </h2>
 
         {filteredOrders.map((o) => (
+
           <div
             key={o._id}
-            onClick={() => selectOrder(o)}
-            className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50 flex justify-between"
+            onClick={() =>
+              selectOrder(o)
+            }
+            className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50"
           >
-            <span>
-              {o.orderNo} | {formatDate(o.orderDate)} | {o.orderBagStatus} | {o.orderQuantity} Bags
-            </span>
+
+            {o.orderNo} |{" "}
+            {formatDate(o.orderRequestedDate)} |{" "}
+            {o.orderQuantity}{" "}
+            {o.orderBagStatus} Bags
+
           </div>
         ))}
-      </Modal>      
+      </Modal>
+
     </div>
   );
 }
