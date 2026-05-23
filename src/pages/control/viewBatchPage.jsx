@@ -769,7 +769,22 @@ export default function ViewBatchPage() {
                 ))}
               </tbody>
             </table>
-
+              {/* FOOTER */}
+              <div
+                style={{
+                  marginTop: "25px",
+                  textAlign: "center",
+                  fontSize: "11px",
+                  color: "#555",
+                  borderTop: "1px solid #ddd",
+                  paddingTop: "10px",
+                }}
+              >
+              <div>This is a system generated invoice. No signature is required.</div>
+                <div style={{ marginTop: "5px", fontWeight: "bold", color: "#333" }}>
+                  Software developed by nSoft Technologies
+                </div>
+              </div>
           </div>
         </div>
       </div>

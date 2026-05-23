@@ -58,8 +58,17 @@ export default function DashboardPage() {
           `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`
         );
         const orders = ordersRes.data;
-        setTotalPendingOrders(orders.filter((o) => o.orderStatus === "Pending").length);
-        setTotalCompletedOrders(orders.filter((o) => o.orderStatus === "Completed").length);
+        setTotalPendingOrders(
+          orders
+            .filter((o) =>
+               (o.orderStatus === "Pending")
+            ).reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
+        setTotalCompletedOrders(
+          orders
+            .filter((o) => o.orderStatus === "Completed")
+            .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
+        );
         setTotalSubstrateBagsOrders(
           orders
             .filter(

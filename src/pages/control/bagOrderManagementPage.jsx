@@ -19,20 +19,23 @@ export default function BagOrderManagementPage() {
     const user = JSON.parse(localStorage.getItem("user"));
     const memberId = user?.memberId;
 
-  const getAuthHeaders = () => {
-    if (!token) return null;
-    return { Authorization: `Bearer ${token}` };
-  };
+    const [viewOrder, setViewOrder] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);    
 
-  const handleAuthError = (err) => {
-    if (err.response?.status === 403) {
-      toast.error("Session expired. Please login again.");
-      localStorage.removeItem("token");
-      navigate("/login");
-    } else {
-      toast.error("Something went wrong");
-    }
-  };
+    const getAuthHeaders = () => {
+        if (!token) return null;
+        return { Authorization: `Bearer ${token}` };
+    };
+
+    const handleAuthError = (err) => {
+        if (err.response?.status === 403) {
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        navigate("/login");
+        } else {
+        toast.error("Something went wrong");
+        }
+    };
       
     // ---------------- LEAD TIME LOGIC ----------------
     const getDefaultDate = (bagStatus = "Substrate") => {
@@ -75,6 +78,11 @@ export default function BagOrderManagementPage() {
         batchId: "",
         orderRemarks: "",
     });
+
+    const openViewModal = (order) => {
+        setViewOrder(order);
+        setIsViewModalOpen(true);
+    };
 
     // ---------------- AUTO UPDATE DATE WHEN BAG STATUS CHANGES ----------------
     useEffect(() => {
@@ -346,8 +354,9 @@ export default function BagOrderManagementPage() {
                 ) : (
                     filteredOrders.map((o) => (
                         <div
-                            key={o._id}
-                            className="bg-white rounded-2xl shadow-sm border p-4 space-y-3"
+                        key={o._id}
+                        onClick={() => openViewModal(o)}
+                        className="bg-white rounded-2xl shadow-sm border p-4 space-y-3 cursor-pointer hover:bg-gray-50"
                         >
                             <div className="flex justify-between items-start gap-3">
 
@@ -490,8 +499,9 @@ export default function BagOrderManagementPage() {
                             ) : (
                                 filteredOrders.map((o) => (
                                     <tr
-                                        key={o._id}
-                                        className="border-t hover:bg-gray-50 transition"
+                                    key={o._id}
+                                    onClick={() => openViewModal(o)}
+                                    className="border-t hover:bg-gray-50 transition cursor-pointer"
                                     >
                                         <td className="p-4 font-semibold">
                                             {o.orderNo}
@@ -730,6 +740,174 @@ export default function BagOrderManagementPage() {
                     </div>
                 </div>
             )}
+
+            {isViewModalOpen && viewOrder && (
+                <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+
+                    <div className="bg-white w-full sm:max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+
+                        {/* HEADER */}
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 className="text-xl font-bold">
+                                    Order Details
+                                </h2>
+                                <p className="text-sm text-gray-500">
+                                    Full bag order information
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => setIsViewModalOpen(false)}
+                                className="text-4xl text-red-500 hover:text-black"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* CONTENT */}
+                        <div className="space-y-3 text-sm">
+
+                            {/* ORDER NO */}
+                            <div>
+                                <p className="text-gray-500">Order No</p>
+                                <p className="font-semibold">{viewOrder.orderNo}</p>
+                            </div>
+
+                            {/* MEMBER */}
+                            <div>
+                                <p className="text-gray-500">Member</p>
+                                <p className="font-semibold">{viewOrder.memberName}</p>
+                            </div>
+
+                            {/* MEMBER ID */}
+                            <div>
+                                <p className="text-gray-500">Member ID</p>
+                                <p>{viewOrder.memberId}</p>
+                            </div>
+
+                            {/* ORDER DATE */}
+                            <div>
+                                <p className="text-gray-500">Order Date</p>
+                                <p>{formatDate(viewOrder.orderDate)}</p>
+                            </div>
+
+                            {/* REQUESTED DATE */}
+                            <div>
+                                <p className="text-gray-500">Requested Date</p>
+                                <p>{formatDate(viewOrder.orderRequestedDate)}</p>
+                            </div>
+
+                            {/* BAG STATUS */}
+                            <div>
+                                <p className="text-gray-500">Bag Type</p>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${typeColors[viewOrder.orderBagStatus]}`}>
+                                    {viewOrder.orderBagStatus}
+                                </span>
+                            </div>
+
+                            {/* QUANTITY */}
+                            <div>
+                                <p className="text-gray-500">Quantity</p>
+                                <p className="text-lg font-bold">
+                                    {viewOrder.orderQuantity}
+                                </p>
+                            </div>
+
+                            {/* STATUS */}
+                            <div>
+                                <p className="text-gray-500">Status</p>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(viewOrder.orderStatus)}`}>
+                                    {viewOrder.orderStatus}
+                                </span>
+                            </div>
+
+                            {/* APPROVED / REJECTED */}
+                            {viewOrder.orderApprovedRejectedBy && (
+                                <div>
+                                    <p className="text-gray-500">
+                                        Approved / Rejected By
+                                    </p>
+                                    <p>{viewOrder.orderApprovedRejectedBy}</p>
+                                </div>
+                            )}
+
+                            {viewOrder.orderApprovedRejectedDate && (
+                                <div>
+                                    <p className="text-gray-500">
+                                        Decision Date
+                                    </p>
+                                    <p>{formatDate(viewOrder.orderApprovedRejectedDate)}</p>
+                                </div>
+                            )}
+
+                            {/* COMPLETED DATE */}
+                            {viewOrder.orderCompletedDate && (
+                                <div>
+                                    <p className="text-gray-500">
+                                        Completed Date
+                                    </p>
+                                    <p>{formatDate(viewOrder.orderCompletedDate)}</p>
+                                </div>
+                            )}
+
+                            {/* DELIVERED DATE */}
+                            {viewOrder.orderDeliveredDate && (
+                                <div>
+                                    <p className="text-gray-500">
+                                        Delivered Date
+                                    </p>
+                                    <p>{formatDate(viewOrder.orderDeliveredDate)}</p>
+                                </div>
+                            )}
+
+                            {/* BATCH ID */}
+                            {viewOrder.batchNo && (
+                                <div>
+                                    <p className="text-gray-500">Batch ID</p>
+                                    <p>{viewOrder.batchNo}</p>
+                                </div>
+                            )}
+
+                            {/* REMARKS */}
+                            {viewOrder.orderRemarks && (
+                                <div>
+                                    <p className="text-gray-500">Remarks</p>
+                                    <p>{viewOrder.orderRemarks}</p>
+                                </div>
+                            )}
+
+                            {/* CREATED / UPDATED (from timestamps) */}
+                            <div className="pt-2 border-t mt-3">
+
+                                <div>
+                                    <p className="text-gray-500">Created At</p>
+                                    <p>{formatDate(viewOrder.createdAt)}</p>
+                                </div>
+
+                                <div className="mt-2">
+                                    <p className="text-gray-500">Updated At</p>
+                                    <p>{formatDate(viewOrder.updatedAt)}</p>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        {/* FOOTER */}
+                        <div className="mt-5">
+                            <button
+                                onClick={() => setIsViewModalOpen(false)}
+                                className="w-full bg-gray-200 py-2 rounded-xl hover:bg-gray-300"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
