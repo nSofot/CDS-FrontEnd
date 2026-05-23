@@ -3,51 +3,58 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
-import { FaRegFilePdf } from "react-icons/fa";
+import {
+  FaRegFilePdf,
+  FaPlus,
+  FaTrash,
+  FaArrowLeft,
+  FaUser,
+  FaBoxOpen,
+} from "react-icons/fa";
 import html2pdf from "html2pdf.js/dist/html2pdf.bundle";
 
 Modal.setAppElement("#root");
 
 export default function SaleInvoicePage() {
   const navigate = useNavigate();
+
   const token = localStorage.getItem("token");
-  const headers = { Authorization: `Bearer ${token}` };
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
 
   // ---------------- STATE ----------------
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   const [items, setItems] = useState([]);
+
   const [invoiceDate, setInvoiceDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+
   const [orderNumber, setOrderNumber] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const reportRef = useRef();
 
-  const [isCustomerModalOpen, setCustomerModalOpen] = useState(false);
-  const [isProductModalOpen, setProductModalOpen] = useState(false);
-  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const uomMap = {
-    "kg": "Kg",
-    "g": "Gram",
-    "L": "Liter",
-    "ml": "Milliliter",
-    "m": "Meter",
-    "cm": "Centimeter",
-    "pcs": "Piece",
-    "pack": "Pack",
-    "pkt": "Packet",
-    "btl": "Bottle",
-    "box": "Box",
-    "set": "Set",
-    "bag": "Bag",
-  };
+  const [isCustomerModalOpen, setCustomerModalOpen] = useState(false);
+  const [isProductModalOpen, setProductModalOpen] = useState(false);
+
+  const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+
+  const reportRef = useRef();
 
   // ---------------- FETCH ----------------
+
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
@@ -59,9 +66,10 @@ export default function SaleInvoicePage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/member`,
         { headers }
       );
+
       setCustomers(res.data || []);
     } catch {
-      toast.error("Failed to load members");
+      toast.error("Failed to load customers");
     }
   };
 
@@ -71,21 +79,72 @@ export default function SaleInvoicePage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
         { headers }
       );
-      const filteredProducts = res.data.filter(
-        (item) => item.stockCategory !=="finished products"
-        );     
-        
-      setProducts(filteredProducts || []);
+
+      const filtered = res.data.filter(
+        (item) => item.stockCategory !== "finished products"
+      );
+
+      setProducts(filtered || []);
     } catch {
-      toast.error("Failed to load stock");
+      toast.error("Failed to load products");
     }
   };
 
-  // ---------------- ITEMS ----------------
+  // ---------------- FILTERS ----------------
+
+  const filteredCustomers = customers.filter((c) => {
+    const name =
+      c.nameInSinhala ||
+      `${c.firstName || ""} ${c.lastName || ""}`;
+
+    return (
+      name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+      String(c.memberId || "")
+        .toLowerCase()
+        .includes(customerSearch.toLowerCase())
+    );
+  });
+
+  const filteredProducts = products.filter((p) =>
+    p.stockName
+      ?.toLowerCase()
+      .includes(productSearch.toLowerCase())
+  );
+
+  // ---------------- UOM ----------------
+
+  const uomMap = {
+    kg: "Kg",
+    g: "Gram",
+    L: "Liter",
+    ml: "Milliliter",
+    m: "Meter",
+    cm: "Centimeter",
+    pcs: "Piece",
+    pack: "Pack",
+    pkt: "Packet",
+    btl: "Bottle",
+    box: "Box",
+    set: "Set",
+    bag: "Bag",
+  };
+
+  // ---------------- ITEM ROW ----------------
+
   const addItemRow = () => {
     setItems([
       ...items,
-      { productId: "", productName: "", qty: 0, inStock: 0, unit: "", rate: 0, amount: 0, cost: 0, rowCost: 0 },
+      {
+        productId: "",
+        productName: "",
+        qty: 0,
+        inStock: 0,
+        unit: "",
+        rate: 0,
+        amount: 0,
+        cost: 0,
+        rowCost: 0,
+      },
     ]);
   };
 
@@ -98,20 +157,27 @@ export default function SaleInvoicePage() {
 
     if (field === "qty") {
       const max = Number(updated[index].inStock || 0);
-      value = Math.min(Math.max(Number(value || 0), 0), max);
+
+      value = Math.min(
+        Math.max(Number(value || 0), 0),
+        max
+      );
     }
 
     updated[index][field] = value;
 
     const qty = Number(updated[index].qty || 0);
     const rate = Number(updated[index].rate || 0);
+    const cost = Number(updated[index].cost || 0);
 
     updated[index].amount = qty * rate;
+    updated[index].rowCost = qty * cost;
 
     setItems(updated);
   };
 
   // ---------------- SELECT PRODUCT ----------------
+
   const selectProduct = (product) => {
     if (selectedRowIndex === null) return;
 
@@ -119,105 +185,53 @@ export default function SaleInvoicePage() {
 
     updated[selectedRowIndex] = {
       ...updated[selectedRowIndex],
+
       productId: product.stockId,
       productName: product.stockName,
+
+      qty: 1,
+
+      inStock: product.stockQuantity || 0,
+
+      unit:
+        uomMap[product.stockUOM] || product.stockUOM,
+
       cost: product.stockCost || 0,
+
       rate: product.stockPrice || 0,
-      qty: 0,
-      inStock: product.stockQuantity,
-      unit: uomMap[product.stockUOM] || product.stockUOM,
-      amount: product.stockPrice || 0,
-      rowCost: product.stockCost || 0,
+
+      amount: Number(product.stockPrice || 0),
+
+      rowCost: Number(product.stockCost || 0),
     };
 
     setItems(updated);
+
     setProductModalOpen(false);
   };
 
-  const formatCurrency = (value) => {
-    return Number(value || 0).toFixed(2);
-  };
-    
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString();
-  };
-  
-  const formatNumber = (value) =>
-  `Rs. ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  // ---------------- TOTALS ----------------
 
-  // ---------------- TOTAL ----------------
   const totalAmount = items.reduce(
-    (sum, item) => sum + Number(item.amount || 0),
+    (sum, item) =>
+      sum + Number(item.amount || 0),
     0
   );
 
-  const totalCost = items.reduce(
-    (sum, item) => sum + Number(item.rowCost || 0),
-    0
-  )
+  // ---------------- FORMAT ----------------
 
-  const pdfPage = {
-    width: "760px",
-    padding: "30px 40px",
-    fontFamily: "Arial",
-    fontSize: "12px",
-    color: "#000",
-    background: "#fff",
-    boxSizing: "border-box",
+  const formatCurrency = (value) => {
+    return Number(value || 0).toLocaleString(
+      "en-US",
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    );
   };
 
-  const center = {
-    textAlign: "center",
-  };
+  // ---------------- PDF ----------------
 
-  const twoCol = {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "15px",
-    marginTop: "10px",
-  };  
-
-  const colBox = {
-    width: "32%",
-    border: "1px solid #ddd",
-    padding: "10px",
-    borderRadius: "6px",
-  };
-  
-  const sectionBold = {
-    fontWeight: "bold",
-    fontSize: "14px",
-    marginBottom: "8px",
-  };
-
-  const section = {
-    marginTop: "20px",
-  };
-
-  const table = {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginTop: "10px",
-    pageBreakInside: "auto",
-  };
-
-  const th = {
-    border: "1px solid #ccc",
-    padding: "6px",
-    background: "#eee",
-    textAlign: "left",
-  };
-
-  const td = {
-    border: "1px solid #ccc",
-    padding: "6px",
-  };
-
-  /* ---------------- PDF DOWNLOAD ---------------- */
   const handleDownloadPDF = async () => {
     try {
       const element = reportRef.current;
@@ -226,7 +240,10 @@ export default function SaleInvoicePage() {
         .set({
           margin: 0.3,
           filename: `Invoice_${invoiceNumber}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
+          image: {
+            type: "jpeg",
+            quality: 0.98,
+          },
           html2canvas: {
             scale: 2,
             backgroundColor: "#ffffff",
@@ -236,15 +253,13 @@ export default function SaleInvoicePage() {
             format: "a4",
             orientation: "portrait",
           },
-          pagebreak: {
-            mode: ["avoid-all", "css", "legacy"],
-          },
         })
         .from(element)
         .save();
     } catch (err) {
-      console.error("PDF ERROR:", err);
-      toast.error("PDF failed");
+      console.error(err);
+
+      toast.error("PDF generation failed");
     }
   };
 
@@ -362,389 +377,649 @@ export default function SaleInvoicePage() {
         }
       );
 
+      setIsSaved(true);
       toast.success("Invoice created successfully");
 
     } catch (err) {
         console.error("Invoice Error:", err);
         toast.error(err?.response?.data?.message || "Error saving invoice");
     } finally {
-        setIsSaved(true);
+        setLoading(false);
     }
   };
 
   // ---------------- UI ----------------
+
   return (
-    <div className="max-w-6xl mx-auto p-4">
+    <div className="min-h-screen bg-gray-100 pb-20">
+      <div className="max-w-7xl mx-auto p-3 sm:p-5">
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-orange-600">🧾 Sale Invoice</h1>
-          <p className="text-sm text-gray-500">Create sales invoice</p>
-        </div>
+        {/* HEADER */}
 
-        <div className="flex gap-3 no-print">
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isSaved === false}
-            className="flex gap-2 items-center px-5 py-3 rounded-xl text-white"
-            style={{
-              backgroundColor: isSaved === false ? "#9ca3af" : "#ea580c",
-            }}
-          >
-            <FaRegFilePdf size={20} />
-            PDF
-          </button>
+        <div className="sticky top-0 z-20 bg-gray-100 pb-4">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
-          <button
-            onClick={() => navigate("/control")}
-            className="flex items-center gap-2 bg-black text-white px-5 py-3 rounded-xl hover:opacity-90 transition"
-          >
-            ← Back
-          </button>
-        </div>
-      </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-orange-600">
+                🧾 Sales Invoice
+              </h1>
 
-      {/* CUSTOMER */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6">
-        <label className="text-sm font-medium">Customer</label>
-
-        <button
-          onClick={() => setCustomerModalOpen(true)}
-          className="w-full border p-3 mt-2 rounded-lg text-left"
-        >
-          {selectedCustomer ? (
-            <>
-              <p className="font-semibold">
-                {selectedCustomer.nameInSinhala ||
-                  `${selectedCustomer.firstName} ${selectedCustomer.lastName}`}
+              <p className="text-sm text-gray-500 mt-1">
+                Create and manage customer invoices
               </p>
-              <p className="text-xs text-gray-500">
-                {selectedCustomer.memberId}
-              </p>
-            </>
-          ) : (
-            <span className="text-gray-400">Select Customer</span>
-          )}
-        </button>
-      </div>
-
-      {/* DATE */}
-      <div className="flex bg-white p-4 rounded-xl shadow mb-6 gap-4">
-          <div>
-              <label className="text-sm font-medium">Invoice Date</label>
-              <input
-                type="date"
-                value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
-                className="ml-6 border p-2 mt-2 rounded-lg"
-              />
-          </div>
-
-          <div>
-              <label className="text-sm font-medium">Order No</label>
-              <input
-                type="orderNo"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                className="ml-6 border p-2 mt-2 rounded-lg"
-              />
-          </div>
-      </div>
-
-      {/* ITEMS */}
-      <div className="bg-white p-4 rounded-xl shadow mb-6">
-        <div className="flex justify-between mb-3">
-          <h2 className="font-semibold">Items</h2>
-
-          <button
-            onClick={addItemRow}
-            className="bg-orange-500 text-white px-3 py-1 rounded"
-          >
-            + Add Item
-          </button>
-        </div>
-
-        <table className="w-full text-sm">
-            <thead className="bg-orange-50">
-                <tr>
-                <th className="p-2 text-left">Product</th>
-                <th className="p-2 text-right">Qty</th>
-                <th className="p-2 text-right">Available</th>
-                <th className="p-2 text-left">UOM</th>
-                <th className="p-2 text-right">Rate</th>
-                <th className="p-2 text-right">Amount</th>
-                <th className="p-2 text-center"></th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {items.map((item, i) => (
-                <tr key={i} className="border-t">
-                    {/* PRODUCT */}
-                    <td className="p-2">
-                    <button
-                        onClick={() => {
-                        setSelectedRowIndex(i);
-                        setProductModalOpen(true);
-                        }}
-                        className="text-orange-600 hover:underline"
-                    >
-                        {item.productName || "Select Product"}
-                    </button>
-                    </td>
-
-                    {/* QTY */}
-                    <td className="p-2 text-right">
-                      <input
-                        type="number"
-                        max={item.inStock}
-                        min={0}                      
-                        value={item.qty}
-                        onChange={(e) => {
-                          let value = Number(e.target.value);
-
-                          const max = Number(item.inStock || 0);
-
-                          // prevent negative
-                          if (value < 0) value = 0;
-
-                          // prevent exceeding stock
-                          if (value > max) {
-                            toast.error(`Max available stock is ${max}`);
-                            value = max;
-                          }
-
-                          updateItem(i, "qty", value);
-                        }}
-                        className="w-20 text-right border rounded px-2 py-1"
-                      />
-                    </td>
-
-                    {/* AVAILABLE */}
-                    <td className="p-2 text-right">
-                    {item.inStock ?? "N/A"}
-                    </td>
-
-                    {/* UOM */}
-                    <td className="p-2 text-left">
-                    {item.unit || "N/A"}
-                    </td>
-
-                    {/* RATE */}
-                    <td className="p-2 text-right">
-                    <input
-                        type="number"
-                        value={item.rate}
-                        onChange={(e) => updateItem(i, "rate", e.target.value)}
-                        className="w-24 text-right border rounded px-2 py-1"
-                    />
-                    </td>
-
-                    {/* AMOUNT */}
-                    <td className="p-2 text-right font-medium">
-                    {Number(item.amount || 0).toFixed(2)}
-                    </td>
-
-                    {/* ACTION */}
-                    <td className="p-2 text-center">
-                    <button
-                        onClick={() => removeItem(i)}
-                        className="text-red-500 hover:text-red-700"
-                    >
-                        ✖
-                    </button>
-                    </td>
-                </tr>
-                ))}
-
-                {items.length === 0 && (
-                <tr>
-                    <td colSpan="7" className="text-center py-4 text-gray-400">
-                    No items added
-                    </td>
-                </tr>
-                )}
-            </tbody>
-        </table>
-      </div>
-
-      {/* TOTAL */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-4">
-        <span className="font-semibold">Total</span>
-        <span className="text-xl font-bold text-green-600">
-          {totalAmount.toFixed(2)}
-        </span>
-      </div>
-
-      {/* SUBMIT */}
-      <button
-        onClick={handleSubmit}
-        disabled={loading || isSaved}
-        className={`w-full py-3 rounded-xl text-white ${
-          loading || isSaved ? "bg-gray-400 cursor-not-allowed" : "bg-green-600"
-        }`}
-      >
-        {loading && !isSaved
-          ? "Saving..."
-          : isSaved
-          ? "Completed, Download PDF"
-          : "Create Invoice"}
-      </button>
-
-
-
-      {/* ================= PDF LAYOUT ================= */}
-      {/* ⚠️ NO TAILWIND HERE */}
-      <div style={{ display: "none" }}>
-        <div ref={reportRef} style={{ pageBreakInside: "avoid" }}>
-          <div style={pdfPage}>
-
-            <h2
-              style={{
-                ...center,
-                fontWeight: "bold",
-                fontSize: "14px",
-              }}
-            >
-              Collective Development Society
-            </h2>
-            <h2
-              style={{
-                ...center,
-                fontWeight: "normal",
-                fontSize: "10px",
-                marginBottom: "10px",
-              }}
-            >
-              Malmaduwa, Kotiyakumbura. Tel: 022-2222222
-            </h2>
-            <h2
-              style={{
-                ...center,
-                fontWeight: "bold",
-                fontSize: "18px",
-                marginBottom: "20px",
-              }}
-            >
-              Sales Invoice
-            </h2>
-
-            <div style={twoCol}>
-              
-              {/* COLUMN 1 */}
-              <div style={colBox}>
-                <p>{selectedCustomer?.memberId || "N/A"}</p>
-                <p>
-                  {selectedCustomer
-                    ? selectedCustomer.nameInSinhala ||
-                      `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
-                    : "N/A"}
-                </p>
-                <p>
-                  {selectedCustomer?.address
-                    ? Object.values(selectedCustomer.address)
-                        .filter(Boolean)
-                        .join(", ")
-                    : "N/A"}
-                </p>
-              </div>
-
-              {/* COLUMN 2 */}
-              <div style={colBox}>
-                <p><b>Invoice No:</b> {invoiceNumber}</p>
-                <p><b>Date:</b> {formatDate(invoiceDate)}</p>
-                <p><b>Order Number:</b>{orderNumber}</p>
-              </div>
-
             </div>
 
-            <table style={table}>
-              <thead>
+            <div className="flex flex-col sm:flex-row gap-3">
+
+              <button
+                onClick={handleDownloadPDF}
+                disabled={!isSaved}
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-white font-medium transition-all ${
+                  isSaved
+                    ? "bg-orange-600 hover:bg-orange-700"
+                    : "bg-gray-400 cursor-not-allowed"
+                }`}
+              >
+                <FaRegFilePdf />
+                Download PDF
+              </button>
+
+              <button
+                onClick={() => navigate("/control")}
+                className="flex items-center justify-center gap-2 bg-black text-white px-5 py-3 rounded-2xl hover:opacity-90"
+              >
+                <FaArrowLeft />
+                Back
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* CUSTOMER + DATE */}
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
+
+          {/* CUSTOMER */}
+
+          <div className="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
+
+            <div className="flex items-center gap-2 mb-4">
+              <FaUser className="text-orange-500" />
+
+              <h2 className="font-semibold text-lg">
+                Customer Information
+              </h2>
+            </div>
+
+            <button
+              disabled={loading || isSaved}
+              onClick={() => setCustomerModalOpen(true)}
+              className="w-full border-2 border-dashed border-gray-200 hover:border-orange-300 rounded-2xl p-4 text-left transition"
+            >
+              {selectedCustomer ? (
+                <div>
+                  <p className="font-semibold text-lg">
+                    {selectedCustomer.nameInSinhala ||
+                      `${selectedCustomer.firstName} ${selectedCustomer.lastName}`}
+                  </p>
+
+                  <p className="text-sm text-gray-500 mt-1">
+                    Member ID :{" "}
+                    {selectedCustomer.memberId}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-gray-400">
+                  Tap to select customer
+                </div>
+              )}
+            </button>
+          </div>
+
+          {/* DATE + ORDER */}
+
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
+
+            <h2 className="font-semibold text-lg mb-4">
+              Invoice Details
+            </h2>
+
+            <div className="space-y-4">
+
+              <div>
+                <label className="text-sm text-gray-500">
+                  Invoice Date
+                </label>
+
+                <input
+                  disabled={loading || isSaved}
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) =>
+                    setInvoiceDate(e.target.value)
+                  }
+                  className="w-full border rounded-2xl px-4 py-3 mt-2 outline-none focus:ring-2 focus:ring-orange-300"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">
+                  Order Number
+                </label>
+
+                <input
+                  disabled={loading || isSaved}
+                  type="text"
+                  value={orderNumber}
+                  onChange={(e) =>
+                    setOrderNumber(e.target.value)
+                  }
+                  placeholder="Enter order number"
+                  className="w-full border rounded-2xl px-4 py-3 mt-2 outline-none focus:ring-2 focus:ring-orange-300"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ITEMS */}
+
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 mt-5">
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+
+            <div className="flex items-center gap-2">
+              <FaBoxOpen className="text-orange-500" />
+
+              <h2 className="font-semibold text-lg">
+                Invoice Items
+              </h2>
+            </div>
+
+            <button
+              disabled={loading || isSaved}
+              onClick={addItemRow}
+              className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-2xl transition"
+            >
+              <FaPlus />
+              Add Item
+            </button>
+          </div>
+
+          {/* MOBILE CARDS */}
+
+          <div className="lg:hidden space-y-4">
+            {items.map((item, i) => (
+              <div
+                key={i}
+                className="border rounded-2xl p-4 bg-gray-50"
+              >
+
+                <div className="flex justify-between items-start gap-3">
+
+                  <button
+                    disabled={loading || isSaved}
+                    onClick={() => {
+                      setSelectedRowIndex(i);
+                      setProductModalOpen(true);
+                    }}
+                    className="font-semibold text-orange-600 text-left"
+                  >
+                    {item.productName ||
+                      "Select Product"}
+                  </button>
+
+                  <button
+                    disabled={loading || isSaved}
+                    onClick={() => removeItem(i)}
+                    className="text-red-500"
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-4">
+
+                  <div>
+                    <label className="text-xs text-gray-500">
+                      Quantity
+                    </label>
+
+                    <input
+                      disabled={loading || isSaved}
+                      type="number"
+                      value={item.qty}
+                      max={item.inStock}
+                      min={0}
+                      onChange={(e) =>
+                        updateItem(
+                          i,
+                          "qty",
+                          e.target.value
+                        )
+                      }
+                      className="w-full border rounded-xl px-3 py-2 mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-500">
+                      Available
+                    </label>
+
+                    <div className="border rounded-xl px-3 py-2 mt-1 bg-white">
+                      {item.inStock}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-500">
+                      Rate
+                    </label>
+
+                    <input
+                      disabled={loading || isSaved}
+                      type="number"
+                      value={item.rate}
+                      onChange={(e) =>
+                        updateItem(
+                          i,
+                          "rate",
+                          e.target.value
+                        )
+                      }
+                      className="w-full border rounded-xl px-3 py-2 mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-gray-500">
+                      Amount
+                    </label>
+
+                    <div className="border rounded-xl px-3 py-2 mt-1 bg-white font-semibold text-green-600">
+                      {formatCurrency(item.amount)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* DESKTOP TABLE */}
+
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-sm">
+
+              <thead className="bg-orange-50">
                 <tr>
-                  <th style={th}>Item DEscription</th>
-                  <th style={th}>Qty</th>
-                  <th style={th}>UOM</th>
-                  <th style={{ ...th, textAlign: "right" }}>Rate</th>
-                  <th style={{ ...th, textAlign: "right" }}>Amount</th>
+                  <th className="p-4 text-left rounded-l-2xl">
+                    Product
+                  </th>
+
+                  <th className="p-4 text-right">
+                    Qty
+                  </th>
+
+                  <th className="p-4 text-right">
+                    Stock
+                  </th>
+
+                  <th className="p-4 text-left">
+                    UOM
+                  </th>
+
+                  <th className="p-4 text-right">
+                    Rate
+                  </th>
+
+                  <th className="p-4 text-right">
+                    Amount
+                  </th>
+
+                  <th className="p-4 rounded-r-2xl"></th>
                 </tr>
               </thead>
 
               <tbody>
-                {items?.map((m, i) => (
+                {items.map((item, i) => (
                   <Fragment key={i}>
-                    <tr style={{ pageBreakInside: "avoid" }}>
-                      <td style={td}>{m.productName}</td>
-                      <td style={td}>{m.qty}</td>
-                      <td style={td}>{m.unit}</td>
-                      <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.rate)}</td>
-                      <td style={{ ...td, textAlign: "right" }}>{formatCurrency(m.amount)}</td>
+
+                    <tr className="border-b">
+
+                      <td className="p-4">
+
+                        <button
+                          disabled={loading || isSaved}
+                          onClick={() => {
+                            setSelectedRowIndex(i);
+                            setProductModalOpen(true);
+                          }}
+                          className="text-orange-600 font-medium hover:underline"
+                        >
+                          {item.productName ||
+                            "Select Product"}
+                        </button>
+                      </td>
+
+                      <td className="p-4 text-right">
+
+                        <input
+                          disabled={loading || isSaved}
+                          type="number"
+                          value={item.qty}
+                          max={item.inStock}
+                          min={0}
+                          onChange={(e) =>
+                            updateItem(
+                              i,
+                              "qty",
+                              e.target.value
+                            )
+                          }
+                          className="w-24 border rounded-xl px-3 py-2 text-right"
+                        />
+                      </td>
+
+                      <td className="p-4 text-right">
+                        {item.inStock}
+                      </td>
+
+                      <td className="p-4">
+                        {item.unit}
+                      </td>
+
+                      <td className="p-4 text-right">
+
+                        <input
+                          disabled={loading || isSaved}
+                          type="number"
+                          value={item.rate}
+                          onChange={(e) =>
+                            updateItem(
+                              i,
+                              "rate",
+                              e.target.value
+                            )
+                          }
+                          className="w-28 border rounded-xl px-3 py-2 text-right"
+                        />
+                      </td>
+
+                      <td className="p-4 text-right font-semibold text-green-600">
+                        {formatCurrency(item.amount)}
+                      </td>
+
+                      <td className="p-4 text-center">
+
+                        <button
+                          disabled={loading || isSaved}
+                          onClick={() => removeItem(i)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
                     </tr>
                   </Fragment>
                 ))}
-
-                {/* 🔽 TOTAL ROW */}
-                <tr>
-                  <td style={{ ...td, fontWeight: "bold" }} colSpan="4">
-                    Total
-                  </td>
-                  <td style={{ ...td, fontWeight: "bold", textAlign: "right" }}>
-                    {formatCurrency(totalAmount)}
-                  </td>
-                </tr>
               </tbody>
-
             </table>
-            {/* <hr style={{ marginTop: "30px", marginBottom: "10px", borderColor: "#ddd" }} /> */}
-            <div style={{ marginTop: "5px", textAlign: "center", fontSize: "11px", color: "#555" }}>
-              This is a system generated invoice. No signature is required.
+          </div>
+
+          {items.length === 0 && (
+            <div className="text-center py-10 text-gray-400">
+              No items added
+            </div>
+          )}
+        </div>
+
+        {/* TOTAL */}
+
+        <div className="mt-5 bg-white rounded-3xl shadow-sm border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+          <div>
+            <p className="text-gray-500 text-sm">
+              Total Invoice Amount
+            </p>
+
+            <h2 className="text-3xl font-bold text-green-600 mt-1">
+              Rs. {formatCurrency(totalAmount)}
+            </h2>
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading || isSaved}
+            className={`w-full sm:w-auto px-8 py-4 rounded-2xl text-white font-semibold transition ${
+              loading || isSaved
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {loading
+              ? "Saving..."
+              : isSaved
+              ? "Invoice Saved. Download PDF..."
+              : "Create Invoice"}
+          </button>
+        </div>
+
+          {/* ================= PDF ================= */}
+          <div style={{ display: "none" }}>
+            <div ref={reportRef} style={{ padding: "30px", fontFamily: "Arial", color: "#000" }}>
+
+              {/* HEADER */}
+              <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>
+                  Collective Development Society
+                </h2>
+                <p style={{ margin: "4px 0", fontSize: "12px" }}>
+                  Malmaduwa, Kotiyakumbura | Tel: 022-2222222
+                </p>
+                <h3 style={{ marginTop: "10px", fontSize: "16px" }}>
+                  SALES INVOICE
+                </h3>
+              </div>
+
+              {/* INVOICE INFO + CUSTOMER */}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+
+                {/* CUSTOMER */}
+                <div style={{ width: "48%", border: "1px solid #ddd", padding: "10px" }}>
+                  <p style={{ fontWeight: "bold", marginBottom: "5px" }}>Bill To:</p>
+                  <p>{selectedCustomer?.memberId || "N/A"}</p>
+                  <p>
+                    {selectedCustomer
+                      ? selectedCustomer.nameInSinhala ||
+                        `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
+                      : "N/A"}
+                  </p>
+                  <p style={{ fontSize: "12px" }}>
+                    {selectedCustomer?.address
+                      ? Object.values(selectedCustomer.address).join(", ")
+                      : ""}
+                  </p>
+                </div>
+
+                {/* INVOICE DETAILS */}
+                <div style={{ width: "48%", border: "1px solid #ddd", padding: "10px" }}>
+                  <p><b>Invoice No:</b> {invoiceNumber}</p>
+                  <p><b>Date:</b> {invoiceDate}</p>
+                  <p><b>Order No:</b> {orderNumber}</p>
+                </div>
+
+              </div>
+
+              {/* ITEMS TABLE */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <thead>
+                  <tr style={{ background: "#f2f2f2" }}>
+                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>Description</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>Qty</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>UOM</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>Rate</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>Amount</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={i}>
+                      <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                        {item.productName}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                        {item.qty}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                        {item.unit}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
+                        {formatCurrency(item.rate)}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
+                        {formatCurrency(item.amount)}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* TOTAL */}
+                  <tr>
+                    <td colSpan="4" style={{ border: "1px solid #ddd", padding: "8px", fontWeight: "bold" }}>
+                      Total
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right", fontWeight: "bold" }}>
+                      {formatCurrency(totalAmount)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* FOOTER */}
+              <div
+                style={{
+                  marginTop: "25px",
+                  textAlign: "center",
+                  fontSize: "11px",
+                  color: "#555",
+                  borderTop: "1px solid #ddd",
+                  paddingTop: "10px",
+                }}
+              >
+                <div>This is a system generated invoice. No signature is required.</div>
+
+                <div style={{ marginTop: "5px", fontWeight: "bold", color: "#333" }}>
+                  Software developed by nSoft Technologies
+                </div>
+              </div>
+
             </div>
           </div>
+
         </div>
-      </div>
-
-
 
       {/* CUSTOMER MODAL */}
+
       <Modal
         isOpen={isCustomerModalOpen}
-        onRequestClose={() => setCustomerModalOpen(false)}
-        className="bg-white p-4 max-w-md mx-auto mt-20 rounded-xl max-h-[70vh] overflow-y-auto"
+        onRequestClose={() =>
+          setCustomerModalOpen(false)
+        }
+        overlayClassName="fixed inset-0 bg-black/40 z-40"
+        className="bg-white max-w-lg mx-auto mt-10 rounded-3xl p-5 outline-none max-h-[85vh] overflow-y-auto"
       >
-        <h2 className="font-bold mb-3">Select Customer</h2>
 
-        {customers.map((c) => (
-          <div
-            key={c._id}
-            onClick={() => {
-              setSelectedCustomer(c);
-              setCustomerModalOpen(false);
-            }}
-            className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50"
-          >
-            {c.nameInSinhala || `${c.firstName} ${c.lastName}`}
-          </div>
-        ))}
+        <h2 className="text-xl font-bold mb-4">
+          Select Customer
+        </h2>
+
+        <input
+          type="text"
+          placeholder="Search customer..."
+          value={customerSearch}
+          onChange={(e) =>
+            setCustomerSearch(e.target.value)
+          }
+          className="w-full border rounded-2xl px-4 py-3 mb-4"
+        />
+
+        <div className="space-y-2">
+          {filteredCustomers.map((c) => (
+
+            <button
+              key={c._id}
+              onClick={() => {
+                setSelectedCustomer(c);
+                setCustomerModalOpen(false);
+              }}
+              className="w-full text-left border rounded-2xl p-4 hover:bg-orange-50 transition"
+            >
+              <p className="font-semibold">
+                {c.nameInSinhala ||
+                  `${c.firstName} ${c.lastName}`}
+              </p>
+
+              <p className="text-xs text-gray-500 mt-1">
+                {c.memberId}
+              </p>
+            </button>
+          ))}
+        </div>
       </Modal>
 
       {/* PRODUCT MODAL */}
+
       <Modal
         isOpen={isProductModalOpen}
-        onRequestClose={() => setProductModalOpen(false)}
-        className="bg-white p-4 max-w-md mx-auto mt-20 rounded-xl max-h-[70vh] overflow-y-auto"
+        onRequestClose={() =>
+          setProductModalOpen(false)
+        }
+        overlayClassName="fixed inset-0 bg-black/40 z-40"
+        className="bg-white max-w-lg mx-auto mt-10 rounded-3xl p-5 outline-none max-h-[85vh] overflow-y-auto"
       >
-        <h2 className="font-bold mb-3">Select Product</h2>
 
-        {products.map((p) => (
-          <div
-            key={p._id}
-            onClick={() => selectProduct(p)}
-            className="p-3 border mb-2 rounded cursor-pointer hover:bg-orange-50 flex justify-between"
-          >
-            <span>{p.stockName}</span>
-            <span>{p.stockPrice}</span>
-          </div>
-        ))}
+        <h2 className="text-xl font-bold mb-4">
+          Select Product
+        </h2>
+
+        <input
+          type="text"
+          placeholder="Search product..."
+          value={productSearch}
+          onChange={(e) =>
+            setProductSearch(e.target.value)
+          }
+          className="w-full border rounded-2xl px-4 py-3 mb-4"
+        />
+
+        <div className="space-y-2">
+          {filteredProducts.map((p) => (
+
+            <button
+              key={p._id}
+              onClick={() => selectProduct(p)}
+              className="w-full border rounded-2xl p-4 hover:bg-orange-50 transition text-left flex justify-between gap-3"
+            >
+              <div>
+                <p className="font-semibold">
+                  {p.stockName}
+                </p>
+
+                <p className="text-xs text-gray-500 mt-1">
+                  Available : {p.stockQuantity}
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="font-bold text-green-600">
+                  Rs.{" "}
+                  {formatCurrency(p.stockPrice)}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
       </Modal>
     </div>
   );
