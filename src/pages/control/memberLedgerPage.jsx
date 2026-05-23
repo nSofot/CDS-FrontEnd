@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../../components/loadingSpinner";
+import { formatNumber } from "../../utils/numberFormat";
 
 export default function MemberLedgerPage() {
   const [members, setMembers] = useState([]);
@@ -161,6 +162,7 @@ export default function MemberLedgerPage() {
                 <thead className="bg-orange-100 sticky top-0">
                   <tr>
                     <th className="p-2 text-left">Date</th>
+                    <th className="p-2 text-left">Trx ID</th>
                     <th className="p-2 text-left">Reference</th>
                     <th className="p-2 text-left">Type</th>
                     <th className="p-2 text-left">Description</th>
@@ -176,20 +178,17 @@ export default function MemberLedgerPage() {
                       <td className="p-2">
                         {new Date(trx.trxDate).toLocaleDateString()}
                       </td>
+                      <td className="p-2">{trx.trxId || "-"}</td>
                       <td className="p-2">{trx.referenceId || "-"}</td>
                       <td className="p-2 capitalize">{trx.trxType}</td>
                       <td className="p-2">{trx.description || "-"}</td>
 
                       <td className="p-2 text-right text-red-600">
-                        {trx.debit.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
+                        {trx.debit? formatNumber(trx.debit) : "-"}
                       </td>
 
                       <td className="p-2 text-right text-green-600">
-                        {trx.credit.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
+                        {trx.credit? formatNumber(trx.credit) : "-"}
                       </td>
 
                       <td
@@ -199,9 +198,7 @@ export default function MemberLedgerPage() {
                             : "text-gray-800"
                         }`}
                       >
-                        {trx.balance.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
+                        {trx.balance? formatNumber(trx.balance) : "-"}
                       </td>
                     </tr>
                   ))}
@@ -217,7 +214,7 @@ export default function MemberLedgerPage() {
                     <span>
                       {new Date(trx.trxDate).toLocaleDateString()}
                     </span>
-                    <span>{trx.referenceId || "-"}</span>
+                    <span>{trx.trxId || "-"}</span>
                     <span className="capitalize">{trx.trxType}</span>
                   </div>
 
@@ -228,17 +225,11 @@ export default function MemberLedgerPage() {
                   {/* LINE 3 */}
                   <div className="flex justify-right text-sm">
                     <span className="text-red-600 w-1/3 text-right">
-                      {Number(trx.debit || 0).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {trx.debit? formatNumber(trx.debit) : "-"}
                     </span>
 
                     <span className="text-green-600 w-1/3 text-right">
-                      {Number(trx.credit || 0).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {trx.credit? formatNumber(trx.credit) : "-"}
                     </span>
 
                     <span
@@ -248,13 +239,7 @@ export default function MemberLedgerPage() {
                           : "text-gray-900"
                       }`}
                     >
-                      {Number(trx.balance || 0).toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
+                      {trx.balance? formatNumber(trx.balance) : "-"}
                     </span>
                   </div>
 
