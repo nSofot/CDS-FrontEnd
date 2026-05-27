@@ -4,6 +4,10 @@ import MemberHomePage from "./member/memberHomePage";
 import MemberDashboardPage from "./member/memberDashboard";
 import MemberProfilePage from "./member/memberProfilePage";
 import BagOrderDetailsPage from "./member/bagOrderDetailsPage";
+import ProductionEntryPage from "./member/productionEntryPage";
+import MemberSalesEntryPage from "./member/memberSalesEntryPage";
+import ViewIncomePage from "./member/viewIncomePage";
+import ViewAccountStatementPage from "./member/viewAccountStatementPage";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -27,6 +31,10 @@ export default function MemberPortalPage() {
         {/* OTHER PAGES */}
         <Route path="profile" element={<MemberProfilePage />} />
         <Route path="bag-orders" element={<BagOrderDetailsPage />} />
+        <Route path="production-entry" element={<ProductionEntryPage />} />
+        <Route path="sales-entry" element={<MemberSalesEntryPage />} />
+        <Route path="finance" element={<ViewIncomePage />} />
+        <Route path="account-statement" element={<ViewAccountStatementPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

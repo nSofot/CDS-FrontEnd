@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   FaBars,
   FaTimes,
@@ -10,6 +11,7 @@ import {
   FaMoneyBillWave,
   FaHome,
   FaAtom,
+  FaFileInvoiceDollar,
 } from "react-icons/fa";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
@@ -25,9 +27,22 @@ export default function MemberHomePage() {
     if (!user) navigate("/login");
   }, [navigate]);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  })();
+
   const normalizedRole = user?.memberRole?.toLowerCase()?.trim();
   const userName = user?.firstName || "User";
+
+  const location = useLocation();
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]); 
 
   /* ───── MENU ITEMS ───── */
   const menuItems = [
@@ -57,20 +72,26 @@ export default function MemberHomePage() {
     },
     {
       label: "අස්වනු වාර්තා",
-      to: "/member/harvests",
+      to: "/member/production-entry",
       icon: <FaLeaf />,
       roles: ["member", "admin"],
     },
     {
       label: "විකුණුම් වාර්තා",
-      to: "/member/sales",
+      to: "/member/sales-entry",
       icon: <FaChartLine />,
       roles: ["member", "admin"],
     },
     {
-      label: "මූල්‍ය වාර්තා",
+      label: "අලෙවි වාර්තාව",
       to: "/member/finance",
       icon: <FaMoneyBillWave />,
+      roles: ["member", "admin"],
+    },
+    {
+      label: "ගිණුම් විස්තර",
+      to: "/member/account-statement",
+      icon: <FaFileInvoiceDollar />,
       roles: ["member", "admin"],
     },
   ];
@@ -88,8 +109,21 @@ export default function MemberHomePage() {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed md:static z-40 w-64 h-full bg-white/90 backdrop-blur-md shadow-xl border-r border-emerald-100 transition-transform duration-300
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        className={`
+          fixed md:sticky top-0 left-0
+          z-40
+          w-64
+          min-h-screen
+          bg-white/90
+          backdrop-blur-md
+          shadow-xl
+          border-r border-emerald-100
+          overflow-y-auto
+          transition-transform duration-300 ease-in-out
+          ${sidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0"}
+        `}
       >
 
         {/* HEADER */}
@@ -128,7 +162,7 @@ export default function MemberHomePage() {
               localStorage.clear();
               navigate("/login");
             }}
-            className="flex items-center gap-3 px-4 py-2 mt-4 rounded-lg text-red-600 hover:bg-red-50 transition"
+            className="flex items-center gap-3 px-4 py-2 mt-4 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200"
           >
             <FaSignOutAlt />
             පිටවීම
@@ -137,7 +171,7 @@ export default function MemberHomePage() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col md:ml-0">
 
         {/* TOP BAR */}
         <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md px-4 py-3 flex items-center gap-4 shadow-sm border-b border-gray-200">
@@ -165,7 +199,7 @@ export default function MemberHomePage() {
         </header>
 
         {/* PAGE CONTENT */}
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           <Outlet />
         </div>
 
@@ -182,8 +216,8 @@ const SidebarLink = ({ to, icon, label, onClick }) => (
     className={({ isActive }) =>
       `flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200
       ${
-        isActive
-          ? "bg-emerald-100 text-emerald-700 font-semibold shadow-sm"
+      isActive
+        ? "bg-emerald-100 text-emerald-700 font-semibold shadow-sm border-l-4 border-emerald-600"
           : "text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
       }`
     }
