@@ -38,13 +38,13 @@ export default function ProductionEntryPage() {
       setLoading(true);
 
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/batches/substrate`
+        `${import.meta.env.VITE_BACKEND_URL}/api/batch`
       );
 
       setSubstrateBatches(res.data || []);
     } catch (err) {
       console.log(err);
-      toast.error("Failed to load substrate batches");
+      toast.error("උපස්ථර කාණ්ඩ පූරණය කිරීමට අසමත් විය.");
     } finally {
       setLoading(false);
     }
@@ -81,11 +81,11 @@ export default function ProductionEntryPage() {
   const saveProduction = async () => {
     try {
       if (!selectedBatch) {
-        return toast.error("Select substrate batch");
+        return toast.error("උපස්ථර කාණ්ඩය තෝරන්න");
       }
 
       if (!packetCount || Number(packetCount) <= 0) {
-        return toast.error("Enter valid packet quantity");
+        return toast.error("වලංගු පැකට් ප්‍රමාණය ඇතුළත් කරන්න");
       }
 
       setLoading(true);
@@ -110,7 +110,7 @@ export default function ProductionEntryPage() {
         payload
       );
 
-      toast.success("Production entry saved");
+      toast.success("නිෂ්පාදන ඇතුළත් කිරීම සුරකින ලදී");
 
       /* RESET */
 
@@ -124,7 +124,7 @@ export default function ProductionEntryPage() {
       console.log(err);
 
       toast.error(
-        err?.response?.data?.message || "Failed to save production"
+        err?.response?.data?.message || "නිෂ්පාදනය සුරැකීමට අසමත් විය."
       );
     } finally {
       setLoading(false);
@@ -143,11 +143,11 @@ export default function ProductionEntryPage() {
 
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            Mushroom Production Entry
+            හතු නිෂ්පාදන ප්‍රවේශය
           </h1>
 
           <p className="text-sm text-gray-500">
-            Create mushroom packet batches from substrate batches
+            උපස්ථර කාණ්ඩ වලින් හතු පැකට් කාණ්ඩ සාදන්න
           </p>
         </div>
       </div>
@@ -161,7 +161,7 @@ export default function ProductionEntryPage() {
           <div className="flex items-center gap-2 mb-4">
             <FaSearch className="text-emerald-600" />
             <h2 className="font-semibold text-gray-700">
-              Select Substrate Batch
+              උපස්ථර කාණ්ඩය තෝරන්න
             </h2>
           </div>
 
@@ -169,7 +169,7 @@ export default function ProductionEntryPage() {
 
           <input
             type="text"
-            placeholder="Search batch no..."
+            placeholder="කාණ්ඩ අංකය සොයන්න..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full border border-gray-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-emerald-400 mb-4"
@@ -181,7 +181,7 @@ export default function ProductionEntryPage() {
 
             {filteredBatches.length === 0 && (
               <div className="text-sm text-gray-500 text-center py-10">
-                No substrate batches found
+                උපස්ථර කාණ්ඩ හමු නොවීය
               </div>
             )}
 
@@ -227,7 +227,7 @@ export default function ProductionEntryPage() {
             <FaBoxes className="text-emerald-600" />
 
             <h2 className="font-semibold text-gray-700">
-              Production Details
+              නිෂ්පාදන විස්තර
             </h2>
           </div>
 
@@ -239,11 +239,11 @@ export default function ProductionEntryPage() {
               </div>
 
               <h3 className="text-lg font-semibold text-gray-700">
-                Select Substrate Batch
+                උපස්ථර කාණ්ඩය තෝරන්න
               </h3>
 
               <p className="text-gray-500 mt-1">
-                Choose substrate batch to create mushroom packets
+                හතු පැකට් සෑදීමට උපස්ථර කාණ්ඩය තෝරන්න.
               </p>
             </div>
           ) : (
@@ -255,7 +255,7 @@ export default function ProductionEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Substrate Batch No
+                    උපස්ථර කාණ්ඩ අංකය
                   </label>
 
                   <input
@@ -268,7 +268,7 @@ export default function ProductionEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Mushroom Batch No
+                    හතු පැකට් කාණ්ඩ අංකය
                   </label>
 
                   <input
@@ -286,7 +286,7 @@ export default function ProductionEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Production Date
+                    නිෂ්පාදන දිනය
                   </label>
 
                   <input
@@ -301,7 +301,7 @@ export default function ProductionEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Mushroom Packet Quantity
+                    හතු පැකට් ප්‍රමාණය
                   </label>
 
                   <input
@@ -311,7 +311,7 @@ export default function ProductionEntryPage() {
                     onChange={(e) =>
                       setPacketCount(e.target.value)
                     }
-                    placeholder="Enter packet quantity"
+                    placeholder="පැකට් ප්‍රමාණය ඇතුළත් කරන්න"
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-400"
                   />
                 </div>
@@ -321,14 +321,14 @@ export default function ProductionEntryPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Remarks
+                  සටහන්
                 </label>
 
                 <textarea
                   rows="4"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Optional remarks..."
+                  placeholder="විකල්ප අදහස්..."
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-400"
                 />
               </div>
@@ -338,14 +338,14 @@ export default function ProductionEntryPage() {
               <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
 
                 <h3 className="font-semibold text-emerald-700 mb-3">
-                  Production Summary
+                  නිෂ්පාදන සාරාංශය
                 </h3>
 
                 <div className="space-y-2 text-sm">
 
                   <div className="flex justify-between">
                     <span className="text-gray-600">
-                      Substrate Batch
+                      උපස්ථර කාණ්ඩ
                     </span>
 
                     <span className="font-semibold">
@@ -355,7 +355,7 @@ export default function ProductionEntryPage() {
 
                   <div className="flex justify-between">
                     <span className="text-gray-600">
-                      Mushroom Batch
+                      හතු පැකට් කාණ්ඩ
                     </span>
 
                     <span className="font-semibold">
@@ -365,7 +365,7 @@ export default function ProductionEntryPage() {
 
                   <div className="flex justify-between">
                     <span className="text-gray-600">
-                      Packet Quantity
+                      හතු පැකට් ප්‍රමාණය
                     </span>
 
                     <span className="font-semibold">
@@ -391,7 +391,7 @@ export default function ProductionEntryPage() {
                 >
                   <FaSave />
 
-                  {loading ? "Saving..." : "Save Production"}
+                  {loading ? "සුරකිමින්..." : "නිෂ්පාදනය සුරකින්න"}
                 </button>
 
                 <button
@@ -404,7 +404,7 @@ export default function ProductionEntryPage() {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
                 >
                   <FaPlus />
-                  New Entry
+                  නව ඇතුල්කිරීම
                 </button>
               </div>
             </div>

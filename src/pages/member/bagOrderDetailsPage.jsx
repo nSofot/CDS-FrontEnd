@@ -266,424 +266,494 @@ export default function BagOrderDetailsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
-            {/* HEADER */}
-            <div className="bg-white rounded-2xl shadow-sm border p-4 sm:p-5 mb-5">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-100 p-3 sm:p-5 md:p-6">
 
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* HEADER */}
 
-                    <div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-                            බෑග් ඇණවුම්
-                        </h2>
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-sm border border-emerald-100 p-4 sm:p-5 mb-5">
 
-                        <p className="text-sm text-gray-500 mt-1">
-                            ඔබගේ සියලුම බෑග් ඇණවුම් මෙහි පෙන්වයි
-                        </p>
-                    </div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
-                    <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <div className="flex items-center gap-4">
 
-                        <select
-                            value={filterStatus}
-                            onChange={(e) =>
-                                setFilterStatus(e.target.value)
-                            }
-                            className="border border-gray-300 rounded-xl px-3 py-2 bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shadow-sm">
+
+                <span className="text-2xl text-emerald-700">
+                🛍️
+                </span>
+            </div>
+
+            <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">
+                බෑග් ඇණවුම්
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                ඔබගේ සියලුම බෑග් ඇණවුම් මෙහි පෙන්වයි
+                </p>
+            </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+
+            <select
+                value={filterStatus}
+                onChange={(e) =>
+                setFilterStatus(e.target.value)
+                }
+                className="border border-emerald-200 rounded-2xl px-4 py-3 bg-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm"
+            >
+                <option value="All">All Orders</option>
+                <option value="Pending">Pending</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Completed">Completed</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Discarded">Discarded</option>
+            </select>
+
+            <button
+                onClick={openAddModal}
+                className="bg-emerald-600 hover:bg-emerald-700 transition-all text-white px-5 py-3 rounded-2xl font-medium shadow-md hover:shadow-lg active:scale-[0.98]"
+            >
+                + නව ඇණවුමක්
+            </button>
+            </div>
+        </div>
+        </div>
+
+        {/* MOBILE CARD VIEW */}
+
+        <div className="block lg:hidden space-y-4">
+
+        {loading ? (
+            <div className="bg-white rounded-3xl p-10 text-center shadow-sm border border-emerald-100 text-gray-500">
+            පූරණය වෙමින් පවතී...
+            </div>
+        ) : filteredOrders.length === 0 ? (
+            <div className="bg-white rounded-3xl p-10 text-center shadow-sm border border-emerald-100 text-gray-500">
+            ඇණවුම් නොමැත
+            </div>
+        ) : (
+            filteredOrders.map((o) => (
+            <div
+                key={o._id}
+                className="bg-white rounded-3xl shadow-sm border border-emerald-100 p-4 space-y-4 hover:shadow-md transition-all"
+            >
+
+                {/* TOP */}
+
+                <div className="flex justify-between items-start gap-3">
+
+                <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">
+                    ඇණවුම් අංකය
+                    </p>
+
+                    <h3 className="font-bold text-lg text-gray-800 mt-1">
+                    {o.orderNo}
+                    </h3>
+                </div>
+
+                <span
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${statusColor(
+                    o.orderStatus
+                    )}`}
+                >
+                    {o.orderStatus}
+                </span>
+                </div>
+
+                {/* INFO GRID */}
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+
+                <div className="bg-emerald-50 rounded-2xl p-3">
+                    <p className="text-gray-500 text-xs">
+                    ඇණවුම් දිනය
+                    </p>
+
+                    <p className="font-semibold text-gray-800 mt-1">
+                    {formatDate(o.orderDate)}
+                    </p>
+                </div>
+
+                <div className="bg-blue-50 rounded-2xl p-3">
+                    <p className="text-gray-500 text-xs">
+                    අවශ්‍ය දිනය
+                    </p>
+
+                    <p className="font-semibold text-gray-800 mt-1">
+                    {formatDate(
+                        o.orderRequestedDate
+                    )}
+                    </p>
+                </div>
+
+                <div className="bg-orange-50 rounded-2xl p-3">
+                    <p className="text-gray-500 text-xs mb-2">
+                    බෑග් වර්ගය
+                    </p>
+
+                    <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${typeColors[o.orderBagStatus]}`}
+                    >
+                    {o.orderBagStatus}
+                    </span>
+                </div>
+
+                <div className="bg-purple-50 rounded-2xl p-3">
+                    <p className="text-gray-500 text-xs">
+                    ප්‍රමාණය
+                    </p>
+
+                    <p className="font-bold text-2xl text-gray-800 mt-1">
+                    {o.orderQuantity}
+                    </p>
+                </div>
+                </div>
+
+                {/* ACTION */}
+
+                <div className="pt-2">
+
+                <button
+                    disabled={
+                    o.orderStatus !== "Pending"
+                    }
+                    onClick={() => openEditModal(o)}
+                    className={`w-full py-3 rounded-2xl font-medium transition-all shadow-sm ${
+                    o.orderStatus === "Pending"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
+                >
+                    සංස්කරණය කරන්න
+                </button>
+                </div>
+            </div>
+            ))
+        )}
+        </div>
+
+        {/* DESKTOP TABLE */}
+
+        <div className="hidden lg:block bg-white shadow-sm border border-emerald-100 rounded-3xl overflow-hidden">
+
+        <div className="overflow-x-auto">
+
+            <table className="w-full text-sm">
+
+            <thead className="bg-emerald-50 text-gray-700 border-b border-emerald-100">
+
+                <tr className="text-left">
+                <th className="p-5 font-semibold">
+                    ඇණවුම් අංකය
+                </th>
+
+                <th className="font-semibold">
+                    ඇණවුම් දිනය
+                </th>
+
+                <th className="font-semibold">
+                    අවශ්‍ය දිනය
+                </th>
+
+                <th className="font-semibold">
+                    බෑග් වර්ගය
+                </th>
+
+                <th className="font-semibold">
+                    ප්‍රමාණය
+                </th>
+
+                <th className="font-semibold">
+                    තත්ත්වය
+                </th>
+
+                <th className="text-center font-semibold">
+                    ක්‍රියාව
+                </th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {loading ? (
+                <tr>
+                    <td
+                    colSpan="7"
+                    className="text-center p-10 text-gray-500"
+                    >
+                    පූරණය වෙමින් පවතී...
+                    </td>
+                </tr>
+                ) : filteredOrders.length === 0 ? (
+                <tr>
+                    <td
+                    colSpan="7"
+                    className="text-center p-10 text-gray-500"
+                    >
+                    ඇණවුම් කිසිවක් හමු නොවීය
+                    </td>
+                </tr>
+                ) : (
+                filteredOrders.map((o) => (
+                    <tr
+                    key={o._id}
+                    className="border-t border-gray-100 hover:bg-emerald-50/40 transition-all"
+                    >
+
+                    <td className="p-5 font-bold text-gray-800">
+                        {o.orderNo}
+                    </td>
+
+                    <td className="text-gray-700">
+                        {formatDate(o.orderDate)}
+                    </td>
+
+                    <td className="text-gray-700">
+                        {formatDate(
+                        o.orderRequestedDate
+                        )}
+                    </td>
+
+                    <td>
+                        <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${typeColors[o.orderBagStatus]}`}
                         >
-                            <option value="All">All Orders</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Cancelled">Cancelled</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Discarded">Discarded</option>
-                        </select>
+                        {o.orderBagStatus}
+                        </span>
+                    </td>
+
+                    <td className="font-bold text-gray-800">
+                        {o.orderQuantity}
+                    </td>
+
+                    <td>
+                        <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColor(
+                            o.orderStatus
+                        )}`}
+                        >
+                        {o.orderStatus}
+                        </span>
+                    </td>
+
+                    <td className="text-center">
 
                         <button
-                            onClick={openAddModal}
-                            className="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded-xl font-medium shadow-sm"
+                        disabled={
+                            o.orderStatus !==
+                            "Pending"
+                        }
+                        onClick={() =>
+                            openEditModal(o)
+                        }
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                            o.orderStatus ===
+                            "Pending"
+                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        }`}
                         >
-                            + නව ඇණවුමක්
+                        සංස්කරණය කරන්න
                         </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* MOBILE CARD VIEW */}
-            <div className="block lg:hidden space-y-4">
-                {loading ? (
-                    <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
-                        පූරණය වෙමින් පවතී...
-                    </div>
-                ) : filteredOrders.length === 0 ? (
-                    <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
-                        ඇණවුම් නොමැත
-                    </div>
-                ) : (
-                    filteredOrders.map((o) => (
-                        <div
-                            key={o._id}
-                            className="bg-white rounded-2xl shadow-sm border p-4 space-y-3"
-                        >
-                            <div className="flex justify-between items-start gap-3">
-
-                                <div>
-                                    <p className="text-xs text-gray-500">
-                                        ඇණවුම් අංකය
-                                    </p>
-
-                                    <h3 className="font-bold text-gray-800">
-                                        {o.orderNo}
-                                    </h3>
-                                </div>
-
-                                <span
-                                    className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(
-                                        o.orderStatus
-                                    )}`}
-                                >
-                                    {o.orderStatus}
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-
-                                <div>
-                                    <p className="text-gray-500">
-                                        ඇණවුම් දිනය
-                                    </p>
-                                    <p className="font-medium">
-                                        {formatDate(o.orderDate)}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-gray-500">
-                                        අවශ්‍ය දිනය
-                                    </p>
-                                    <p className="font-medium">
-                                        {formatDate(
-                                            o.orderRequestedDate
-                                        )}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-gray-500">
-                                        බෑග් වර්ගය
-                                    </p>
-
-                                    <span
-                                        className={`inline-block mt-1 px-2 py-1 rounded-full text-xs font-medium ${typeColors[o.orderBagStatus]}`}
-                                    >
-                                        {o.orderBagStatus}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <p className="text-gray-500">
-                                        ප්‍රමාණය
-                                    </p>
-
-                                    <p className="font-semibold text-lg">
-                                        {o.orderQuantity}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="pt-2 border-t">
-                                <button
-                                    disabled={
-                                        o.orderStatus !== "Pending"
-                                    }
-                                    onClick={() => openEditModal(o)}
-                                    className={`w-full py-2 rounded-xl font-medium transition ${
-                                        o.orderStatus === "Pending"
-                                            ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                    }`}
-                                >
-                                    සංස්කරණය කරන්න
-                                </button>
-                            </div>
-                        </div>
-                    ))
+                    </td>
+                    </tr>
+                ))
                 )}
-            </div>
-
-            {/* DESKTOP TABLE */}
-            <div className="hidden lg:block bg-white shadow-sm border rounded-2xl overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-
-                        <thead className="bg-gray-100 text-gray-700">
-                            <tr className="text-left">
-                                <th className="p-4">ඇණවුම් අංකය</th>
-                                <th>ඇණවුම් දිනය</th>
-                                <th>අවශ්‍ය දිනය</th>
-                                <th>බෑග් වර්ගය</th>
-                                <th>ප්‍රමාණය</th>
-                                <th>තත්ත්වය</th>
-                                <th className="text-center">
-                                    ක්‍රියාව
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td
-                                        colSpan="7"
-                                        className="text-center p-6"
-                                    >
-                                        පූරණය වෙමින් පවතී...
-                                    </td>
-                                </tr>
-                            ) : filteredOrders.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan="7"
-                                        className="text-center p-6"
-                                    >
-                                        ඇණවුම් කිසිවක් හමු නොවීය
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredOrders.map((o) => (
-                                    <tr
-                                        key={o._id}
-                                        className="border-t hover:bg-gray-50 transition"
-                                    >
-                                        <td className="p-4 font-semibold">
-                                            {o.orderNo}
-                                        </td>
-
-                                        <td>
-                                            {formatDate(o.orderDate)}
-                                        </td>
-
-                                        <td>
-                                            {formatDate(
-                                                o.orderRequestedDate
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            <span
-                                                className={`px-3 py-1 rounded-full text-xs font-medium ${typeColors[o.orderBagStatus]}`}
-                                            >
-                                                {o.orderBagStatus}
-                                            </span>
-                                        </td>
-
-                                        <td className="font-semibold">
-                                            {o.orderQuantity}
-                                        </td>
-
-                                        <td>
-                                            <span
-                                                className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(
-                                                    o.orderStatus
-                                                )}`}
-                                            >
-                                                {o.orderStatus}
-                                            </span>
-                                        </td>
-
-                                        <td className="text-center">
-                                            <button
-                                                disabled={
-                                                    o.orderStatus !==
-                                                    "Pending"
-                                                }
-                                                onClick={() =>
-                                                    openEditModal(o)
-                                                }
-                                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                                                    o.orderStatus ===
-                                                    "Pending"
-                                                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                }`}
-                                            >
-                                                සංස්කරණය කරන්න
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-
-                    </table>
-                </div>
-            </div>
-
-            {/* MODAL */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-end sm:items-center z-50">
-
-                    <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 max-h-[95vh] overflow-y-auto animate-slideUp">
-
-                        <div className="flex justify-between items-center mb-5">
-
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-800">
-                                    {editId
-                                        ? "යාවත්කාලීන කරන්න"
-                                        : "නව ඇණවුම"}
-                                </h3>
-
-                                <p className="text-sm text-gray-500">
-                                    බෑග් ඇණවුම් තොරතුරු
-                                </p>
-                            </div>
-
-                            <button
-                                onClick={() =>
-                                    setIsModalOpen(false)
-                                }
-                                className="text-red-500 border border-red-500 rounded-xl text-4xl px-2 flex items-center hover:bg-red-500 hover:text-white transition"
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <form
-                            onSubmit={handleSubmit}
-                            className="space-y-4"
-                        >
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    සාමාජික අංකය
-                                </label>
-
-                                <input
-                                    disabled
-                                    value={form.memberId}
-                                    className="w-full border rounded-xl p-3 bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    සාමාජික නම
-                                </label>
-
-                                <input
-                                    disabled
-                                    value={form.memberName}
-                                    className="w-full border rounded-xl p-3 bg-gray-100"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    බෑග් වර්ගය
-                                </label>
-
-                                <select
-                                    name="orderBagStatus"
-                                    value={form.orderBagStatus}
-                                    onChange={handleChange}
-                                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                                >
-                                    <option>Substrate</option>
-                                    <option>Sterilized</option>
-                                    <option>Inoculated</option>
-                                    <option>Incubating</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    අවශ්‍ය දිනය
-                                </label>
-
-                                <input
-                                    type="date"
-                                    name="orderRequestedDate"
-                                    value={form.orderRequestedDate}
-                                    onChange={handleChange}
-                                    min={getDefaultDate(
-                                        form.orderBagStatus
-                                    )}
-                                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    බෑග් ගණන
-                                </label>
-
-                                <input
-                                    type="number"
-                                    name="orderQuantity"
-                                    value={form.orderQuantity}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    සටහන්
-                                </label>
-
-                                <textarea
-                                    rows={4}
-                                    name="orderRemarks"
-                                    value={form.orderRemarks}
-                                    onChange={handleChange}
-                                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm text-gray-600 mb-1 block">
-                                    තත්ත්වය
-                                </label>
-
-                                <select
-                                    name="orderStatus"
-                                    value={form.orderStatus}
-                                    onChange={handleChange}
-                                    className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                                >
-                                    <option>Pending</option>
-                                    <option>Cancelled</option>
-                                </select>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-3 pt-3">
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setIsModalOpen(false)
-                                    }
-                                    className="w-full border border-gray-300 py-3 rounded-xl font-medium hover:bg-gray-100 transition"
-                                >
-                                    අවලංගු කරන්න
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-medium shadow-sm transition"
-                                >
-                                    {editId
-                                        ? "යාවත්කාලීන කරන්න"
-                                        : "තහවුරු කරන්න"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            </tbody>
+            </table>
         </div>
+        </div>
+
+        {/* MODAL */}
+
+        {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-end sm:items-center z-50 p-0 sm:p-4">
+
+            <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-emerald-100 p-5 sm:p-6 max-h-[95vh] overflow-y-auto animate-slideUp">
+
+            {/* MODAL HEADER */}
+
+            <div className="flex justify-between items-center mb-6">
+
+                <div>
+                <h3 className="text-2xl font-bold text-gray-800">
+                    {editId
+                    ? "යාවත්කාලීන කරන්න"
+                    : "නව ඇණවුම"}
+                </h3>
+
+                <p className="text-sm text-gray-500 mt-1">
+                    බෑග් ඇණවුම් තොරතුරු
+                </p>
+                </div>
+
+                <button
+                onClick={() =>
+                    setIsModalOpen(false)
+                }
+                className="w-11 h-11 rounded-2xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all text-2xl flex items-center justify-center"
+                >
+                ×
+                </button>
+            </div>
+
+            {/* FORM */}
+
+            <form
+                onSubmit={handleSubmit}
+                className="space-y-4"
+            >
+
+                {/* MEMBER ID */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    සාමාජික අංකය
+                </label>
+
+                <input
+                    disabled
+                    value={form.memberId}
+                    className="w-full border border-gray-200 rounded-2xl p-3 bg-gray-100 text-gray-600"
+                />
+                </div>
+
+                {/* MEMBER NAME */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    සාමාජික නම
+                </label>
+
+                <input
+                    disabled
+                    value={form.memberName}
+                    className="w-full border border-gray-200 rounded-2xl p-3 bg-gray-100 text-gray-600"
+                />
+                </div>
+
+                {/* BAG TYPE */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    බෑග් වර්ගය
+                </label>
+
+                <select
+                    name="orderBagStatus"
+                    value={form.orderBagStatus}
+                    onChange={handleChange}
+                    className="w-full border border-gray-200 rounded-2xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                    <option>Substrate</option>
+                    <option>Sterilized</option>
+                    <option>Inoculated</option>
+                    <option>Incubating</option>
+                </select>
+                </div>
+
+                {/* DATE */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    අවශ්‍ය දිනය
+                </label>
+
+                <input
+                    type="date"
+                    name="orderRequestedDate"
+                    value={form.orderRequestedDate}
+                    onChange={handleChange}
+                    min={getDefaultDate(
+                    form.orderBagStatus
+                    )}
+                    className="w-full border border-gray-200 rounded-2xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+                </div>
+
+                {/* QUANTITY */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    බෑග් ගණන
+                </label>
+
+                <input
+                    type="number"
+                    name="orderQuantity"
+                    value={form.orderQuantity}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-gray-200 rounded-2xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+                </div>
+
+                {/* REMARKS */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    සටහන්
+                </label>
+
+                <textarea
+                    rows={4}
+                    name="orderRemarks"
+                    value={form.orderRemarks}
+                    onChange={handleChange}
+                    className="w-full border border-gray-200 rounded-2xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                />
+                </div>
+
+                {/* STATUS */}
+
+                <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                    තත්ත්වය
+                </label>
+
+                <select
+                    name="orderStatus"
+                    value={form.orderStatus}
+                    onChange={handleChange}
+                    className="w-full border border-gray-200 rounded-2xl p-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                    <option>Pending</option>
+                    <option>Cancelled</option>
+                </select>
+                </div>
+
+                {/* BUTTONS */}
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+
+                <button
+                    type="button"
+                    onClick={() =>
+                    setIsModalOpen(false)
+                    }
+                    className="w-full border border-gray-300 py-3 rounded-2xl font-medium hover:bg-gray-100 transition-all"
+                >
+                    අවලංගු කරන්න
+                </button>
+
+                <button
+                    type="submit"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-medium shadow-md transition-all"
+                >
+                    {editId
+                    ? "යාවත්කාලීන කරන්න"
+                    : "තහවුරු කරන්න"}
+                </button>
+                </div>
+            </form>
+            </div>
+        </div>
+        )}
+    </div>
     );
 }

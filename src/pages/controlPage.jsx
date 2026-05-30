@@ -40,6 +40,8 @@ import BatchListPage from "./control/batchListPage";
 import ViewBatchPage from "./control/viewBatchPage";
 import BagOrderManagementPage from "./control/bagOrderManagementPage";
 
+import LedgerAccountsPage from "./control/ledgerAccountsPage";
+
 
 import NotFoundPage from "./notFoundPage";
 
@@ -100,6 +102,9 @@ export default function ControlPage() {
         <Route path="batch-list" element={<BatchListPage />} />
         <Route path="view-batch/:batchNo" element={<ViewBatchPage />} />
         <Route path="bag-orders-management" element={<BagOrderManagementPage />} />
+
+        <Route path="ledger-accounts" element={<LedgerAccountsPage />} />
+        
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
