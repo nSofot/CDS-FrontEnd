@@ -11,6 +11,11 @@ export default function CashRegisterPage() {
   const [accountBalance, setAccountBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [transactions, setTransactions] = useState([]);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [trxLoading, setTrxLoading] = useState(false);  
+
   const formatLocalISODate = (d) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -46,6 +51,54 @@ export default function CashRegisterPage() {
 
     fetchAccounts();
   }, [isLoading]);
+
+
+  const fetchTransactions = async (accountId, from, to) => {
+    try {
+      setTrxLoading(true);
+
+      const res = await axios.get(
+        `${API}/api/ledger-transaction/${accountId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      let data = res.data || [];
+
+      // date filter (frontend filter for flexibility)
+      if (from) {
+        data = data.filter((t) => new Date(t.trxDate) >= new Date(from));
+      }
+      if (to) {
+        data = data.filter((t) => new Date(t.trxDate) <= new Date(to));
+      }
+
+      // sort by date
+      data.sort((a, b) => new Date(a.trxDate) - new Date(b.trxDate));
+
+      // calculate running balance
+      let balance = 0;
+
+      const enriched = data.map((t) => {
+        if (t.isCredit) {
+          balance += t.trxAmount;
+        } else {
+          balance -= t.trxAmount;
+        }
+
+        return { ...t, balance };
+      });
+
+      setTransactions(enriched);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load transactions");
+    } finally {
+      setTrxLoading(false);
+    }
+  };
+
 
   const validateDates = (start, end) => {
     if (start && end && new Date(start) > new Date(end)) {

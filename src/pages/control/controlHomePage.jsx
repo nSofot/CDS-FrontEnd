@@ -53,6 +53,7 @@ export default function ControlHomePage() {
         "admin",
       ],
     },
+
     {
       label: "Dashboard",
       to: "/control/",
@@ -61,28 +62,11 @@ export default function ControlHomePage() {
         "admin",
       ],
     },
-    {
-      label: "Members",
-      to: "/control/members",
-      icon: <FaUsers />,
-      roles: [
-        "admin",
-      ],
-    },
 
     {
-      label: "Stock",
-      to: "/control/stock",
-      icon: <FaSackDollar />,
-      roles: [
-        "admin",
-      ],
-    },
-
-    {
-      label: "Vendors",
-      to: "/control/vendors",
-      icon: <FaMoneyBillTransfer />,
+      label: "Bag Production Process",
+      to: "/control/mushroom-process",
+      icon: <FaUsersCog />,
       roles: [
         "admin",
       ],
@@ -107,9 +91,45 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "Cashbook",
+      label: "Members",
+      to: "/control/members",
+      icon: <FaUsers />,
+      roles: [
+        "admin",
+      ],
+    },
+
+    {
+      label: "Vendors",
+      to: "/control/vendors",
+      icon: <FaMoneyBillTransfer />,
+      roles: [
+        "admin",
+      ],
+    },
+
+    {
+      label: "Products",
+      to: "/control/stock",
+      icon: <FaSackDollar />,
+      roles: [
+        "admin",
+      ],
+    },
+
+    {
+      label: "Cash Book",
       to: "/control/cash-book",
       icon: <FaMoneyCheckAlt />,
+      roles: [
+        "admin",
+      ],
+    },
+
+    {
+      label: "GRNs & Purchases",
+      to: "/control/grns",
+      icon: <FaReceipt />,
       roles: [
         "admin",
       ],
@@ -128,15 +148,6 @@ export default function ControlHomePage() {
       label: "Sales Invoices",
       to: "/control/sales-invoice",
       icon: <FaMoneyCheckAlt />,
-      roles: [
-        "admin",
-      ],
-    },
-
-    {
-      label: "GRNs & Purchases",
-      to: "/control/grns",
-      icon: <FaReceipt />,
       roles: [
         "admin",
       ],
@@ -169,23 +180,23 @@ export default function ControlHomePage() {
       ],
     },
       
+    // {
+    //   label: "Stock Adjustments",
+    //   to: "/control/stock-adjustments",
+    //   icon: <TbReport />,
+    //   roles: [
+    //     "admin",
+    //   ],
+    // },
+    
     {
-      label: "Stock Adjustments",
-      to: "/control/stock-adjustments",
-      icon: <TbReport />,
-      roles: [
-        "admin",
-      ],
-    },
-
-    {
-      label: "Production Process",
-      to: "/control/mushroom-process",
+      label: "Ledger Accounts",
+      to: "/control/ledger-accounts",
       icon: <FaUsersCog />,
       roles: [
         "admin",
-      ],
-    },
+      ]
+    }
   ];
 
   return (
