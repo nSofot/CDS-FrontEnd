@@ -3,8 +3,6 @@ import axios from "axios";
 import LoadingSpinner from "../../components/loadingSpinner";
 import { FaUsersCog, FaUserClock, FaChevronUp, FaChevronDown, FaReceipt  } from "react-icons/fa";
 import { FaSackDollar } from "react-icons/fa6";
-import { m } from "framer-motion";
-import { t } from "i18next";
 
 /* ───────── DASHBOARD PAGE ───────── */
 
@@ -40,6 +38,9 @@ export default function DashboardPage() {
     finance: true,
   });
 
+  const formatNumber = (num) =>
+    new Intl.NumberFormat().format(num || 0);
+
   /* ───── HELPERS ───── */
   const formatCurrency = (num) =>
     new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(num || 0);
@@ -54,9 +55,18 @@ export default function DashboardPage() {
         setIsLoading(true);
 
         // Fetch orders
-        const ordersRes = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`
-        );
+        const [
+          ordersRes,
+          membersRes,
+          financeRes,
+          batchRes,
+        ] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/bag-order`),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/member`),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`),
+          axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/batch`),
+        ]);
+
         const orders = ordersRes.data;
         setTotalPendingOrders(
           orders
@@ -124,18 +134,10 @@ export default function DashboardPage() {
             .reduce((sum, o) => sum + Number(o.orderQuantity || 0), 0)
         );
 
-        // Production summary
-        const membersRes = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/member`
-        );
         const list = membersRes.data;
         // setActiveMembers(list.filter((m) => m.status === "active"));
         setActiveMembers(membersRes.data.length);
 
-
-        const financeRes = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
-        );
         const accounts = financeRes.data;
 
         setCashInHand(
@@ -148,10 +150,6 @@ export default function DashboardPage() {
           accounts.find((a) => a.accountId === "115-0002")?.accountBalance || 0
         );
 
-
-        const batchRes = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/batch`
-        );
         const batches = batchRes.data;
 
         setTodayProductionBags(
@@ -201,7 +199,7 @@ export default function DashboardPage() {
           open={openSections.orders}
           onToggle={() => toggleSection("orders")}
         >
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Stat label="Pending Orders" value={totalPendingOrders} color="text-red-600" />
             <Stat label="Completed Orders" value={totalCompletedOrders} color="text-green-600" />
             <Stat label="Pending Orders - Substrate Bags" value={totalSubstrateBagsOrders} color="text-orange-600" />
@@ -221,11 +219,11 @@ export default function DashboardPage() {
         >
           <div className="grid grid-cols-2 gap-4">
             <Stat label="Active Members" value={activeMembers} color="text-blue-600" />
-            <Stat label="Today Produced Bags" value={todayProductionBags} color="text-blue-600"/>
-            <Stat label="Today Sterilized Bags" value={todaySterilizedBags} color="text-green-600" />
-            <Stat label="Today Inoculated Bags" value={todayInoculatedBags} color="text-purple-600" />
-            <Stat label="Current Incubating Bags" value={currentIcubatingBags} color="text-orange-600" />
-            <Stat label="Today Sold Bags" value={todaySoldBags} color="text-red-600" />
+            <Stat label="Today Produced Bags" value={formatNumber(todayProductionBags)} color="text-blue-600"/>
+            <Stat label="Today Sterilized Bags" value={formatNumber(todaySterilizedBags)} color="text-green-600" />
+            <Stat label="Today Inoculated Bags" value={formatNumber(todayInoculatedBags)} color="text-purple-600" />
+            <Stat label="Current Incubating Bags" value={formatNumber(currentIcubatingBags)} color="text-orange-600" />
+            <Stat label="Today Sold Bags" value={formatNumber(todaySoldBags)} color="text-red-600" />
           </div>
         </DashboardCard>
 

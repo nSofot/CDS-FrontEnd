@@ -35,14 +35,26 @@ export default function ViewIncomePage() {
       setLoading(true);
 
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member-sales`
+        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`
       );
 
-      setSales(res.data || []);
+      console.log(res.data);
+
+      // SAFE ARRAY SET
+      if (Array.isArray(res.data)) {
+        setSales(res.data);
+      } else if (Array.isArray(res.data.data)) {
+        setSales(res.data.data);
+      } else {
+        setSales([]);
+      }
+
     } catch (err) {
       console.log(err);
 
       toast.error("Failed to load income records");
+
+      setSales([]);
     } finally {
       setLoading(false);
     }
@@ -84,7 +96,7 @@ export default function ViewIncomePage() {
   /* ───────────────── FILTERED SALES ───────────────── */
 
   const filteredSales = useMemo(() => {
-    let filtered = [...sales];
+    let filtered = Array.isArray(sales) ? [...sales] : [];
 
     /* FILTER BY TYPE */
 

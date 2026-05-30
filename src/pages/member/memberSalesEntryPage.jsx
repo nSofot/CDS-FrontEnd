@@ -45,14 +45,14 @@ export default function MemberSalesEntryPage() {
       setLoading(true);
 
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/productions/mushroom-batches`
+        `${import.meta.env.VITE_BACKEND_URL}/api/batch`
       );
 
       setBatches(res.data || []);
     } catch (err) {
       console.log(err);
 
-      toast.error("Failed to load mushroom batches");
+      toast.error("බිම්මල් කාණ්ඩ පූරණය කිරීමට අසමත් විය.");
     } finally {
       setLoading(false);
     }
@@ -84,26 +84,26 @@ export default function MemberSalesEntryPage() {
   const saveSale = async () => {
     try {
       if (!selectedBatch) {
-        return toast.error("Select mushroom batch");
+        return toast.error("බිම්මල් කාණ්ඩය තෝරන්න");
       }
 
       if (!customerName.trim()) {
-        return toast.error("Enter customer name");
+        return toast.error("සැපයුම්කරුගේ නම ඇතුලත් කරන්න");
       }
 
       if (!quantity || Number(quantity) <= 0) {
-        return toast.error("Enter valid quantity");
+        return toast.error("වලංගු ප්‍රමාණයක් ඇතුලත් කරන්න");
       }
 
       if (
         Number(quantity) >
         Number(selectedBatch.balancePackets || 0)
       ) {
-        return toast.error("Insufficient packet balance");
+        return toast.error("පැකෙට් අඩු ප්‍රමාණයක් ඇත");
       }
 
       if (!pricePerPacket || Number(pricePerPacket) <= 0) {
-        return toast.error("Enter valid selling price");
+        return toast.error("වලංගු විකුණුම් මිල ඇතුළත් කරන්න");
       }
 
       setLoading(true);
@@ -137,7 +137,7 @@ export default function MemberSalesEntryPage() {
         payload
       );
 
-      toast.success("Mushroom sale entry saved");
+      toast.success("බිම්මල් විකුණුම් ඇතුලත් කරන ලදි");
 
       /* RESET */
 
@@ -153,7 +153,7 @@ export default function MemberSalesEntryPage() {
 
       toast.error(
         err?.response?.data?.message ||
-          "Failed to save sale entry"
+          "විකුණුම් සටහන සුරැකීමට අසමත් විය."
       );
     } finally {
       setLoading(false);
@@ -173,11 +173,11 @@ export default function MemberSalesEntryPage() {
 
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            Mushroom Sales Entry
+            හතු අලෙවිකරණ ප්‍රවේශය
           </h1>
 
           <p className="text-sm text-gray-500">
-            Record member mushroom packet sales
+            සාමාජික හතු පැකට් අලෙවිය වාර්තාගත කරන්න
           </p>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function MemberSalesEntryPage() {
             <FaSearch className="text-emerald-600" />
 
             <h2 className="font-semibold text-gray-700">
-              Available Mushroom Batches
+              ලබා ගත හැකි බිම්මල් කාණ්ඩ
             </h2>
           </div>
 
@@ -202,7 +202,7 @@ export default function MemberSalesEntryPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search batch no..."
+            placeholder="කාණ්ඩ අංකය සොයන්න..."
             className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-400 mb-4"
           />
 
@@ -212,7 +212,7 @@ export default function MemberSalesEntryPage() {
 
             {filteredBatches.length === 0 && (
               <div className="text-center text-gray-500 py-10 text-sm">
-                No mushroom batches found
+                බිම්මල් කාණ්ඩ හමු නොවීය
               </div>
             )}
 
@@ -236,7 +236,7 @@ export default function MemberSalesEntryPage() {
                     </p>
 
                     <p className="text-xs text-gray-500 mt-1">
-                      Substrate Batch:
+                      උපස්ථර කාණ්ඩය:
                     </p>
 
                     <p className="text-sm text-gray-700">
@@ -245,7 +245,7 @@ export default function MemberSalesEntryPage() {
                   </div>
 
                   <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                    {batch.balancePackets || 0} Packets
+                    {batch.balancePackets || 0} පැකට්
                   </div>
                 </div>
               </button>
@@ -265,11 +265,11 @@ export default function MemberSalesEntryPage() {
               </div>
 
               <h2 className="text-xl font-semibold text-gray-700">
-                Select Mushroom Batch
+                බිම්මල් කාණ්ඩය තෝරන්න
               </h2>
 
               <p className="text-gray-500 mt-2">
-                Choose available mushroom packet batch to continue
+                ඉදිරියට යාමට ලබා ගත හැකි හතු පැකට් කාණ්ඩය තෝරන්න.
               </p>
             </div>
           ) : (
@@ -283,7 +283,7 @@ export default function MemberSalesEntryPage() {
                   <FaBoxes className="text-emerald-700" />
 
                   <h2 className="font-semibold text-emerald-700">
-                    Selected Batch Details
+                    තෝරාගත් කාණ්ඩ විස්තර
                   </h2>
                 </div>
 
@@ -291,7 +291,7 @@ export default function MemberSalesEntryPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">
-                      Mushroom Batch
+                      බිම්මල් කාණ්ඩය
                     </p>
 
                     <p className="font-semibold text-gray-800">
@@ -301,7 +301,7 @@ export default function MemberSalesEntryPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">
-                      Substrate Batch
+                      උපස්ථර කාණ්ඩය
                     </p>
 
                     <p className="font-semibold text-gray-800">
@@ -311,7 +311,7 @@ export default function MemberSalesEntryPage() {
 
                   <div>
                     <p className="text-xs text-gray-500">
-                      Available Packets
+                      ලබා ගත හැකි පැකට්
                     </p>
 
                     <p className="font-semibold text-emerald-700">
@@ -327,7 +327,7 @@ export default function MemberSalesEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Sale Date
+                    විකුණුම් දිනය
                   </label>
 
                   <input
@@ -340,7 +340,7 @@ export default function MemberSalesEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Customer Name
+                    පාරිභෝගික නම
                   </label>
 
                   <div className="relative">
@@ -360,7 +360,7 @@ export default function MemberSalesEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Quantity
+                    ප්‍රමාණය
                   </label>
 
                   <input
@@ -377,7 +377,7 @@ export default function MemberSalesEntryPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Price Per Packet
+                    පැකට්ටුවකට මිල
                   </label>
 
                   <div className="relative">
@@ -401,7 +401,7 @@ export default function MemberSalesEntryPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Remarks
+                  සටහන්
                 </label>
 
                 <textarea
@@ -418,14 +418,14 @@ export default function MemberSalesEntryPage() {
               <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
 
                 <h2 className="font-semibold text-gray-700 mb-4">
-                  Sales Summary
+                  විකුණුම් සාරාංශය
                 </h2>
 
                 <div className="space-y-3 text-sm">
 
                   <div className="flex justify-between">
                     <span className="text-gray-500">
-                      Mushroom Batch
+                      බිම්මල් කාණ්ඩය
                     </span>
 
                     <span className="font-semibold">
@@ -435,7 +435,7 @@ export default function MemberSalesEntryPage() {
 
                   <div className="flex justify-between">
                     <span className="text-gray-500">
-                      Quantity
+                      ප්‍රමාණය
                     </span>
 
                     <span className="font-semibold">
@@ -445,7 +445,7 @@ export default function MemberSalesEntryPage() {
 
                   <div className="flex justify-between">
                     <span className="text-gray-500">
-                      Price Per Packet
+                      පැකට්ටුවකට මිල
                     </span>
 
                     <span className="font-semibold">
@@ -456,11 +456,11 @@ export default function MemberSalesEntryPage() {
                   <div className="border-t border-gray-200 pt-3 flex justify-between">
 
                     <span className="font-semibold text-gray-700">
-                      Total Amount
+                      මුලු වටිනාකම
                     </span>
 
                     <span className="font-bold text-emerald-700 text-lg">
-                      Rs. {totalAmount.toFixed(2)}
+                      රු. {totalAmount.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -495,7 +495,7 @@ export default function MemberSalesEntryPage() {
                   }}
                   className="px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all"
                 >
-                  Clear Form
+                  පෝරමය හිස් කරන්න
                 </button>
               </div>
             </div>
