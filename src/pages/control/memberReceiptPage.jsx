@@ -6,6 +6,8 @@ import { FaRegFilePdf } from "react-icons/fa";
 import html2pdf from "html2pdf.js/dist/html2pdf.bundle";
 
 export default function MemberReceiptPage() {
+  window.document.title = "Member Receipt - Control Panel";
+  window.scrollTo(0, 0);
   const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [ledgers, setLedgers] = useState([]);

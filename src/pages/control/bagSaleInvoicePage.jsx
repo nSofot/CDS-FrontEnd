@@ -1,20 +1,89 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import Modal from "react-modal";
-import { useNavigate } from "react-router-dom";
-import {
-  FaRegFilePdf,
-  FaSearch,
-  FaTrash,
-} from "react-icons/fa";
-import html2pdf from "html2pdf.js/dist/html2pdf.bundle";
+import { FaEye, FaSearch, FaTrash, FaPlus, FaRegFilePdf } from "react-icons/fa";
+import { formatNumber } from "../../utils/numberFormat.js";
+import { formatDate } from "../../utils/dateFormat.js";
+import html2pdf from "html2pdf.js";
 
-Modal.setAppElement("#root");
 
 export default function BagSaleInvoicePage() {
+  const [invoices, setInvoices] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [batches, setBatches] = useState([]);
+ 
+  const [loading, setLoading] = useState(false);
+  const [refresh, setRefresh] = useState(false);  
+  const [isSaved, setIsSaved] = useState(false);
 
-  const navigate = useNavigate();
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [loadingMasters, setLoadingMasters] = useState(false);  
+
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);  
+  const [selectedBatch, setSelectedBatch] = useState(null);
+
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);  
+
+  const [stockTrx, setStockTrx] = useState({});
+
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+
+  const [search, setSearch] = useState("");
+
+  const [viewMode, setViewMode] = useState("list"); // 👈 LIST / CREATE
+
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  const reportRef = useRef(null);
+
+  const [form, setForm] = useState({
+    invoiceDate: new Date().toISOString().split("T")[0],
+    memberId: "",
+    memberName: "",
+    orderNo: "",
+    batchNo: "",
+    numberOfBags: "",
+    balanceBags: "",
+    totalCostValue: "",
+    totalJobValue: "",
+    productId: "",
+    productName: "",
+    cost: "",
+    rate: "",
+    quantity: "",
+    costValue: "",
+    totalAmount: "",
+  });
+
+  const initialForm = {
+    invoiceDate: new Date().toISOString().split("T")[0],
+    memberId: "",
+    memberName: "",
+    orderNo: "",
+    batchNo: "",
+    numberOfBags: "",
+    balanceBags: "",
+    totalCostValue: "",
+    totalJobValue: "",
+    productId: "",
+    productName: "",
+    cost: "",    
+    rate: "",
+    quantity: "",
+    costValue: "",
+    totalAmount: "",
+  };
+
+  const statusStockMap = {
+    Substrate: "5000",
+    Sterilized: "5001",
+    Inoculated: "5002",
+    Incubating: "5003",
+  };
 
   const token = localStorage.getItem("token");
 
@@ -22,66 +91,75 @@ export default function BagSaleInvoicePage() {
     Authorization: `Bearer ${token}`,
   };
 
-  // ---------------- STATES ----------------
-
-  const [customers, setCustomers] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [batches, setBatches] = useState([]);
-  const [orders, setOrders] = useState([]);
-
-  const [selectedCustomer, setSelectedCustomer] =
-    useState(null);
-
-  const [selectedOrder, setSelectedOrder] =
-    useState(null);
-
-  const [items, setItems] = useState([]);
-
-  const [invoiceDate, setInvoiceDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-
-  const [orderNumber, setOrderNumber] = useState("");
-  const [invoiceNumber, setInvoiceNumber] = useState("");
-
-  const [loading, setLoading] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-
-  const [isCustomerModalOpen, setCustomerModalOpen] =
-    useState(false);
-
-  const [isOrderModalOpen, setOrderModalOpen] =
-    useState(false);
-
-  const [customerSearch, setCustomerSearch] =
-    useState("");
-
-  const [orderSearch, setOrderSearch] =
-    useState("");
-
-  const reportRef = useRef();
-
-  // ---------------- FETCH ----------------
-
-  useEffect(() => {
-    fetchCustomers();
-    fetchProducts();
-    fetchBatches();
-    fetchOrders();
-  }, []);
-
-  const fetchCustomers = async () => {
+  /* LOAD */
+  const fetchInvoices = async () => {
     try {
+      setLoading(true);
 
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
         { headers }
       );
 
-      setCustomers(res.data || []);
+      const data = Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+
+      const filtered = data.filter(
+        (i) =>
+          i.trxType === "BagInvoice"
+      );
+
+      setInvoices(filtered);
+    } catch (err) {
+      toast.error("Failed to load invoices");
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* FETCH */
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/member`
+      );
+      setMembers(res.data.data || res.data);
+    } catch {
+      toast.error("Failed to load members");
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`,
+        { headers }
+      );
+
+      setOrders(res.data || []);
 
     } catch {
-      toast.error("Failed to load customers");
+      toast.error("Failed to load orders");
+    }
+  };
+
+  const fetchBatches = async () => {
+    try {
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/batch`
+      );
+
+      setBatches(res.data || []);
+
+    } catch {
+      toast.error("Failed to load batches");
     }
   };
 
@@ -105,231 +183,119 @@ export default function BagSaleInvoicePage() {
     }
   };
 
-  const fetchBatches = async () => {
+
+  const featchStockTrx = async (trxId) => {  
+    if (!trxId) return null;     
     try {
-
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/batch`
-      );
-
-      setBatches(res.data || []);
-
-    } catch {
-      toast.error("Failed to load batches");
-    }
-  };
-
-  const fetchOrders = async () => {
-    try {
-
-      const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/${trxId}`,
         { headers }
       );
-
-      setOrders(res.data || []);
-
-    } catch {
-      toast.error("Failed to load orders");
+      setStockTrx(res.data || []);
+    } catch (err) {
+      return null;
     }
   };
 
-  // ---------------- FILTERED ----------------
-
-  const filteredOrders = orders.filter(
-    (o) =>
-      o.memberId === selectedCustomer?.memberId &&
-      o.orderStatus === "Completed"
-  );
-
-  const filteredBatches = batches.filter((batch) => {
-
-    if (!selectedOrder) return false;
-
-    const statusMatch =
-      (batch.status || "").toLowerCase() ===
-      (selectedOrder.orderBagStatus || "").toLowerCase();
-
-    const hasBalance =
-      Number(batch.balanceBags || 0) > 0;
-
-    return statusMatch && hasBalance;
-  });
-
-  // ---------------- FORMAT ----------------
-
-  const formatDate = (date) => {
-
-    if (!date) return "N/A";
-
-    return new Date(date).toLocaleDateString();
-  };
-
-  const formatCurrency = (value) => {
-
-    return Number(value || 0).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
-  const formatNumber = (value) =>
-    `Rs. ${formatCurrency(value)}`;
-
-  // ---------------- STATUS COLORS ----------------
-
-  const getStatusColor = (status) => {
-
-    switch (status?.toLowerCase()) {
-
-      case "substrate":
-        return "bg-yellow-100 text-yellow-700";
-
-      case "sterilized":
-        return "bg-blue-100 text-blue-700";
-
-      case "inoculated":
-        return "bg-purple-100 text-purple-700";
-
-      case "incubating":
-        return "bg-green-100 text-green-700";
-
-      default:
-        return "bg-gray-100 text-gray-700";
+  useEffect(() => {
+    if (isViewOpen && selected?.trxId) {
+      featchStockTrx(selected.trxId);
     }
-  };
+  }, [isViewOpen, selected?.trxId]);
 
-  // ---------------- SELECT ORDER ----------------
 
-  const selectOrder = (order) => {
-
-    setSelectedOrder(order);
-
-    setOrderNumber(order.orderNo || "");
-
-    setItems([]);
-
-    setOrderModalOpen(false);
-  };
-
-  // ---------------- SELECT BATCH ----------------
-
-  const selectBatch = (batch) => {
-
-    if (!selectedOrder) {
-      return toast.error("Select order first");
-    }
-
-    const statusToStockId = {
-      Substrate: "5000",
-      Sterilized: "5001",
-      Inoculated: "5002",
-      Incubating: "5003",
+  useEffect(() => {
+    const loadAll = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchProducts(),
+          fetchBatches(),
+          fetchOrders(),
+          fetchMembers(),
+          fetchInvoices(),
+        ]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const requiredStatus =
-      selectedOrder.orderBagStatus;
+    loadAll();
+  }, []);
 
-    const requiredStockId =
-      statusToStockId[requiredStatus];
 
-    if (!requiredStockId) {
-      return toast.error("Invalid order bag status");
-    }
+  useEffect(() => {
+    const totalAmount =
+      Number(form.rate || 0) * Number(form.quantity || 0);
 
-    const matchedProduct = products.find(
-      (p) =>
-        String(p.stockId) ===
-        String(requiredStockId)
+    const costValue =
+      Number(form.cost || 0) * Number(form.quantity || 0);
+
+    setForm((prev) => ({
+      ...prev,
+      totalAmount,
+      costValue,
+    }));
+  }, [form.rate, form.quantity, form.cost]); 
+
+
+
+  const reloadInvoices = () => {
+    fetchInvoices();
+  };
+
+  /* FILTER */
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(
+      (i) =>
+        i.trxId?.toLowerCase().includes(search.toLowerCase()) ||
+        i.memberName?.toLowerCase().includes(search.toLowerCase()) ||
+        i.referenceId?.toLowerCase().includes(search.toLowerCase())
     );
+  }, [invoices, search]);
 
-    if (!matchedProduct) {
-      return toast.error("No product found");
-    }
-
-    const rate =
-      Number(batch.totalJobValue || 0) /
-      Number(batch.numberOfBags || 1);
-
-    setItems([
-      {
-        productId: matchedProduct.stockId,
-        productName: matchedProduct.stockName,
-
-        qty: 0,
-
-        inStock: batch.balanceBags || 0,
-
-        unit:
-          matchedProduct.stockUOM || "Bag",
-
-        rate,
-        amount: 0,
-
-        batchNo: batch.batchNo || "",
-        batchDate: batch.batchDate || "",
-        batchStatus: batch.status || "",
-      },
-    ]);
-  };
-
-  // ---------------- UPDATE ITEM ----------------
-
-  const updateItem = (
-    index,
-    field,
-    value
-  ) => {
-
-    const updated = [...items];
-
-    if (field === "qty") {
-
-      const max =
-        Number(updated[index].inStock || 0);
-
-      value = Math.min(
-        Math.max(Number(value || 0), 0),
-        max
-      );
-    }
-
-    updated[index][field] = value;
-
-    const qty =
-      Number(updated[index].qty || 0);
-
-    const rate =
-      Number(updated[index].rate || 0);
-
-    updated[index].amount = qty * rate;
-
-    setItems(updated);
-  };
-
-  // ---------------- REMOVE ----------------
-
-  const removeItem = (index) => {
-
-    setItems(
-      items.filter((_, i) => i !== index)
+  const filteredOrders = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return orders.filter(
+      (o) =>
+        o.memberId === selectedCustomer.memberId &&
+        o.orderStatus === "Completed"
     );
+  }, [orders, selectedCustomer]);
+
+
+  const filteredBatches = useMemo(() => {
+    if (!selectedOrder) return [];
+
+    return batches.filter((batch) => {
+      const statusMatch =
+        (batch.status || "").toLowerCase() ===
+        (selectedOrder.orderBagStatus || "").toLowerCase();
+
+      return statusMatch && Number(batch.balanceBags || 0) > 0;
+    });
+  }, [batches, selectedOrder]);
+
+
+  const deleteInvoice = async (trxId) => {
+    try {
+      const isYes = await new Promise((resolve) => {
+        resolve(window.confirm(`Are you sure you want to delete this invoice? ${trxId}`));
+      });
+
+      if (!isYes) return;
+
+      // await axios.delete(...)
+      toast.success("Invoice deleted");
+      reloadInvoices();
+    } catch (err) {
+      toast.error("Failed to delete invoice");
+    }
   };
-
-  // ---------------- TOTAL ----------------
-
-  const totalAmount = items.reduce(
-    (sum, item) =>
-      sum + Number(item.amount || 0),
-    0
-  );
 
   // ---------------- PDF ----------------
-
   const handleDownloadPDF = async () => {
-
     try {
-
       const element = reportRef.current;
 
       await html2pdf()
@@ -358,941 +324,870 @@ export default function BagSaleInvoicePage() {
       toast.error("PDF failed");
     }
   };
+    
 
-  // ---------------- SUBMIT ----------------
-
-  const handleSubmit = async () => {
-    if (!selectedCustomer) {return toast.error("Select customer");}
-
-    if (!selectedOrder) { return toast.error("Select order");}
-
-    if (items.length === 0) {return toast.error("No items added");}
-
-    // VALIDATE ITEMS
-    const invalidItem = items.find(
-      (i) =>
-        !i.productId ||
-        !i.productName ||
-        !i.batchNo ||
-        Number(i.qty) <= 0
-    );
-
-    if (invalidItem) {
-      return toast.error(
-        "Each item must have product, batch and quantity"
-      );
-    }
+  /* SAVE (CREATE) */
+  const handleSave = async () => {
+    if (!form.invoiceDate) return toast.error("Select invoice date");
+    if (!selectedCustomer) return toast.error("Select customer");
+    if (!selectedOrder) return toast.error("Select order");
+    if (!selectedBatch) return toast.error("Select batch");
+    if (!form.rate) return toast.error("Submit rate");
+    if (!form.quantity) return toast.error("Submit quantity");
 
     try {
       setLoading(true);
 
-      const stockTrxPayload = {
-        referenceId: selectedOrder.orderNo,
-        trxDate: invoiceDate,
-        trxType: "SalesInvoice",
-
-        description:
-          selectedCustomer.nameInSinhala ||
-          `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
-
-        isAdded: false,
-
-        clientId: selectedCustomer.memberId,
-
-        // 1. SALE INVOICE STOCK TRANSACTION - ISSUE
-        items: items.map((i) => ({
-          stockId: Number(i.productId),
-          stockName: i.productName,
-          quantity: Number(i.qty),
-          quantityBalance: 0,
-          stockUOM: i.unit || "Bag",
-          stockCost: Number(i.cost || 0),
-          stockPrice: Number(i.rate || 0),
-        })),
-      };
-
+      // 1. Stock transaction (must be first)
       const stockTrxRes = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction`,
-        stockTrxPayload,
-        { headers }
-      );
-
-      const newTrxId = stockTrxRes.data.data.issuedTrxId;
-
-      setInvoiceNumber(newTrxId);
-
-      // 2. STOCK UPDATE - SUBSTRACT
-      await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
-          {
-              items: items.map((item) => ({
-                stockId: item.productId,
-                quantity: Number(item.qty || 0),
-              })),
-          },
-      ); 
-
-      // 3. Customer Transaction Write
-      const cusTrxPayload = {
-          trxId: newTrxId,
-          referenceId: orderNumber,
-          trxDate: invoiceDate,
-          trxType: "SalesInvoice",
-          memberId: selectedCustomer.memberId,
-          memberName: selectedCustomer.nameInSinhala ||
-                `${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
-          description: selectedOrder.orderBagStatus + " Bag Sale",
-          isCredit: false,
-          amount: totalAmount,
-          dueAmount: totalAmount,
-      };
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
-        cusTrxPayload
-      )
-
-      // 4. Member/Customer balance update
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member/${selectedCustomer.memberId}/due/add`,
-        {amount: totalAmount}
-      );
-
-      // 5. Update stock quantity balance in GRN
-      const payload = {
-        items: items.map((i) => ({
-          stockId: i.productId,
-          stockName: i.productName,
-          quantity: i.qty,
-          quantityBalance: 0,
-          stockUOM: i.unit,
-          stockCost: i.cost,
-          stockPrice: i.rate,
-        })),
-      };
-      const detailsRes = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/updateQuantityBalance`,
-        payload,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const updatedDetails = detailsRes?.data?.issueDetails || [];
-
-
-      // 6. Update Stock Issue Details      
-      const updatePayload = {
-        issueTrxId: newTrxId,
-        issueReferenceId: orderNumber,
-        issueDate: invoiceDate,
-        items: updatedDetails,
-      };         
-      const updateRes = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
-        updatePayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
-      // 7. Update Batch Balance
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/batch/reduce-batch-balance-bags`,
-        {
-          items: items.map((i) => ({
-            batchNo: i.batchNo,
-            bags: Number(i.qty || 0),
-          })),
-        }
-      );
-
-      // 8. Update Bag Order Status
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/bag-order/${selectedOrder._id}`,
-        {
-          orderStatus: "Delivered",
-          orderDeliveredDate: invoiceDate,
-          batchNo: items[0].batchNo,
+          referenceId: selectedOrder.orderNo,
+          trxDate: form.invoiceDate,
+          trxType: "BagInvoice",
+          description: `${form.batchNo} - ${
+            `${selectedCustomer?.firstName || ""} ${selectedCustomer?.lastName || ""}`
+          }`,
+          isAdded: false,
+          clientId: selectedCustomer.memberId,
+          items: [
+            {
+              stockId: form.productId,
+              stockName: form.productName,
+              quantity: Number(form.quantity || 0),
+              quantityBalance: 0,
+              stockUOM: "Bag",
+              stockCost: Number(form.cost || 0),
+              stockPrice: Number(form.rate || 0),
+            },
+          ],
         },
         { headers }
       );
 
-      toast.success("Invoice Created");
+      const newTrxId = stockTrxRes.data.data.issuedTrxId;
+      setInvoiceNumber(newTrxId);
+
+      // 2. Update quantity balance (depends on stock trx only)
+      const qtyBalancePayload = {
+        items: [
+          {
+            stockId: form.productId,
+            stockName: form.productName,
+            quantity: form.quantity,
+            quantityBalance: 0,
+            stockUOM: "Bag",
+            stockCost: Number(form.cost || 0),
+            stockPrice: Number(form.rate || 0),
+          },
+        ],
+      };
+
+      const updateQuantityPromise = axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/updateQuantityBalance`,
+        qtyBalancePayload,
+        { headers }
+      );
+
+      // 3. Bulk operations (can run in parallel)
+      const stockReducePromise = axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
+        {
+          items: [
+            {
+              stockId: form.productId,
+              quantity: Number(form.quantity || 0),
+            },
+          ],
+        },
+        { headers }
+      );
+
+      const customerTrxPromise = axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
+        {
+          trxId: newTrxId,
+          referenceId: form.orderNo,
+          trxDate: form.invoiceDate,
+          trxType: "BagInvoice",
+          memberId: selectedCustomer.memberId,
+          memberName:`${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
+          description: selectedOrder.orderBagStatus + " Bag Sale",
+          isCredit: false,
+          amount: Number(form.totalAmount || 0),
+          dueAmount: Number(form.totalAmount || 0),
+        },
+        { headers }
+      );
+
+      const memberDuePromise = axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/member/${selectedCustomer.memberId}/due/add`,
+        { amount: Number(form.totalAmount || 0) },
+        { headers }
+      );
+
+      const batchUpdatePromise = axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/batch/reduce-batch-balance-bags`,
+        {
+          items: [
+            {
+              batchNo: form.batchNo,
+              bags: Number(form.quantity || 0),
+            },
+          ],
+        },
+        { headers }
+      );
+
+      const orderUpdatePromise = axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/bag-order/${selectedOrder._id}`,
+        {
+          orderStatus: "Delivered",
+          orderDeliveredDate: form.invoiceDate,
+          batchNo: form.batchNo,
+        },
+        { headers }
+      );
+
+      // wait for quantity update first (needed for next step)
+      const detailsRes = await updateQuantityPromise;
+      const updatedDetails = detailsRes?.data?.issueDetails || [];
+
+      // 4. Stock issue details (depends on updatedDetails)
+      const stockIssuePromise = axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
+        {
+          issueTrxId: newTrxId,
+          issueReferenceId: form.orderNo,
+          issueDate: form.invoiceDate,
+          items: updatedDetails,
+        },
+        { headers }
+      );
+
+      // 5. Run remaining independent tasks in parallel
+      await Promise.all([
+        stockReducePromise,
+        customerTrxPromise,
+        memberDuePromise,
+        batchUpdatePromise,
+        orderUpdatePromise,
+        stockIssuePromise,
+      ]);
 
       setIsSaved(true);
-
+      toast.success("Invoice created");
     } catch (err) {
-      console.error("FULL ERROR => ", err?.response?.data || err);
-
-      toast.error(
-        err?.response?.data?.message ||
-        "Failed to create invoice"
-      );
+      console.error(err?.response?.data || err);
+      toast.error(err?.response?.data?.message || "Failed to create invoice");
     } finally {
       setLoading(false);
     }
   };
 
- 
-  // ---------------- UI ----------------
 
   return (
+    <div className="w-full space-y-4">
 
-    <div className="min-h-screen bg-gray-100">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
 
-      <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
+        <h1 className="text-xl font-bold text-orange-600">
+          Bag Sale Invoices
+        </h1>
 
-        {/* HEADER */}
-
-        <div className="sticky top-0 z-20 bg-gray-100 pb-3 mb-4">
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-            <div>
-
-              <h1 className="text-2xl font-bold text-orange-600">
-                🧾 Bag Sale Invoice
-              </h1>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Create customer bag sales invoice
-              </p>
-
-            </div>
-
-            <div className="flex gap-2 w-full sm:w-auto">
-
-              <button
-                onClick={handleDownloadPDF}
-                disabled={!isSaved}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
-                  isSaved
-                    ? "bg-orange-600 hover:bg-orange-700"
-                    : "bg-gray-400"
-                }`}
-              >
-                <FaRegFilePdf />
-                PDF
-              </button>
-
-              <button
-                onClick={() => navigate("/control")}
-                className="flex-1 sm:flex-none bg-black text-white px-4 py-3 rounded-xl"
-              >
-                ← Back
-              </button>
-
-            </div>
+        <div className="flex gap-2 w-full md:w-auto">
+          <div
+            className={`relative w-full md:w-64 ${
+              viewMode === "create" && "hidden"
+            }`}
+          >
+            <FaSearch className="absolute left-3 top-3 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search invoices..."
+              className="border px-3 py-2 pl-9 rounded-lg w-full"
+            />
           </div>
-        </div>
 
-        {/* TOP SECTION */}
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
-
-          {/* CUSTOMER */}
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
-
-            <label className="text-sm font-medium text-gray-600">
-              Customer
-            </label>
-
+          {viewMode === "create" && (
             <button
-              disabled={loading || isSaved}
-              onClick={() =>
-                setCustomerModalOpen(true)
-              }
-              className="w-full border border-gray-200 mt-2 rounded-2xl p-4 text-left hover:border-orange-400 transition"
-            >
-
-              {selectedCustomer ? (
-                <>
-                  <p className="font-semibold text-lg">
-                    {selectedCustomer.nameInSinhala ||
-                      `${selectedCustomer.firstName} ${selectedCustomer.lastName}`}
-                  </p>
-
-                  <p className="text-sm text-gray-500">
-                    {selectedCustomer.memberId}
-                  </p>
-                </>
-              ) : (
-                <p className="text-gray-400">
-                  Select Customer
-                </p>
-              )}
-
-            </button>
-          </div>
-
-          {/* DATE + ORDER */}
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 xl:col-span-2">
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              <div>
-
-                <label className="text-sm font-medium text-gray-600">
-                  Invoice Date
-                </label>
-
-                <input
-                  disabled={loading || isSaved}
-                  type="date"
-                  value={invoiceDate}
-                  onChange={(e) =>
-                    setInvoiceDate(
-                      e.target.value
-                    )
-                  }
-                  className="w-full border border-gray-200 rounded-xl p-3 mt-2"
-                />
-
-              </div>
-
-              <div>
-
-                <label className="text-sm font-medium text-gray-600">
-                  Order
-                </label>
-
-                <button
-                  disabled={
-                    !selectedCustomer ||
-                    filteredOrders.length === 0 ||
-                    loading ||
-                    isSaved
-                  }
-                  onClick={() =>
-                    setOrderModalOpen(true)
-                  }
-                  className="w-full border border-gray-200 rounded-xl p-3 mt-2 text-left"
-                >
-
-                  {selectedOrder ? (
-                    <>
-                      <p className="font-semibold">
-                        {selectedOrder.orderNo}
-                      </p>
-
-                      <p className="text-sm text-gray-500 mt-1">
-                        {
-                          selectedOrder.orderQuantity
-                        }{" "}
-                        {
-                          selectedOrder.orderBagStatus
-                        }{" "}
-                        Bags
-                      </p>
-                    </>
-                  ) : (
-                    <span className="text-gray-400">
-                      Select Order
-                    </span>
-                  )}
-
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* BATCHES */}
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6">
-
-          <h2 className="font-bold text-lg mb-4">
-            Available Batches
-          </h2>
-
-          {!selectedOrder ? (
-
-            <div className="text-center py-10 text-gray-400">
-              Select order to view batches
-            </div>
-
-          ) : filteredBatches.length === 0 ? (
-
-            <div className="text-center py-10 text-red-500">
-              No available batches
-            </div>
-
-          ) : (
-
-            <div className="space-y-4">
-
-              {filteredBatches.map((batch) => (
-
-                <div
-                  key={batch._id}
-                  className="border border-gray-200 rounded-2xl p-4 hover:shadow-md transition"
-                >
-
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-                    <div className="space-y-2">
-
-                      <div className="flex items-center gap-3 flex-wrap">
-
-                        <h3 className="font-bold text-lg">
-                          {batch.batchNo}
-                        </h3>
-
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(batch.status)}`}
-                        >
-                          {batch.status}
-                        </span>
-
-                      </div>
-
-                      <p className="text-sm text-gray-500">
-                        Date:{" "}
-                        {formatDate(
-                          batch.batchDate
-                        )}
-                      </p>
-
-                      <p className="text-sm">
-                        Available Bags:{" "}
-                        <span className="font-semibold">
-                          {
-                            batch.balanceBags
-                          }
-                        </span>
-                      </p>
-
-                    </div>
-
-                    <div className="flex flex-col items-start lg:items-end gap-3">
-
-                      <div className="text-2xl font-bold text-green-600">
-                        {formatNumber(
-                          Number(
-                            batch.totalJobValue || 0
-                          ) /
-                            Number(
-                              batch.numberOfBags ||
-                                1
-                            )
-                        )}
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          selectBatch(batch)
-                        }
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl transition"
-                        disabled={loading || isSaved}
-                      >
-                        Select Batch
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              ))}
-
-            </div>
-
-          )}
-
-        </div>
-
-        {/* ITEMS */}
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-28">
-
-          <h2 className="font-bold text-lg mb-4">
-            Invoice Items
-          </h2>
-
-          {items.length === 0 ? (
-
-            <div className="text-center py-10 text-gray-400">
-              No items selected
-            </div>
-
-          ) : (
-
-            <div className="space-y-4">
-
-              {items.map((item, index) => (
-
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-2xl p-4"
-                >
-
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-
-                    {/* LEFT */}
-
-                    <div>
-
-                      <h3 className="font-bold text-lg">
-                        {item.productName}
-                      </h3>
-
-                      <p className="text-sm text-blue-600 mt-1">
-                        Batch: {item.batchNo}
-                      </p>
-
-                      <p className="text-sm text-gray-500 mt-1">
-                        Available:{" "}
-                        {item.inStock}{" "}
-                        {item.unit}
-                      </p>
-
-                    </div>
-
-                    {/* RIGHT */}
-
-                    <div className="flex flex-col gap-4">
-
-                      <div className="flex items-center gap-2">
-
-                        <button
-                          disabled={loading || isSaved}
-                          onClick={() =>
-                            updateItem(
-                              index,
-                              "qty",
-                              Number(item.qty) -
-                                1
-                            )
-                          }
-                          className="w-10 h-10 rounded-xl border border-gray-300"
-                        >
-                          -
-                        </button>
-
-                        <input
-                          disabled={loading || isSaved}
-                          type="number"
-                          value={item.qty}
-                          onChange={(e) =>
-                            updateItem(
-                              index,
-                              "qty",
-                              e.target.value
-                            )
-                          }
-                          className="w-24 text-center border border-gray-300 rounded-xl py-2"
-                        />
-
-                        <button
-                          disabled={loading || isSaved}
-                          onClick={() =>
-                            updateItem(
-                              index,
-                              "qty",
-                              Number(item.qty) +
-                                1
-                            )
-                          }
-                          className="w-10 h-10 rounded-xl border border-gray-300"
-                        >
-                          +
-                        </button>
-
-                      </div>
-
-                      <div className="text-right">
-
-                        <p className="text-sm text-gray-500">
-                          Rate
-                        </p>
-
-                        <p className="font-semibold">
-                          {formatNumber(
-                            item.rate
-                          )}
-                        </p>
-
-                      </div>
-
-                      <div className="text-right">
-
-                        <p className="text-sm text-gray-500">
-                          Amount
-                        </p>
-
-                        <p className="text-2xl font-bold text-green-600">
-                          {formatNumber(
-                            item.amount
-                          )}
-                        </p>
-
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          removeItem(index)
-                        }
-                        disabled={loading || isSaved}
-                        className="flex items-center justify-center gap-2 text-red-500 border border-red-200 rounded-xl py-2 hover:bg-red-50"
-                      >
-                        <FaTrash />
-                        Remove
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              ))}
-
-            </div>
-
-          )}
-
-        </div>
-
-        {/* STICKY TOTAL */}
-
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-30">
-
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-
-            <div>
-
-              <p className="text-sm text-gray-500">
-                Total Amount
-              </p>
-
-              <h2 className="text-3xl font-bold text-green-600">
-                {formatNumber(totalAmount)}
-              </h2>
-
-            </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={loading || isSaved}
-              className={`px-8 py-4 rounded-2xl text-white font-semibold text-lg ${
-                loading || isSaved
-                  ? "bg-gray-400"
-                  : "bg-green-600 hover:bg-green-700"
+              onClick={handleDownloadPDF}
+              disabled={!isSaved}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
+                isSaved
+                  ? "bg-orange-600 hover:bg-orange-700"
+                  : "bg-gray-400"
               }`}
             >
-              {loading
-                ? "Saving..."
-                : isSaved
-                ? "Completed. Download PDF..."
-                : "Create Invoice"}
+              <FaRegFilePdf />
+              PDF
             </button>
+          )}
 
-          </div>
+          <button
+            onClick={async () => {
+              if ((viewMode === "create") && (isSaved)) {
+                setIsSaved(false);
+                setForm(initialForm);
+                setSelectedCustomer(null);
+                setSelectedOrder(null);
+                setSelectedBatch(null);
+                await fetchInvoices(); // now valid
+              }
 
+              setViewMode(viewMode === "list" ? "create" : "list");
+            }}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 text-white
+              ${viewMode === "list" ? "bg-orange-500" : "bg-gray-700"}`}
+          >
+            {viewMode === "list" ? (
+              <>
+                <FaPlus /> Add
+              </>
+            ) : (
+              "← Back"
+            )}
+          </button>
         </div>
-
-        {/* PDF */}
-        <div style={{ display: "none" }}>
-          <div ref={reportRef} style={{ padding: "20px", fontFamily: "Arial" }}>
-
-            {/* HEADER */}
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>
-                Collective Development Society
-              </h2>
-              <p style={{ margin: "4px 0", fontSize: "12px" }}>
-                Malmaduwa, Kotiyakumbura | Tel: 022-2222222
-              </p>
-              <h3 style={{ marginTop: "10px", fontSize: "16px" }}>
-                SUBSTRATE BAG SALES INVOICE
-              </h3>
-            </div>
-
-
-              {/* INVOICE INFO + CUSTOMER */}
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-
-              {/* CUSTOMER */}
-              <div style={{ width: "48%", border: "1px solid #ddd", padding: "10px" }}>
-                <p style={{ fontWeight: "bold", marginBottom: "5px" }}>Bill To:</p>
-                <p>{selectedCustomer?.memberId || "N/A"}</p>
-                <p>
-                  {selectedCustomer
-                    ? selectedCustomer.nameInSinhala ||
-                      `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
-                    : "N/A"}
-                </p>
-                <p style={{ fontSize: "12px" }}>
-                  {selectedCustomer?.address
-                    ? Object.values(selectedCustomer.address).join(", ")
-                    : ""}
-                </p>
-              </div>
-
-              {/* INVOICE DETAILS */}
-              <div style={{ width: "48%", border: "1px solid #ddd", padding: "10px" }}>
-                <p><b>Invoice No:</b> {invoiceNumber}</p>
-                <p><b>Date:</b> {invoiceDate}</p>
-                <p><b>Order No:</b> {orderNumber}</p>
-              </div>
-
-            </div>
-
-            {/* ITEMS TABLE */}
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-              <thead>
-                <tr style={{ background: "#f2f2f2" }}>
-                  <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>Description</th>
-                  <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>Batch No</th>
-                  <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Bags</th>
-                  <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>Rate</th>
-                  <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>Amount</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {items.map((item, i) => (
-                  <tr key={i}>
-                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>
-                      {item.productName}
-                    </td>
-                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>
-                      {item.batchNo}
-                    </td>
-                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>
-                      {item.qty}
-                    </td>
-                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
-                      {formatCurrency(item.rate)}
-                    </td>
-                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
-                      {formatCurrency(item.amount)}
-                    </td>
-                  </tr>
-                ))}
-
-                {/* TOTAL */}
-                <tr>
-                  <td colSpan="4" style={{ border: "1px solid #ddd", padding: "8px", fontWeight: "bold" }}>
-                    Total
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right", fontWeight: "bold" }}>
-                    {formatCurrency(totalAmount)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* FOOTER */}
-            <div style={{
-              marginTop: "30px",
-              textAlign: "center",
-              fontSize: "11px",
-              color: "#555"
-            }}>
-              This is a system generated invoice. No signature is required.
-              <br />
-              Software developed by nSoft Technologies
-            </div>
-
-          </div>
-        </div>
-
       </div>
 
-      {/* CUSTOMER MODAL */}
 
-      <Modal
-        isOpen={isCustomerModalOpen}
-        onRequestClose={() =>
-          setCustomerModalOpen(false)
-        }
-        overlayClassName="fixed inset-0 bg-black/40 z-40"
-        className="
-        bg-white
-        w-full
-        h-full
-        sm:h-auto
-        sm:max-w-md
-        mx-auto
-        sm:mt-20
-        rounded-none
-        sm:rounded-2xl
-        p-4
-        overflow-y-auto
-        outline-none
-        "
-      >
+      {/* ================= LIST VIEW ================= */}
+      {viewMode === "list" && (
+        <>
+          {loading ? (
+            <div className="animate-pulse text-center py-10 text-gray-500">
+              Loading invoices...
+            </div>
+          ) : (
+            <>
+              {/* MOBILE */}
+              <div className="md:hidden space-y-3">
+                {filteredInvoices.map((inv) => (
+                  <div key={inv._id} className="bg-white border rounded-xl p-4 shadow-sm">
 
-        <h2 className="font-bold text-xl mb-4">
-          Select Customer
-        </h2>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-orange-600">{inv.trxId}</p>
+                        <p className="text-sm text-gray-600">{inv.memberName}</p>
+                        <p className="text-xs text-gray-400">Ref: {inv.referenceId}</p>
+                        <p className="text-xs text-gray-400">{formatDate(inv.trxDate)}</p>
+                      </div>
 
-        <div className="relative mb-4">
+                      <p className="text-red-600 font-bold">
+                        {formatNumber(inv.amount)}
+                      </p>
+                    </div>
 
-          <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+                    <div className="flex gap-3 mt-3">
+                      <button
+                        onClick={() => {
+                          setSelected(inv);
+                          setIsViewOpen(true);
+                        }}
+                        className="text-blue-600 flex items-center gap-1"
+                      >
+                        <FaEye /> View
+                      </button>
 
-          <input
-            type="text"
-            placeholder="Search customer..."
-            value={customerSearch}
-            onChange={(e) =>
-              setCustomerSearch(
-                e.target.value
-              )
-            }
-            className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3"
-          />
+                      <button 
+                        onClick={() => deleteInvoice(inv.trxId)}
+                        className="text-red-600"
+                      >
 
-        </div>
+                        <FaTrash />
+                      </button>
+                    </div>
 
-        <div className="space-y-3">
+                  </div>
+                ))}
+              </div>
 
-          {customers
-            .filter((c) =>
-              (
-                c.nameInSinhala ||
-                `${c.firstName} ${c.lastName}`
-              )
-                .toLowerCase()
-                .includes(
-                  customerSearch.toLowerCase()
-                )
-            )
-            .map((c) => (
 
-              <button
-                key={c._id}
-                onClick={() => {
+              {/* DESKTOP */}
+              <div className="hidden md:block bg-white rounded-xl shadow border overflow-hidden">
 
-                  setSelectedCustomer(c);
+                <table className="w-full text-sm">
 
-                  setSelectedOrder(null);
+                  <thead className="bg-orange-100 text-left">
+                    <tr>
+                      <th className="p-3">Date</th>
+                      <th className="p-3">Invoice No</th>
+                      <th className="p-3">Customer</th>
+                      <th className="p-3">Reference</th>
+                      <th className="p-3 text-right">Amount</th>
+                      <th className="p-3 text-center">Actions</th>
+                    </tr>
+                  </thead>
 
-                  setItems([]);
+                  <tbody>
+                    {filteredInvoices.map((inv) => (
+                      <tr key={inv._id} className="border-t hover:bg-orange-50">
 
-                  setOrderNumber("");
+                        <td className="p-3">{formatDate(inv.trxDate)}</td>
 
-                  setCustomerModalOpen(false);
-                }}
-                className="w-full border border-gray-200 rounded-2xl p-4 text-left hover:border-orange-400 hover:bg-orange-50 transition"
-              >
+                        <td className="p-3 font-semibold text-orange-600">
+                          {inv.trxId}
+                        </td>
 
-                <p className="font-semibold">
-                  {c.nameInSinhala ||
-                    `${c.firstName} ${c.lastName}`}
-                </p>
+                        <td className="p-3">{inv.memberName}</td>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  {c.memberId}
-                </p>
+                        <td className="p-3 text-gray-500">{inv.referenceId}</td>
 
-              </button>
+                        <td className="p-3 text-right text-red-600 font-semibold">
+                          {formatNumber(inv.amount)}
+                        </td>
 
-            ))}
+                        <td className="p-3 text-center flex justify-center gap-3">
+                          <button
+                            onClick={() => {
+                              setSelected(inv);
+                              featchStockTrx(inv.trxId);
+                              setIsViewOpen(true);
+                            }}
+                            className="text-blue-600"
+                          >
+                            <FaEye />
+                          </button>
 
-        </div>
+                          <button 
+                            onClick={() => deleteInvoice(inv.trxId)}
+                            className="text-red-600"
+                          >
 
-      </Modal>
+                            <FaTrash />
+                          </button>
+                        </td>
 
-      {/* ORDER MODAL */}
+                      </tr>
+                    ))}
+                  </tbody>
 
-      <Modal
-        isOpen={isOrderModalOpen}
-        onRequestClose={() =>
-          setOrderModalOpen(false)
-        }
-        overlayClassName="fixed inset-0 bg-black/40 z-40"
-        className="
-        bg-white
-        w-full
-        h-full
-        sm:h-auto
-        sm:max-w-md
-        mx-auto
-        sm:mt-20
-        rounded-none
-        sm:rounded-2xl
-        p-4
-        overflow-y-auto
-        outline-none
-        "
-      >
+                </table>
+              </div>
 
-        <h2 className="font-bold text-xl mb-4">
-          Select Order
-        </h2>
+            </>
+          )}
+        </>
+      )}
 
-        <div className="relative mb-4">
 
-          <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+      {/* ================= CREATE VIEW ================= */}
+      {viewMode === "create" && (
+        <div className="bg-white rounded-xl shadow border p-6 space-y-6">
 
-          <input
-            type="text"
-            placeholder="Search order..."
-            value={orderSearch}
-            onChange={(e) =>
-              setOrderSearch(
-                e.target.value
-              )
-            }
-            className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3"
-          />
+          <h2 className="text-lg font-bold text-orange-600">
+            Create Bag Invoice
+          </h2>
 
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        <div className="space-y-3">
-
-          {filteredOrders
-            .filter((o) =>
-              o.orderNo
-                ?.toLowerCase()
-                .includes(
-                  orderSearch.toLowerCase()
-                )
-            )
-            .map((o) => (
-
-              <button
-                key={o._id}
-                onClick={() =>
-                  selectOrder(o)
+            <div>
+              <label className="text-sm text-gray-600">Invoice Date</label>
+              <input
+                disabled={loading || isSaved}
+                type="date"
+                className="border p-2 w-full rounded-lg"
+                value={form.invoiceDate}
+                onChange={(e) =>
+                  setForm({ ...form, invoiceDate: e.target.value })
                 }
-                className="w-full border border-gray-200 rounded-2xl p-4 text-left hover:border-orange-400 hover:bg-orange-50 transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-600">Customer</label>
+              <select
+                disabled={loading || isSaved}
+                className="border p-2 w-full rounded-lg"
+                value={selectedCustomer?._id || ""}
+                onChange={(e) => {
+                  const customer = members.find(
+                    (m) => m._id === e.target.value
+                  );
+
+                  setSelectedCustomer(customer || null);
+                  setSelectedOrder(null);
+                  setSelectedBatch(null);
+
+                  setForm((prev) => ({
+                    ...prev,
+                    memberId: customer?.memberId || "",
+                    memberName:
+                      customer?.nameInSinhala ||
+                      `${customer?.firstName || ""} ${customer?.lastName || ""}`,
+                    orderNo: "",
+                    batchNo: "",
+                    numberOfBags: "",
+                    balanceBags: "",
+                    totalCostValue: "",
+                    totalJobValue: "",
+                    productId: "",
+                    productName: "",
+                    cost: "",
+                    rate: "",
+                    quantity: "",
+                    costValue: "",
+                    totalAmount: "",
+                  }));
+                }}
               >
+                <option value="">Select Customer</option>
 
-                <p className="font-semibold">
-                  {o.orderNo}
+                {members.map((m) => (
+                  <option key={m._id} value={m._id}>
+                    {m.nameInSinhala || `${m.firstName} ${m.lastName}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">Order</label>
+            <select
+              disabled={loading || isSaved}
+              className="border p-2 w-full rounded-lg"
+              value={selectedOrder?._id || ""}
+              onChange={(e) => {
+                const order = filteredOrders.find(
+                  (o) => o._id === e.target.value
+                );
+
+                setSelectedOrder(order || null);
+                setSelectedBatch(null);
+
+                setForm((prev) => ({
+                  ...prev,
+                  orderNo: order?.orderNo || "",
+                  batchNo: "",
+                  numberOfBags: "",
+                  balanceBags: "",
+                  totalCostValue: "",
+                  totalJobValue: "",
+                  productId: "",
+                  productName: "",
+                  cost: "",
+                  rate: "",
+                  quantity: "",
+                  costValue: "",
+                  totalAmount: "",
+                }));
+              }}
+            >
+              <option value="">Select Order</option>
+
+              {filteredOrders.map((o) => (
+                <option key={o._id} value={o._id}>
+                  {formatDate(o.orderDate)} - {o.orderNo} -
+                  {formatDate(o.orderRequestedDate)} -
+                  {o.orderQuantity} {o.orderBagStatus} Bags
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">Batch</label>
+            <select
+              disabled={loading || isSaved}
+              className="border p-2 w-full rounded-lg"
+              value={form.batchNo}
+              onChange={(e) => {
+                const batch = filteredBatches.find(
+                  (b) => b.batchNo === e.target.value
+                );
+
+                const stockId = statusStockMap[batch?.status];
+                const product = products.find(
+                  (p) => p.stockId === stockId
+                );
+
+                setSelectedOrder(selectedOrder || null);  
+                setSelectedBatch(batch || null);
+
+                setForm((prev) => ({
+                  ...prev,
+                  batchNo: batch?.batchNo || "",
+                  numberOfBags: batch?.numberOfBags || 0,
+                  balanceBags: batch?.balanceBags || 0,
+                  totalCostValue: batch?.totalCostValue || 0,
+                  totalJobValue: batch?.totalJobValue || 0,
+
+                  // 👇 fill from product
+                  productId: product?.stockId || "",
+                  productName: product?.stockName || "",
+
+                  cost: product?.stockCost || 0,
+                  rate: product?.stockPrice || 0,
+                  quantity: "",
+                  costValue: "",
+                  totalAmount: "",
+                }));
+              }}
+            >
+              <option value="">Select Batch</option>
+
+              {filteredBatches.map((b) => (
+                <option key={b._id} value={b.batchNo}>
+                  {formatDate(b.batchDate)}  |  {b.batchNo}  |  {b.balanceBags} {b.status} Bags
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm text-gray-600">Rate</label>
+              <input
+                disabled={loading || isSaved}
+                type="number"
+                className="border p-2 w-full rounded-lg"
+                value={form.rate}
+                onChange={(e) =>
+                  setForm({ ...form, rate: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Quantity (Max: {form.balanceBags})</label>
+              <input
+                disabled={loading || isSaved}
+                type="number"
+                className="border p-2 w-full rounded-lg"
+                value={form.quantity}
+                onChange={(e) => {
+                  const qty = Number(e.target.value || 0);
+
+                  if (qty > Number(form.balanceBags || 0)) {
+                    toast.error(
+                      `Only ${form.balanceBags} bags available`
+                    );
+                    return;
+                  }
+
+                  setForm({
+                    ...form,
+                    quantity: qty,
+                  });
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-600 font-semibold">Amount</label>
+              <input
+                type="text"
+                className="border p-2 w-full rounded-lg bg-gray-100 text-orange-600 font-semibold"
+                value={formatNumber(form.totalAmount || 0)}
+                readOnly
+              />
+            </div>
+          </div>
+
+
+          <button
+            onClick={handleSave}
+            disabled={loading || isSaved}
+            className={`px-4 py-3 rounded-lg w-full font-semibold text-white transition
+              ${isSaved
+                ? "bg-green-600"
+                : loading
+                ? "bg-gray-400"
+                : "bg-orange-500 hover:bg-orange-600"
+              }`}
+          >
+            {loading
+              ? "Saving Invoice..."
+              : isSaved
+              ? "Saved ✓ Ready for PDF Download"
+              : "Save Invoice"}
+          </button>
+
+          {/* PDF */}
+          <div style={{ display: "none" }}>
+            <div ref={reportRef} style={{ padding: "20px", fontFamily: "Arial" }}>
+
+              {/* HEADER */}
+              <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "bold" }}>
+                  Collective Development Society
+                </h2>
+                <p style={{ margin: "4px 0", fontSize: "12px" }}>
+                  Malmaduwa, Kotiyakumbura | Tel: 022-2222222
                 </p>
+                <h3 style={{ marginTop: "10px", fontSize: "16px" }}>
+                  SUBSTRATE BAG SALES INVOICE
+                </h3>
+              </div>
 
-                <p className="text-sm text-gray-500 mt-1">
-                  {formatDate(
-                    o.orderRequestedDate
-                  )}
-                </p>
 
-                <p className="text-sm mt-1">
-                  {o.orderQuantity}{" "}
-                  {o.orderBagStatus} Bags
-                </p>
+                {/* INVOICE INFO + CUSTOMER */}
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
 
-              </button>
+                {/* CUSTOMER */}
+                <div style={{ width: "48%", border: "1px solid #ddd", padding: "10px" }}>
+                  <p style={{ fontWeight: "bold", marginBottom: "5px" }}>Bill To:</p>
+                  <p>{selectedCustomer?.memberId || "N/A"}</p>
+                  <p>
+                    {selectedCustomer
+                      ? selectedCustomer.nameInSinhala ||
+                        `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
+                      : "N/A"}
+                  </p>
+                  <p style={{ fontSize: "12px" }}>
+                    {selectedCustomer?.address
+                      ? Object.values(selectedCustomer.address).join(", ")
+                      : ""}
+                  </p>
+                </div>
 
-            ))}
+                {/* INVOICE DETAILS */}
+                <div style={{ width: "48%", border: "1px solid #ddd", padding: "10px" }}>
+                  <p><b>Invoice No:</b> {invoiceNumber}</p>
+                  <p><b>Date:</b> {form.invoiceDate}</p>
+                  <p><b>Order No:</b> {form.orderNo}</p>
+                </div>
+
+              </div>
+
+              {/* ITEMS TABLE */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <thead>
+                  <tr style={{ background: "#f2f2f2" }}>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>Description</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>Batch No</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Bags</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>Rate</th>
+                    <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>Amount</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {/* {items.map((item, i) => ( */}
+                    <tr>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>
+                        {form.productName}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "left" }}>
+                        {form.batchNo}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>
+                        {form.quantity}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
+                        {formatNumber(form.rate)}
+                      </td>
+                      <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
+                        {formatNumber(form.totalAmount)}
+                      </td>
+                    </tr>
+                   {/* ))} */}
+
+                  {/* TOTAL */}
+                  <tr>
+                    <td colSpan="4" style={{ border: "1px solid #ddd", padding: "8px", fontWeight: "bold" }}>
+                      Total
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right", fontWeight: "bold" }}>
+                      {formatNumber(form.totalAmount)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* FOOTER */}
+              <div style={{
+                marginTop: "30px",
+                textAlign: "center",
+                fontSize: "11px",
+                color: "#555"
+              }}>
+                This is a system generated invoice. No signature is required.
+                <br />
+                Software developed by nSoft Technology
+              </div>
+
+            </div>
+          </div>
 
         </div>
+      )}
 
-      </Modal>
+      {/* VIEW MODAL */}
+      {isViewOpen && selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+
+            {/* Header */}
+            <div className="bg-orange-600 text-white px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  Substrate Bag Sale Invoice
+                </h2>
+                <p className="text-xs opacity-90">
+                  Invoice Details
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsViewOpen(false)}
+                className="text-white hover:text-gray-200 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {/* Customer */}
+              <div className="border rounded-xl p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Customer Information
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <span className="font-medium text-gray-500">
+                    Customer
+                  </span>
+                  <span className="col-span-2">
+                    {selected.memberName} ( {selected.memberId} )
+                  </span>
+                </div>
+              </div>
+
+              {/* Invoice */}
+              <div className="border rounded-xl p-4">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Invoice Information
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <span className="font-medium text-gray-500">
+                    Invoice No
+                  </span>
+                  <span className="col-span-2 font-semibold text-orange-600">
+                    {selected.trxId}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Date
+                  </span>
+                  <span className="col-span-2">
+                    {formatDate(selected.trxDate)}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Order No
+                  </span>
+                  <span className="col-span-2">
+                    {selected.referenceId}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Description
+                  </span>
+                  <span className="col-span-2">
+                    {/* {selected.description} */}
+                    {stockTrx?.description || selected.description}
+                  </span>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left p-2">Product</th>
+                      <th className="text-center p-2">Qty</th>
+                      <th className="text-right p-2">Rate</th>
+                      <th className="text-right p-2">Amount</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {Array.isArray(stockTrx?.items) &&
+                      stockTrx.items.map((item, index) => (
+                      <tr key={index} className="">
+                        <td className="p-2">{item.stockName}</td>
+                        <td className="p-2 text-center">{item.quantity}</td>
+                        <td className="p-2 text-right">
+                          {formatNumber(item.stockPrice)}
+                        </td>
+                        <td className="p-2 text-right">
+                          {formatNumber(
+                            Number(item.quantity) * Number(item.stockPrice)
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>                
+              </div>
+
+              {/* <div className="border rounded-xl p-4">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Item Details
+                </h3>
+
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left p-2">Product</th>
+                      <th className="text-center p-2">Qty</th>
+                      <th className="text-right p-2">Rate</th>
+                      <th className="text-right p-2">Amount</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {Array.isArray(stockTrx?.items) &&
+                      stockTrx.items.map((item, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="p-2">{item.stockName}</td>
+                        <td className="p-2 text-center">{item.quantity}</td>
+                        <td className="p-2 text-right">
+                          {formatNumber(item.stockPrice)}
+                        </td>
+                        <td className="p-2 text-right">
+                          {formatNumber(
+                            Number(item.quantity) * Number(item.stockPrice)
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div> */}
+
+              {/* Amount */}
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">
+                    Invoice Amount
+                  </span>
+
+                  <span className="text-2xl font-bold text-orange-600">
+                    Rs. {formatNumber(selected.amount)}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 flex justify-end">
+              <button
+                onClick={() => setIsViewOpen(false)}
+                className="px-5 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

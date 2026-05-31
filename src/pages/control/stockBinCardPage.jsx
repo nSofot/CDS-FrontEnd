@@ -166,10 +166,10 @@ export default function StockBinCardPage() {
       <div className="flex md:flex-row flex-col justify-between gap-2 py-4">
         <div>
           <h1 className="text-2xl font-bold text-orange-600">
-            📦 Stock Bin Card
+            📦 Product Bin Card
           </h1>
           <p className="text-sm text-gray-600">
-            Inventory movement & stock tracking
+            Inventory movement & product tracking
           </p>
         </div>
 

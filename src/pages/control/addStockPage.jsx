@@ -117,10 +117,10 @@ export default function AddStockPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold">
-            📦 Add Stock
+            📦 Add Product
           </h1>
           <p className="text-sm text-gray-500">
-            Create new stock item
+            Create new product item
           </p>
         </div>
 

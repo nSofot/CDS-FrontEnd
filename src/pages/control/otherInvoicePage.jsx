@@ -20,7 +20,7 @@ export default function OtherInvoicePage() {
   const fetchVendors = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/vendor`
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
       );
       setVendors(res.data.data || res.data);
     } catch {
@@ -138,22 +138,22 @@ export default function OtherInvoicePage() {
               value={form.vendorId}
               onChange={(e) => {
                 const selected = vendors.find(
-                  (v) => v.vendorId === e.target.value
+                  (v) => v.accountId === e.target.value
                 );
 
                 setForm({
                   ...form,
-                  vendorId: selected?.vendorId || "",
-                  vendorName: selected?.vendorName || "",
+                  vendorId: selected?.accountId || "",
+                  vendorName: selected?.accountName || "",
                 });
               }}
               className="border p-2 rounded w-full"
               required
             >
-              <option value="">Select Vendor</option>
+              <option value="">Select Account</option>
               {vendors.map((v) => (
-                <option key={v.vendorId} value={v.vendorId}>
-                  {v.vendorName}
+                <option key={v.accountId} value={v.accountId}>
+                  {v.accountName}
                 </option>
               ))}
             </select>

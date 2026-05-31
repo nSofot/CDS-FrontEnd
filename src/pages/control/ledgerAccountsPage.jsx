@@ -7,6 +7,7 @@ import Modal from "react-modal";
 import { formatNumber } from "../../utils/numberFormat.js";
 
 export default function LedgerAccountsPage() {
+  window.scrollTo(0, 0);
   const [accounts, setAccounts] = useState([]);
   const [headerAccounts, setHeaderAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
