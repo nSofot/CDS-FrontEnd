@@ -140,10 +140,10 @@ export default function StockPage() {
         <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
-              📦 Stocks List
+              📦 Product List
             </h1>
             <p className="text-gray-600 text-sm">
-              View and manage all registered stocks
+              View and manage all registered products
             </p>
           </div>
 
@@ -152,7 +152,7 @@ export default function StockPage() {
               onClick={() => navigate("/control/add-stock")}
               className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
             >
-              + Add Stock
+              + Add Product
             </button>
 
             <button

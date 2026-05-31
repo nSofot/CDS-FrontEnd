@@ -3,6 +3,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 export default function VendorPaymentPage() {
+  window.document.title = "Vendor Payment - Control Panel";
+  window.scrollTo(0, 0);
   const [vendors, setVendors] = useState([]);
   const [ledgers, setLedgers] = useState([]);
   const [loading, setLoading] = useState(false);

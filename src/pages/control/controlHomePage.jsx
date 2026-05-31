@@ -127,15 +127,6 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "GRNs & Purchases",
-      to: "/control/grns",
-      icon: <FaReceipt />,
-      roles: [
-        "admin",
-      ],
-    },
-
-    {
       label: "Bag Sale Invoices",
       to: "/control/bagSale-invoice",
       icon: <FaMoneyCheckAlt />,
@@ -154,9 +145,36 @@ export default function ControlHomePage() {
     },
 
     {
+      label: "GRNs & Purchases",
+      to: "/control/grns",
+      icon: <FaReceipt />,
+      roles: [
+        "admin",
+      ],
+    },
+        
+    {
       label: "Other Invoices",
       to: "/control/other-invoice",
       icon: <FaFileAlt />,
+      roles: [
+        "admin",
+      ],
+    },
+
+    {
+      label: "Member Receipts",
+      to: "/control/member-receipt",
+      icon: <FaUserClock />,
+      roles: [
+        "admin",
+      ],
+    },    
+        
+    {
+      label: "Other Receipts",
+      to: "/control/other-receipt",
+      icon: <FaUserClock />,
       roles: [
         "admin",
       ],
@@ -172,9 +190,9 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "Member Receipts",
-      to: "/control/member-receipt",
-      icon: <FaUserClock />,
+      label: "Other Payments",
+      to: "/control/other-payment",
+      icon: <FaMoneyCheckAlt />,
       roles: [
         "admin",
       ],
