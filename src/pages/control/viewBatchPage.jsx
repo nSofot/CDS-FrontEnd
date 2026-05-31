@@ -782,7 +782,7 @@ export default function ViewBatchPage() {
               >
               <div>This is a system generated invoice. No signature is required.</div>
                 <div style={{ marginTop: "5px", fontWeight: "bold", color: "#333" }}>
-                  Software developed by nSoft Technologies
+                  Software developed by nSoft Technology
                 </div>
               </div>
           </div>

@@ -20,16 +20,15 @@ import EditVendorPage from "./control/editVendorPage";
 import VendorLedgerPage from "./control/vendorLedgerPage";
 
 import CashBookPage from "./control/cashBookPage";
-import AddCashBookPage from "./control/addCashBookPage";
-import EditCashBookPage from "./control/editCashBookPage";
-import CashBookLedgerPage from "./control/cashBookLedgerPage"
 
 import GRNsPage from "./control/grnsPage";
 import OtherInvoicePage from "./control/otherInvoicePage";
 import VendorPaymentPage from "./control/vendorPayment";
 import MemberReceiptPage from "./control/memberReceiptPage";
+import OtherReceiptsPage from "./control/otherReceiptPage";
 import BagSaleInvoicePage from "./control/bagSaleInvoicePage"
 import SalesInvoicePage from "./control/salesInvoicePage";
+import OtherPayment from "./control/otherPayment";
 
 import MushroomProcessMenu from "./control/mushroomProcessMenu";
 import MakeSubstrateBagPage from "./control/makeSubstrateBagPage";
@@ -83,17 +82,15 @@ export default function ControlPage() {
         <Route path="vendor-ledger" element={<VendorLedgerPage />} />
 
         <Route path="cash-book" element={<CashBookPage />} />
-        <Route path="add-cash-account" element={<AddCashBookPage />} />
-        <Route path="edit-cash-account" element={<EditCashBookPage />} />
-        <Route path="cash-book-ledger" element={<CashBookLedgerPage />} />
     
         <Route path="grns" element={<GRNsPage />} />
         <Route path="other-invoice" element={<OtherInvoicePage />} />
         <Route path="vendor-payment" element={<VendorPaymentPage />} />
         <Route path="member-receipt" element={<MemberReceiptPage />} />
+        <Route path="other-receipt" element={<OtherReceiptsPage />} />
         <Route path="bagSale-invoice" element={<BagSaleInvoicePage />} />
         <Route path="sales-invoice" element={<SalesInvoicePage />} />
-
+        <Route path="other-payment" element={<OtherPayment />} />
         <Route path="mushroom-process" element={<MushroomProcessMenu />} />
         <Route path="make-substrate-bag" element={<MakeSubstrateBagPage />} />
         <Route path="make-sterilized-bag" element={<MakeSterilizedBagPage />} />
