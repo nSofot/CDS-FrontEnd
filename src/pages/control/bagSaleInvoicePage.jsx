@@ -14,20 +14,21 @@ export default function BagSaleInvoicePage() {
   const [batches, setBatches] = useState([]);
  
   const [loading, setLoading] = useState(false);
-  const [refresh, setRefresh] = useState(false);  
+  // const [refresh, setRefresh] = useState(false);  
   const [isSaved, setIsSaved] = useState(false);
 
-  const [loadingInvoices, setLoadingInvoices] = useState(false);
-  const [loadingMasters, setLoadingMasters] = useState(false);  
+  // const [loadingInvoices, setLoadingInvoices] = useState(false);
+  // const [loadingMasters, setLoadingMasters] = useState(false); 
+  const [loadingTrx, setLoadingTrx] = useState(false); 
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);  
   const [selectedBatch, setSelectedBatch] = useState(null);
 
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);  
+  // const [filteredProducts, setFilteredProducts] = useState([]);  
 
-  const [stockTrx, setStockTrx] = useState({});
+  const [stockTrx, setStockTrx] = useState(null);
 
   const [invoiceNumber, setInvoiceNumber] = useState("");
 
@@ -78,11 +79,28 @@ export default function BagSaleInvoicePage() {
     totalAmount: "",
   };
 
+
+  const resetForm = () => {
+    setForm(initialForm);
+    setSelectedCustomer(null);
+    setSelectedOrder(null);
+    setSelectedBatch(null);
+    setInvoiceNumber("");
+  };
+
+
   const statusStockMap = {
     Substrate: "5000",
     Sterilized: "5001",
     Inoculated: "5002",
     Incubating: "5003",
+  };
+
+
+  const closeViewModal = () => {
+    setIsViewOpen(false);
+    setStockTrx(null);
+    setSelected(null);
   };
 
   const token = localStorage.getItem("token");
@@ -92,10 +110,8 @@ export default function BagSaleInvoicePage() {
   };
 
   /* LOAD */
-  const fetchInvoices = async () => {
+ const fetchInvoices = async () => {
     try {
-      setLoading(true);
-
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
         { headers }
@@ -108,35 +124,31 @@ export default function BagSaleInvoicePage() {
         : [];
 
       const filtered = data.filter(
-        (i) =>
-          i.trxType === "BagInvoice"
+        (i) => i.trxType === "BagInvoice"
       );
 
       setInvoices(filtered);
     } catch (err) {
       toast.error("Failed to load invoices");
       setInvoices([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   /* FETCH */
   const fetchMembers = async () => {
     try {
-      setLoading(true);
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/member`
       );
       setMembers(res.data.data || res.data);
     } catch {
       toast.error("Failed to load members");
+      setMembers([]);
     }
   };
 
   const fetchOrders = async () => {
     try {
-
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/bag-order`,
         { headers }
@@ -146,12 +158,12 @@ export default function BagSaleInvoicePage() {
 
     } catch {
       toast.error("Failed to load orders");
+      setOrders([]);
     }
   };
 
   const fetchBatches = async () => {
     try {
-
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/batch`
       );
@@ -160,12 +172,12 @@ export default function BagSaleInvoicePage() {
 
     } catch {
       toast.error("Failed to load batches");
+      setBatches([]);
     }
   };
 
   const fetchProducts = async () => {
     try {
-
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`,
         { headers }
@@ -180,26 +192,41 @@ export default function BagSaleInvoicePage() {
 
     } catch {
       toast.error("Failed to load products");
+      setProducts([]);
     }
   };
 
 
-  const featchStockTrx = async (trxId) => {  
-    if (!trxId) return null;     
+  const fetchStockTrx = async (trxId) => {
+    if (!trxId) return;
+
     try {
+      setLoadingTrx(true);
+
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock-transaction/${trxId}`,
         { headers }
       );
-      setStockTrx(res.data || []);
+
+      setStockTrx(res.data || null);
     } catch (err) {
-      return null;
+      toast.error("Failed to load transaction");
+      setStockTrx(null);
+    } finally {
+      setLoadingTrx(false);
     }
   };
 
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+
   useEffect(() => {
     if (isViewOpen && selected?.trxId) {
-      featchStockTrx(selected.trxId);
+      setStockTrx(null);
+      fetchStockTrx(selected.trxId);
     }
   }, [isViewOpen, selected?.trxId]);
 
@@ -222,23 +249,13 @@ export default function BagSaleInvoicePage() {
 
     loadAll();
   }, []);
+ 
 
+  const totalAmount =
+    Number(form.rate || 0) * Number(form.quantity || 0);
 
-  useEffect(() => {
-    const totalAmount =
-      Number(form.rate || 0) * Number(form.quantity || 0);
-
-    const costValue =
-      Number(form.cost || 0) * Number(form.quantity || 0);
-
-    setForm((prev) => ({
-      ...prev,
-      totalAmount,
-      costValue,
-    }));
-  }, [form.rate, form.quantity, form.cost]); 
-
-
+  const costValue =
+    Number(form.cost || 0) * Number(form.quantity || 0);
 
   const reloadInvoices = () => {
     fetchInvoices();
@@ -301,7 +318,7 @@ export default function BagSaleInvoicePage() {
       await html2pdf()
         .set({
           margin: 0.3,
-          filename: `Invoice_${invoiceNumber}.pdf`,
+          filename: `Invoice_${invoiceNumber || "Draft"}.pdf`,
           image: {
             type: "jpeg",
             quality: 0.98,
@@ -333,7 +350,7 @@ export default function BagSaleInvoicePage() {
     if (!selectedOrder) return toast.error("Select order");
     if (!selectedBatch) return toast.error("Select batch");
     if (!form.rate) return toast.error("Submit rate");
-    if (!form.quantity) return toast.error("Submit quantity");
+    if (Number(form.quantity) <= 0) return toast.error("Quantity must be greater than zero");
 
     try {
       setLoading(true);
@@ -411,18 +428,18 @@ export default function BagSaleInvoicePage() {
           trxDate: form.invoiceDate,
           trxType: "BagInvoice",
           memberId: selectedCustomer.memberId,
-          memberName:`${selectedCustomer.firstName} ${selectedCustomer.lastName}`,
+          memberName:`${selectedCustomer.firstName} ${selectedCustomer.lastName}`.trim(),
           description: selectedOrder.orderBagStatus + " Bag Sale",
           isCredit: false,
-          amount: Number(form.totalAmount || 0),
-          dueAmount: Number(form.totalAmount || 0),
+          amount: Number(totalAmount || 0),
+          dueAmount: Number(totalAmount || 0),
         },
         { headers }
       );
 
       const memberDuePromise = axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/member/${selectedCustomer.memberId}/due/add`,
-        { amount: Number(form.totalAmount || 0) },
+        { amount: Number(totalAmount || 0) },
         { headers }
       );
 
@@ -491,10 +508,14 @@ export default function BagSaleInvoicePage() {
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-
-        <h1 className="text-xl font-bold text-orange-600">
-          Bag Sale Invoices
-        </h1>
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold text-orange-600">
+            🧾 Bag Sale Invoices
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Create and manage substrate bag sale invoices
+          </p>         
+        </div>
 
         <div className="flex gap-2 w-full md:w-auto">
           <div
@@ -528,15 +549,12 @@ export default function BagSaleInvoicePage() {
 
           <button
             onClick={async () => {
+
               if ((viewMode === "create") && (isSaved)) {
-                setIsSaved(false);
-                setForm(initialForm);
-                setSelectedCustomer(null);
-                setSelectedOrder(null);
-                setSelectedBatch(null);
+                setIsSaved(false);         
                 await fetchInvoices(); // now valid
               }
-
+              resetForm();  
               setViewMode(viewMode === "list" ? "create" : "list");
             }}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 text-white
@@ -558,9 +576,17 @@ export default function BagSaleInvoicePage() {
       {viewMode === "list" && (
         <>
           {loading ? (
-            <div className="animate-pulse text-center py-10 text-gray-500">
-              Loading invoices...
-            </div>
+            // <div className="animate-pulse text-center py-10 text-gray-500">
+            //   Loading invoices...
+            // </div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-gray-200 rounded animate-pulse"
+                />
+              ))}
+            </div>            
           ) : (
             <>
               {/* MOBILE */}
@@ -644,7 +670,6 @@ export default function BagSaleInvoicePage() {
                           <button
                             onClick={() => {
                               setSelected(inv);
-                              featchStockTrx(inv.trxId);
                               setIsViewOpen(true);
                             }}
                             className="text-blue-600"
@@ -857,8 +882,10 @@ export default function BagSaleInvoicePage() {
               <input
                 disabled={loading || isSaved}
                 type="number"
+                min="1"
+                max={form.balanceBags}
+                value={form.quantity}                
                 className="border p-2 w-full rounded-lg"
-                value={form.quantity}
                 onChange={(e) => {
                   const qty = Number(e.target.value || 0);
 
@@ -882,7 +909,7 @@ export default function BagSaleInvoicePage() {
               <input
                 type="text"
                 className="border p-2 w-full rounded-lg bg-gray-100 text-orange-600 font-semibold"
-                value={formatNumber(form.totalAmount || 0)}
+                value={formatNumber(totalAmount)}
                 readOnly
               />
             </div>
@@ -890,7 +917,11 @@ export default function BagSaleInvoicePage() {
 
 
           <button
-            onClick={handleSave}
+            onClick={() => {
+              if (loading || isSaved) return;
+              setLoading(true);
+              handleSave();
+            }}
             disabled={loading || isSaved}
             className={`px-4 py-3 rounded-lg w-full font-semibold text-white transition
               ${isSaved
@@ -982,7 +1013,7 @@ export default function BagSaleInvoicePage() {
                         {formatNumber(form.rate)}
                       </td>
                       <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right" }}>
-                        {formatNumber(form.totalAmount)}
+                        {formatNumber(totalAmount)}
                       </td>
                     </tr>
                    {/* ))} */}
@@ -993,23 +1024,29 @@ export default function BagSaleInvoicePage() {
                       Total
                     </td>
                     <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "right", fontWeight: "bold" }}>
-                      {formatNumber(form.totalAmount)}
+                      {formatNumber(totalAmount)}
                     </td>
                   </tr>
                 </tbody>
               </table>
 
               {/* FOOTER */}
-              <div style={{
-                marginTop: "30px",
-                textAlign: "center",
-                fontSize: "11px",
-                color: "#555"
-              }}>
-                This is a system generated invoice. No signature is required.
-                <br />
-                Software developed by nSoft Technology
-              </div>
+                <div
+                  style={{
+                    marginTop: "25px",
+                    textAlign: "center",
+                    fontSize: "11px",
+                    color: "#555",
+                    borderTop: "1px solid #ddd",
+                    paddingTop: "10px",
+                  }}
+                >
+                  <div>This is a computer-generated invoice and does not require a signature.</div>
+
+                  <div style={{ fontWeight: "bold", color: "#333" }}>
+                    Software by nSoft Technology © 2026
+                  </div>
+                </div>
 
             </div>
           </div>
@@ -1017,10 +1054,11 @@ export default function BagSaleInvoicePage() {
         </div>
       )}
 
+
       {/* VIEW MODAL */}
       {isViewOpen && selected && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
             {/* Header */}
             <div className="bg-orange-600 text-white px-6 py-4 flex items-center justify-between">
@@ -1028,21 +1066,23 @@ export default function BagSaleInvoicePage() {
                 <h2 className="text-lg font-bold">
                   Substrate Bag Sale Invoice
                 </h2>
+
                 <p className="text-xs opacity-90">
                   Invoice Details
                 </p>
               </div>
 
               <button
-                onClick={() => setIsViewOpen(false)}
+                onClick={closeViewModal}
                 className="text-white hover:text-gray-200 text-xl"
               >
                 ✕
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-6 space-y-5">
+            {/* Scrollable Body */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+
               {/* Customer */}
               <div className="border rounded-xl p-4 bg-gray-50">
                 <h3 className="font-semibold text-gray-700 mb-3">
@@ -1053,8 +1093,9 @@ export default function BagSaleInvoicePage() {
                   <span className="font-medium text-gray-500">
                     Customer
                   </span>
+
                   <span className="col-span-2">
-                    {selected.memberName} ( {selected.memberId} )
+                    {selected.memberName} ({selected.memberId})
                   </span>
                 </div>
               </div>
@@ -1065,10 +1106,11 @@ export default function BagSaleInvoicePage() {
                   Invoice Information
                 </h3>
 
-                <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="grid grid-cols-3 gap-2 text-sm mb-4">
                   <span className="font-medium text-gray-500">
                     Invoice No
                   </span>
+
                   <span className="col-span-2 font-semibold text-orange-600">
                     {selected.trxId}
                   </span>
@@ -1076,6 +1118,7 @@ export default function BagSaleInvoicePage() {
                   <span className="font-medium text-gray-500">
                     Date
                   </span>
+
                   <span className="col-span-2">
                     {formatDate(selected.trxDate)}
                   </span>
@@ -1083,6 +1126,7 @@ export default function BagSaleInvoicePage() {
                   <span className="font-medium text-gray-500">
                     Order No
                   </span>
+
                   <span className="col-span-2">
                     {selected.referenceId}
                   </span>
@@ -1090,77 +1134,89 @@ export default function BagSaleInvoicePage() {
                   <span className="font-medium text-gray-500">
                     Description
                   </span>
+
                   <span className="col-span-2">
-                    {/* {selected.description} */}
                     {stockTrx?.description || selected.description}
                   </span>
                 </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-gray-50">
-                      <th className="text-left p-2">Product</th>
-                      <th className="text-center p-2">Qty</th>
-                      <th className="text-right p-2">Rate</th>
-                      <th className="text-right p-2">Amount</th>
-                    </tr>
-                  </thead>
 
-                  <tbody>
-                    {Array.isArray(stockTrx?.items) &&
-                      stockTrx.items.map((item, index) => (
-                      <tr key={index} className="">
-                        <td className="p-2">{item.stockName}</td>
-                        <td className="p-2 text-center">{item.quantity}</td>
-                        <td className="p-2 text-right">
-                          {formatNumber(item.stockPrice)}
-                        </td>
-                        <td className="p-2 text-right">
-                          {formatNumber(
-                            Number(item.quantity) * Number(item.stockPrice)
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>                
+                {/* Loading State */}
+                {loadingTrx ? (
+                  <div className="text-center py-10 text-gray-500">
+                    Loading invoice details...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border rounded-lg overflow-hidden">
+                      <thead>
+                        <tr className="border-b bg-gray-50">
+                          <th className="text-left p-2">Product</th>
+                          <th className="text-center p-2">Qty</th>
+                          <th className="text-right p-2">Rate</th>
+                          <th className="text-right p-2">Amount</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {Array.isArray(stockTrx?.items) &&
+                        stockTrx.items.length > 0 ? (
+                          stockTrx.items.map((item, index) => (
+                            <tr
+                              key={index}
+                              className="border-b last:border-b-0"
+                            >
+                              <td className="p-2">
+                                {item.stockName}
+                              </td>
+
+                              <td className="p-2 text-center">
+                                {item.quantity}
+                              </td>
+
+                              <td className="p-2 text-right">
+                                {formatNumber(item.stockPrice)}
+                              </td>
+
+                              <td className="p-2 text-right">
+                                {formatNumber(
+                                  Number(item.quantity) *
+                                    Number(item.stockPrice)
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="text-center p-4 text-gray-500"
+                            >
+                              No items found
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+
+                      <tfoot>
+                        <tr className="bg-orange-50 font-semibold border-t">
+                          <td
+                            colSpan="3"
+                            className="p-2 text-right"
+                          >
+                            Total
+                          </td>
+
+                          <td className="p-2 text-right text-orange-600">
+                            {formatNumber(selected.amount)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
               </div>
 
-              {/* <div className="border rounded-xl p-4">
-                <h3 className="font-semibold text-gray-700 mb-3">
-                  Item Details
-                </h3>
-
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-gray-50">
-                      <th className="text-left p-2">Product</th>
-                      <th className="text-center p-2">Qty</th>
-                      <th className="text-right p-2">Rate</th>
-                      <th className="text-right p-2">Amount</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {Array.isArray(stockTrx?.items) &&
-                      stockTrx.items.map((item, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="p-2">{item.stockName}</td>
-                        <td className="p-2 text-center">{item.quantity}</td>
-                        <td className="p-2 text-right">
-                          {formatNumber(item.stockPrice)}
-                        </td>
-                        <td className="p-2 text-right">
-                          {formatNumber(
-                            Number(item.quantity) * Number(item.stockPrice)
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div> */}
-
-              {/* Amount */}
+              {/* Amount Summary */}
               <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700 font-semibold">
@@ -1176,9 +1232,9 @@ export default function BagSaleInvoicePage() {
             </div>
 
             {/* Footer */}
-            <div className="border-t px-6 py-4 flex justify-end">
+            <div className="border-t px-6 py-4 flex justify-end bg-white">
               <button
-                onClick={() => setIsViewOpen(false)}
+                onClick={closeViewModal}
                 className="px-5 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
               >
                 Close
