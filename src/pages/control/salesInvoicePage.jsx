@@ -140,10 +140,15 @@ export default function SaleInvoicePage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
         { headers }
       );
+
       const transactions = res.data.data || [];
-      const salesInvoices = transactions.filter(
-        (trx) => trx.trxType === "SalesInvoice"
-      );
+
+      const salesInvoices = transactions
+        .filter((trx) => trx.trxType === "SalesInvoice")
+        .sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
       setInvoices(salesInvoices);
     } catch (err) {
       console.error(err);
@@ -188,7 +193,6 @@ export default function SaleInvoicePage() {
   const filteredMembers = useMemo(() => {
     return members.filter((c) => {
       const name =
-        c.nameInSinhala ||
         `${c.firstName || ""} ${c.lastName || ""}`;
 
       return (
@@ -778,8 +782,7 @@ export default function SaleInvoicePage() {
 
                 {members.map((m) => (
                   <option key={m._id} value={m._id}>
-                    {m.nameInSinhala ||
-                      `${m.firstName} ${m.lastName}`}
+                    {`${m.firstName} ${m.lastName}`}
                   </option>
                 ))}
               </select>
