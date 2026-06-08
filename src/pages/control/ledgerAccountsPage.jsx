@@ -295,7 +295,7 @@ export default function LedgerAccountsPage() {
         </div>
 
         {/* SEARCH */}
-        <div className="bg-white border rounded-2xl p-5 mb-5 flex gap-3">
+        <div className="bg-white mb-5 flex gap-3">
           <div className="relative w-full">
             <Search className="absolute left-3 top-3 text-gray-400" />
             <input
@@ -334,28 +334,28 @@ export default function LedgerAccountsPage() {
             <table className="w-full min-w-[700px]">
               <thead className="bg-orange-50">
                 <tr>
-                  <th className="p-4 text-left whitespace-nowrap">Account ID</th>
-                  <th className="p-4 text-left whitespace-nowrap">Type</th>
-                  <th className="p-4 text-left whitespace-nowrap">Header Account</th>
-                  <th className="p-4 text-left whitespace-nowrap">Name</th>
-                  <th className="p-4 text-right whitespace-nowrap">Balance</th>
-                  <th className="p-4 text-center whitespace-nowrap">Action</th>
+                  <th className="px-4 py-3 text-left whitespace-nowrap">Account ID</th>
+                  <th className="px-4 py-3 text-left whitespace-nowrap">Type</th>
+                  <th className="px-4 py-3 text-left whitespace-nowrap">Header Account</th>
+                  <th className="px-4 py-3 text-left whitespace-nowrap">Name</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Balance</th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">Action</th>
                 </tr>
               </thead>
 
               <tbody>
                 {filteredAccounts.map((acc) => (
                   <tr key={acc._id} className="border-t hover:bg-orange-50">
-                    <td className="p-4 whitespace-nowrap">{acc.accountId}</td>
-                    <td className="p-4 whitespace-nowrap">{acc.accountType}</td>
-                    <td className="p-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">{acc.accountId}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{acc.accountType}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {headerMap[acc.headerAccountId] || "N/A"}
                     </td>
-                    <td className="p-4 whitespace-nowrap">{acc.accountName}</td>
-                    <td className="p-4 text-right whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">{acc.accountName}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
                       {formatNumber(acc.accountBalance || 0)}
                     </td>
-                    <td className="p-4 text-center whitespace-nowrap">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <button
                         onClick={() => openEdit(acc)}
                         className="px-3 py-2 border rounded-xl"

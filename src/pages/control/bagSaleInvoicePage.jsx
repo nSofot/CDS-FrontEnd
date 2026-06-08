@@ -13,12 +13,9 @@ export default function BagSaleInvoicePage() {
   const [orders, setOrders] = useState([]);
   const [batches, setBatches] = useState([]);
  
-  const [loading, setLoading] = useState(false);
-  // const [refresh, setRefresh] = useState(false);  
+  const [loading, setLoading] = useState(false);  
   const [isSaved, setIsSaved] = useState(false);
 
-  // const [loadingInvoices, setLoadingInvoices] = useState(false);
-  // const [loadingMasters, setLoadingMasters] = useState(false); 
   const [loadingTrx, setLoadingTrx] = useState(false); 
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -124,7 +121,10 @@ export default function BagSaleInvoicePage() {
         : [];
 
       const filtered = data.filter(
-        (i) => i.trxType === "BagInvoice"
+          (i) => i.trxType === "BagInvoice"
+        )
+        .sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
       setInvoices(filtered);
@@ -642,7 +642,7 @@ export default function BagSaleInvoicePage() {
                       <th className="p-3">Date</th>
                       <th className="p-3">Invoice No</th>
                       <th className="p-3">Customer</th>
-                      <th className="p-3">Reference</th>
+                      <th className="p-3">Order No</th>
                       <th className="p-3 text-right">Amount</th>
                       <th className="p-3 text-center">Actions</th>
                     </tr>

@@ -1,10 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { FaEye, FaSearch, FaTrash, FaPlus, FaRegFilePdf } from "react-icons/fa";
+import { formatNumber } from "../../utils/numberFormat.js";
+import { formatDate } from "../../utils/dateFormat.js";
+import html2pdf from "html2pdf.js";
 
 export default function OtherInvoicePage() {
+  const [invoices, setInvoices] = useState([]);
   const [vendors, setVendors] = useState([]);
-  const [loading, setLoading] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState("list");
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selected, setSelected] = useState(null);   
+
+  const [loading, setLoading] = useState(false);  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);    
 
   const [form, setForm] = useState({
     referenceId: "",
@@ -16,14 +29,38 @@ export default function OtherInvoicePage() {
     amount: "",
   });
 
+  const initialForm = {  
+    referenceId: "",
+    trxType: "Invoice",
+    trxDate: new Date().toISOString().split("T")[0],
+    vendorId: "",
+    vendorName: "",
+    description: "",
+    amount: "",
+  };
+
+  const resetForm = () => {
+    setForm(initialForm);
+  };
+
   // Fetch vendors
   const fetchVendors = async () => {
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`
       );
-      setVendors(res.data.data || res.data);
-    } catch {
+
+      const accounts = res.data.data || res.data || [];
+
+      const filteredAccounts = accounts
+        .filter((acc) => acc.accountType === "Expense")
+        .sort((a, b) =>
+          (a.accountName || "").localeCompare(b.accountName || "")
+        );
+
+      setVendors(filteredAccounts);
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to load vendors");
     }
   };
@@ -31,6 +68,20 @@ export default function OtherInvoicePage() {
   useEffect(() => {
     fetchVendors();
   }, []);
+
+
+
+  /* FILTER */
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(
+      (i) =>
+        i.trxId?.toLowerCase().includes(search.toLowerCase()) ||
+        i.memberName?.toLowerCase().includes(search.toLowerCase()) ||
+        i.referenceId?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [invoices, search]);
+  
+  
 
   // Handle change
   const handleChange = (e) => {
@@ -66,7 +117,7 @@ export default function OtherInvoicePage() {
         amount: Number(total),
         dueAmount: Number(total),
       };
-   
+ console.log("Vendor Transaction Payload:", vendorTrxPayload); 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
         vendorTrxPayload
@@ -100,16 +151,203 @@ export default function OtherInvoicePage() {
   };
 
   return (
-    <div className="sm:p-6 bg-gray-100 min-h-screen">
-      <div className="max-w-5xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow">
+    <div className="w-full space-y-4">
 
-        <h1 className="text-xl sm:text-2xl font-bold">
-          Other Invoice Entry
-        </h1>
-        <h2 className="text-sm sm:text-base text-gray-600 mb-6">
-          Manage Miscellaneous Invoice and expense records
-        </h2>
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold text-orange-600">
+            🧾 Other Invoice
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Create and manage Miscellaneous Invoice and expense records.
+          </p>         
+        </div>
 
+        <div className="flex gap-2 w-full md:w-auto">
+          <div
+            className={`relative w-full md:w-64 ${
+              viewMode === "create" && "hidden"
+            }`}
+          >
+            <FaSearch className="absolute left-3 top-3 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search Other Invoices..."
+              className="border px-3 py-2 pl-9 rounded-lg w-full"
+            />
+          </div>
+
+          {viewMode === "create" && (
+            <button
+              // onClick={handleDownloadPDF}
+              disabled={!isSaved}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
+                isSaved
+                  ? "bg-orange-600 hover:bg-orange-700"
+                  : "bg-gray-400"
+              }`}
+            >
+              <FaRegFilePdf />
+              PDF
+            </button>
+          )}
+
+          <button
+            onClick={async () => {
+
+              if ((viewMode === "create") && (isSaved)) {
+                setIsSaved(false);         
+                await fetchInvoices(); // now valid
+              }
+              resetForm();  
+              setViewMode(viewMode === "list" ? "create" : "list");
+            }}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 text-white
+              ${viewMode === "list" ? "bg-orange-500" : "bg-gray-700"}`}
+          >
+            {viewMode === "list" ? (
+              <>
+                <FaPlus /> Add
+              </>
+            ) : (
+              "← Back"
+            )}
+          </button>
+        </div>
+      </div>
+            
+
+      {/* ================= LIST VIEW ================= */}
+      {viewMode === "list" && (
+        <>
+          {loading ? (
+            // <div className="animate-pulse text-center py-10 text-gray-500">
+            //   Loading invoices...
+            // </div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-gray-200 rounded animate-pulse"
+                />
+              ))}
+            </div>            
+          ) : (
+            <>
+              {/* MOBILE */}
+              <div className="md:hidden space-y-3">
+                {filteredInvoices.map((inv) => (
+                  <div key={inv._id} className="bg-white border rounded-xl p-4 shadow-sm">
+
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-orange-600">{inv.trxId}</p>
+                        <p className="text-sm text-gray-600">{inv.vendorName}</p>
+                        <p className="text-xs text-gray-400">Ref: {inv.referenceId}</p>
+                        <p className="text-xs text-gray-400">{formatDate(inv.trxDate)}</p>
+                      </div>
+
+                      <p className="text-red-600 font-bold">
+                        {formatNumber(inv.amount)}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3 mt-3">
+                      <button
+                        onClick={() => {
+                          setSelected(inv);
+                          setIsViewOpen(true);
+                        }}
+                        className="text-blue-600 flex items-center gap-1"
+                      >
+                        <FaEye /> View
+                      </button>
+
+                      <button 
+                        onClick={() => deleteInvoice(inv.trxId)}
+                        className="text-red-600"
+                      >
+
+                        <FaTrash />
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+
+
+              {/* DESKTOP */}
+              <div className="hidden md:block bg-white rounded-xl shadow border overflow-hidden">
+
+                <table className="w-full text-sm">
+
+                  <thead className="bg-orange-100 text-left">
+                    <tr>
+                      <th className="p-3">Date</th>
+                      <th className="p-3">Invoice No</th>
+                      <th className="p-3">Reference</th>                      
+                      <th className="p-3">Supplier</th>
+                      <th className="p-3 text-right">Amount</th>
+                      <th className="p-3 text-center">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredInvoices.map((inv) => (
+                      <tr key={inv._id} className="border-t hover:bg-orange-50">
+
+                        <td className="p-3">{formatDate(inv.trxDate)}</td>
+                        <td className="p-3 font-semibold text-orange-600">
+                          {inv.trxId}
+                        </td>
+                        <td className="p-3 text-gray-500">{inv.referenceId}</td>
+                        <td className="p-3">{inv.vendorName}</td>
+                        <td className="p-3 text-right text-red-600 font-semibold">
+                          {formatNumber(inv.amount)}
+                        </td>
+
+                        <td className="p-3 text-center flex justify-center gap-3">
+                          <button
+                            onClick={() => {
+                              setSelected(inv);
+                              setIsViewOpen(true);
+                            }}
+                            className="text-blue-600"
+                          >
+                            <FaEye />
+                          </button>
+
+                          <button 
+                            onClick={() => deleteInvoice(inv.trxId)}
+                            className="text-red-600"
+                          >
+
+                            <FaTrash />
+                          </button>
+                        </td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+
+                </table>
+              </div>
+
+            </>
+          )}
+        </>
+      )}
+
+
+      {/* ================= FORM VIEW ================= */}
+      {viewMode === "create" && (
+        <div className="bg-white rounded-xl shadow border p-6 space-y-6">
+          <h2 className="text-lg font-bold text-orange-600">
+            Create Other Invoice
+          </h2>
         <form onSubmit={handleSubmit}>
 
           {/* Header */}
@@ -187,20 +425,43 @@ export default function OtherInvoicePage() {
           </div>
 
           {/* Total */}
-          <div className="text-right text-lg sm:text-xl font-bold mb-4">
-            Total: Rs. {Number(form.amount ?? 0).toFixed(2)}
+          <div className="flex justify-between items-center border-t pt-4 mb-6">
+
+            <h3 className="text-lg font-bold text-gray-700">
+              Total Amount
+            </h3>
+
+            <h2 className="text-xl font-bold text-green-600">
+                {formatNumber(form.amount ?? 0)}
+            </h2>
+
           </div>
+
 
           {/* Button */}
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full sm:w-auto bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+            onClick={() => {
+                handleSubmit();
+            }}
+            disabled={isSubmitting || isSaved}
+            className={`px-4 py-3 rounded-lg w-full font-semibold text-white transition
+              ${
+                isSaved
+                  ? "bg-green-600"
+                  : isSubmitting
+                  ? "bg-gray-400"
+                  : "bg-orange-500 hover:bg-orange-600"
+              }`}
           >
-            {loading ? "Saving..." : "Save Invoice"}
+            {isSubmitting
+              ? "Saving Invoice..."
+              : isSaved
+              ? "Saved ✓ Ready for PDF"
+              : "Save Invoice"}
           </button>
         </form>
       </div>
+      )}
     </div>
   );
 }
