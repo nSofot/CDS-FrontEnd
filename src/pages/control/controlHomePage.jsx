@@ -145,7 +145,7 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "GRNs & Purchases",
+      label: "Purchase Invoices",
       to: "/control/grns",
       icon: <FaReceipt />,
       roles: [
