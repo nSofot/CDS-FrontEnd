@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import {
   FaMoneyCheckAlt,
   FaUserClock,
@@ -22,19 +22,18 @@ export default function ControlHomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-  /* 🔐 PROTECT PAGE (REDIRECT IF NOT LOGGED IN) */
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
+  const user = useMemo(() => {
+    return JSON.parse(localStorage.getItem("user")) || null;
+  }, []);
 
+  useEffect(() => {
     if (!user) {
       navigate("/login");
     }
-  }, [navigate]);
+  }, [navigate, user]);
 
-  /* ───── USER & ROLE ───── */
-  let memberRoll = "";
-  const user = JSON.parse(localStorage.getItem("user"));
-  memberRoll = user?.memberRole;
+  let memberRoll = user?.memberRole || "";
+
 
   // Override role for a specific email
   if (user?.email === "nihalranathunge@gmail.com") {
@@ -64,7 +63,7 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "Bag Production Process",
+      label: "Bag Production",
       to: "/control/mushroom-process",
       icon: <FaUsersCog />,
       roles: [
@@ -181,7 +180,7 @@ export default function ControlHomePage() {
     },
 
     {
-      label: "Vendor Payments",
+      label: "Supplier Payments",
       to: "/control/vendor-payment",
       icon: <FaMoneyCheckAlt />,
       roles: [
@@ -217,8 +216,17 @@ export default function ControlHomePage() {
     }
   ];
 
+
+  const filteredMenuItems = useMemo(() => {
+    return menuItems.filter(item =>
+      !normalizedRole ||
+      item.roles.includes(normalizedRole)
+    );
+  }, [normalizedRole]);
+
+
   return (
-    <div className="flex w-full min-h-screen bg-gray-100">
+    <div className="flex w-full h-screen overflow-hidden bg-gray-100">
       {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
@@ -229,33 +237,42 @@ export default function ControlHomePage() {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed md:static z-40 w-64 bg-white shadow-lg transition-transform duration-300
+        className={`fixed md:static z-40 w-64 h-screen bg-white shadow-lg flex flex-col
+        transition-transform duration-300
         ${
           sidebarOpen
             ? "translate-x-0"
             : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="p-4 flex justify-between items-center font-bold text-orange-600 border-b">
-          CDS ERP
+        {/* SIDEBAR HEADER */}
+        <div className="p-4 flex justify-between items-center font-bold text-orange-600 border-b shrink-0">
+          <span className="text-lg">CDS ERP</span>
+
           <button
-            className="md:hidden"
+            className="md:hidden text-gray-600 hover:text-red-500"
             onClick={() => setSidebarOpen(false)}
           >
             <FaTimes />
           </button>
         </div>
 
-        <nav className="flex flex-col p-2 gap-1">
-          {menuItems
-            .filter(
-              (item) =>
-                !normalizedRole ||
-                item.roles
-                  .map((r) => r.toLowerCase())
-                  .includes(normalizedRole)
-            )
-            .map((item) => (
+
+        {/* SCROLLABLE MENU AREA */}
+        <nav
+          className="
+            flex-1
+            overflow-y-auto
+            px-2
+            py-3
+            space-y-1
+
+            scrollbar-thin
+            scrollbar-thumb-orange-300
+            scrollbar-track-gray-100
+          "
+        >
+          {filteredMenuItems.map((item)=>(
               <SidebarLink
                 key={item.to}
                 to={item.to}
@@ -264,22 +281,38 @@ export default function ControlHomePage() {
                 onClick={() => setSidebarOpen(false)}
               />
             ))}
+        </nav>
 
-          {/* 🚪 LOGOUT */}
+
+        {/* FIXED LOGOUT BUTTON */}
+        <div className="border-t p-3 shrink-0">
           <button
             onClick={() => {
               localStorage.clear();
               navigate("/login");
             }}
-            className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-red-50"
+            className="
+              w-full
+              flex
+              items-center
+              gap-3
+              px-4
+              py-2
+              rounded-lg
+              text-red-600
+              hover:bg-red-50
+              transition
+            "
           >
-            <FaSignOutAlt className="text-red-500" /> Logout
+            <FaSignOutAlt />
+            Logout
           </button>
-        </nav>
+        </div>
+
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="sticky top-0 z-20 bg-white px-4 py-3 flex gap-4 shadow-sm">
           <button
             className="md:hidden text-orange-600 text-4xl"
@@ -287,14 +320,19 @@ export default function ControlHomePage() {
           >
             <FaBars />
           </button>
-          <img src="/CDSLogo.png" alt="logo" className="w-12 h-12" />
+          <img
+            src="/CDSLogo.png"
+            alt="logo"
+            loading="lazy"
+            className="w-12 h-12"
+          />
           <div className="flex flex-col">
             <h1 className="md:text-xl text-lg font-semibold">Collective Development Society</h1>
             <h2 className="md:text-sm text-xs text-gray-500">Smart Mushroom Production Management System</h2>
           </div>
         </header>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </div>
       </main>
@@ -303,7 +341,8 @@ export default function ControlHomePage() {
 }
 
 /* ───────── COMPONENTS ───────── */
-const SidebarLink = ({ to, icon, label, onClick, end }) => (
+const SidebarLink = memo(
+({ to, icon, label, onClick, end }) => (
   <NavLink
     to={to}
     end={end}
@@ -320,4 +359,4 @@ const SidebarLink = ({ to, icon, label, onClick, end }) => (
     <span className="text-orange-500">{icon}</span>
     {label}
   </NavLink>
-);
+));

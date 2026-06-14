@@ -4,9 +4,9 @@ import toast from "react-hot-toast";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaSearch, FaTrash, FaPlus, FaRegFilePdf } from "react-icons/fa";
-import { formatNumber } from "../../utils/numberFormat.js";
-import { formatDate } from "../../utils/dateFormat.js";
 import LoadingSpinner from "../../components/loadingSpinner";
+import { formatNumber }  from "../../utils/numberFormat.js";
+import { formatDate } from "../../utils/dateFormat.js";
 import html2pdf from "html2pdf.js";
 
 export default function MemberReceiptPage() {
@@ -19,6 +19,7 @@ export default function MemberReceiptPage() {
   const [bankAccounts, setBankAccounts] = useState([]);
   const reportRef = useRef();
   const [receiptNumber, setReceiptNumber] = useState("");
+  const [description, setDescription] = useState("");
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("list");
@@ -48,7 +49,7 @@ export default function MemberReceiptPage() {
 
   const [form, setForm] = useState({
     referenceNo: "",
-    trxType: "Receipt",
+    trxType: "MemberReceipt",
     receiptDate: new Date().toISOString().split("T")[0],
     memberId: "",
     memberName: "",
@@ -74,7 +75,7 @@ export default function MemberReceiptPage() {
 
   const initialForm = {  
     referenceNo: "",
-    trxType: "Receipt",
+    trxType: "MemberReceipt",
     receiptDate: new Date().toISOString().split("T")[0],
     memberId: "",
     memberName: "",
@@ -100,7 +101,6 @@ export default function MemberReceiptPage() {
   const resetForm = () => {
     setForm(initialForm);
     setSelectedMember(null);
-    setReceipts([]);
     setDueInvoices([]);
     setSelectedInvoiceTotal(0);
     setSelectedInvoice([]);
@@ -170,50 +170,73 @@ const normaliseBanks = (raw) => {
     
 
   const numberToWords = (num) => {
-    if (!num) return "Zero";
+    if (num === null || num === undefined || isNaN(num)) {
+      return "Zero Rupees Only";
+    }
 
     const a = [
       "",
-      "One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
-      "Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
-      "Seventeen","Eighteen","Nineteen",
+      "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+      "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+      "Sixteen", "Seventeen", "Eighteen", "Nineteen",
     ];
 
     const b = [
-      "", "", "Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"
+      "", "", "Twenty", "Thirty", "Forty", "Fifty",
+      "Sixty", "Seventy", "Eighty", "Ninety",
     ];
 
     const convert = (n) => {
+      if (n === 0) return "";
       if (n < 20) return a[n];
-      if (n < 100)
+
+      if (n < 100) {
         return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
-      if (n < 1000)
+      }
+
+      if (n < 1000) {
         return (
           a[Math.floor(n / 100)] +
-          " Hundred " +
-          (n % 100 ? convert(n % 100) : "")
+          " Hundred" +
+          (n % 100 ? " " + convert(n % 100) : "")
         );
-      if (n < 100000)
+      }
+
+      if (n < 100000) {
         return (
           convert(Math.floor(n / 1000)) +
-          " Thousand " +
-          (n % 1000 ? convert(n % 1000) : "")
+          " Thousand" +
+          (n % 1000 ? " " + convert(n % 1000) : "")
         );
-      if (n < 10000000)
+      }
+
+      if (n < 10000000) {
         return (
           convert(Math.floor(n / 100000)) +
-          " Lakh " +
-          (n % 100000 ? convert(n % 100000) : "")
+          " Lakh" +
+          (n % 100000 ? " " + convert(n % 100000) : "")
         );
+      }
 
       return (
         convert(Math.floor(n / 10000000)) +
-        " Crore " +
-        (n % 10000000 ? convert(n % 10000000) : "")
+        " Crore" +
+        (n % 10000000 ? " " + convert(n % 10000000) : "")
       );
     };
 
-    return convert(Math.floor(num)) + " Rupees Only";
+    const rupees = Math.floor(Number(num));
+    const cents = Math.round((Number(num) - rupees) * 100);
+
+    let words = `${convert(rupees) || "Zero"} Rupees`;
+
+    if (cents > 0) {
+      words += ` and ${convert(cents)} Cents`;
+    }
+
+    words += " Only";
+
+    return words;
   };
 
 
@@ -290,7 +313,7 @@ const normaliseBanks = (raw) => {
 
       const filtered = data
         .filter((i) =>
-          i.trxType === "Receipt"
+          i.trxType === "MemberReceipt"
         )
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -304,32 +327,13 @@ const normaliseBanks = (raw) => {
     }
   };
 
-
   const fetchOutstandingInvoices = async (memberId) => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
-        { headers }
-      );
+    const res = await axios.get(
+      `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction/outstanding/${memberId}`,
+      { headers }
+    );
 
-      const data = Array.isArray(res.data?.data)
-        ? res.data.data
-        : Array.isArray(res.data)
-        ? res.data
-        : [];
-
-      const filtered = data.filter(
-          (i) => (i.trxType === "BagInvoice" || i.trxType === "SalesInvoice") && i.memberId === memberId
-        )
-        .sort(
-            (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      );
-      setDueInvoices(filtered);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load invoices");
-      setDueInvoices([]);
-    }
+    setDueInvoices(res.data.data || []);
   };
 
 
@@ -353,8 +357,10 @@ const normaliseBanks = (raw) => {
     
     
   useEffect(() => {
-    fetchReceipts();
-  }, []);
+    if (viewMode === "list") {
+      fetchReceipts();
+    }
+  }, [viewMode]);  
 
 
   useEffect(() => {
@@ -370,7 +376,7 @@ const normaliseBanks = (raw) => {
 
 
   /* FILTER */
-  const filteredInvoices = useMemo(() => {
+  const filteredInvoices = useMemo(() => {    
     return receipts.filter(
       (i) =>
         i.trxId?.toLowerCase().includes(search.toLowerCase()) ||
@@ -399,50 +405,44 @@ const normaliseBanks = (raw) => {
   const toggleInvoice = (invoiceId) => {
     const received = Number(form.receivedAmount || 0);
 
-    const toggled = dueInvoices.map((inv) => {
-      if (inv._id === invoiceId) {
+    setDueInvoices((prev) => {
+      // 1. toggle selection first
+      const toggled = prev.map((inv) =>
+        inv._id === invoiceId
+          ? { ...inv, selected: !inv.selected }
+          : inv
+      );
+
+      // 2. distribute payment based on selection order
+      let remaining = received;
+
+      const updated = toggled.map((inv) => {
+        if (!inv.selected) {
+          return { ...inv, payAmount: 0 };
+        }
+
+        const due = Number(inv.dueAmount || 0);
+        const payAmount = Math.min(due, remaining);
+
+        remaining -= payAmount;
+
         return {
           ...inv,
-          selected: !inv.selected,
+          payAmount,
         };
-      }
-      return inv;
+      });
+
+      // 3. update total
+      const total = updated.reduce(
+        (sum, inv) => sum + Number(inv.payAmount || 0),
+        0
+      );
+
+      setSelectedInvoiceTotal(total);
+
+      return updated;
     });
-
-    const sorted = [...toggled].sort(
-      (a, b) => new Date(a.trxDate) - new Date(b.trxDate)
-    );
-
-    let remaining = received;
-
-    const updated = sorted.map((inv) => {
-      if (!inv.selected) {
-        return {
-          ...inv,
-          payAmount: 0,
-        };
-      }
-
-      const due = Number(inv.dueAmount || 0);
-      const payAmount = Math.min(due, remaining);
-      remaining -= payAmount;
-
-      return {
-        ...inv,
-        payAmount,
-      };
-    });
-
-    setDueInvoices(updated);
-
-    const total = updated.reduce(
-      (sum, inv) => sum + Number(inv.payAmount || 0),
-      0
-    );
-
-    setSelectedInvoiceTotal(total);
   };
-
 
 
   const updatePayAmount = (invoiceId, value) => {
@@ -492,7 +492,9 @@ const normaliseBanks = (raw) => {
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
   }, [filteredInvoices]);
+
   
+
   // ================= HANDLE CHANGE =================
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -502,23 +504,25 @@ const normaliseBanks = (raw) => {
       [name]: name === "amount" ? Number(value) : value,
     });
   };
+  
 
-  const formatCurrency = (value) => {
-    return Number(value || 0).toFixed(2);
-  };
-    
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString();
+  const closeViewModal = () => {
+    setIsViewOpen(false);
+    // setStockTrx(null);
+    setSelected(null);
   };
   
-  const formatNumber = (value) =>
-  `Rs. ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+
+  useEffect(() => {
+    if (isViewOpen && selected?.trxId) {
+      // setStockTrx(null);
+      // fetchStockTrx(selected.trxId);
+    }
+  }, [isViewOpen, selected?.trxId]);
   
-  
+
+
+  // ================= PDF STYLES =================
   const pdfPage = {
     width: "760px",
     padding: "30px 40px",
@@ -703,7 +707,9 @@ const normaliseBanks = (raw) => {
             : form.paymentMethod === "BankTransfer"
             ? form.accountName
             : "";
-   
+      setDescription(description);
+
+      // ================= 1. SAVE MEMBER TRANSACTION =================            
       const memberTrxPayload = {
         referenceId: form.referenceNo,
         trxDate: form.receiptDate,
@@ -716,17 +722,18 @@ const normaliseBanks = (raw) => {
         dueAmount: 0,
         
       };
-
-      // Save member transaction
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
         memberTrxPayload
       );
 
+
+      // ================= 2. GET NEW TRX ID =================
       const savedTrxId = res.data.data.trxId || res.data.trxId;
       setReceiptNumber(savedTrxId);
 
-      // Reduce member due
+
+      // ================= 3. SUBSTRACT MEMBER DUE =================
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/member/${form.memberId}/due/subtract`,
         {
@@ -735,27 +742,72 @@ const normaliseBanks = (raw) => {
       );
 
 
-      // ================= 3. UPDATE LEDGER BALANCE =================
+      // ================= 4. CLEAR DUE TRANS =================
+      await Promise.all(
+        dueInvoices
+          .filter((inv) => inv.selected)
+          .map((inv) =>
+            axios.put(
+              `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction/subtract/${inv.trxId}`,
+              { amount: inv.payAmount }
+            )
+          )
+      );
+
+
+      // ================= 5. UPDATE LEDGER BALANCE =================
+      let accountId = "";
+      let accountName = "";
+      if (form.paymentMethod === "Card") {
+        if (form.cardType === "Visa") {
+          accountId = "303-0001";
+          accountName = "Visa";
+        } else if (form.cardType === "Mastercard") {
+          accountId = "303-0002";
+          accountName = "Mastercard";
+        } else if (form.cardType === "American Express") {
+          accountId = "303-0003";
+          accountName = "American Express";
+        } else if (form.cardType === "UnionPay") {
+          accountId = "303-0004";
+          accountName = "UnionPay";
+        } else if (form.cardType === "LankaPay") {
+          accountId = "303-0005";
+          accountName = "LankaPay";
+        }
+      } else if (form.paymentMethod === "Cheque") {
+        accountId = "304-0001";
+        accountName = "Inward Cheque Register";
+      } else if (form.paymentMethod === "Cash" || form.paymentMethod === "BankTransfer") {
+        accountId = form.accountId;
+        accountName = form.accountName;
+      }
+      if (!accountId || !accountName) {
+        toast.error("Invalid ledger account selection");
+        setIsSubmitting(false);
+        return;
+      }
+
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
         {
           updates: [
             {
-              accountId: form.accountId,
+              accountId,
               amount: form.receivedAmount,
             },
           ],
         }
       );
 
-      // ================= 4. SAVE LEDGER TRANSACTION =================
+      // ================= 6. SAVE LEDGER TRANSACTION =================
       const ledgerTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceNo,
         trxDate: form.receiptDate,
         transactionType: form.trxType,
-        accountId: form.accountId,
-        accountName: form.accountName,
+        accountId: accountId,
+        accountName: accountName,
         description: form.memberName + " - " + description,
         isCredit: false,
         trxAmount: form.receivedAmount,
@@ -766,15 +818,58 @@ const normaliseBanks = (raw) => {
         ledgerTrxPayload
       );      
 
+
+      try {
+        // ================= 7. SAVE CHEQUE =================
+        if (form.paymentMethod === "Cheque") {
+          const chequePayload = {
+            receiptId: savedTrxId,
+            customerId: form.memberId,
+            receiptDate: form.receiptDate,
+            chequeNumber: form.chequeNumber,
+            chequeDate: form.chequeDate,
+            chequeAmount: form.receivedAmount,
+            chequeStatus: "Pending"
+          }
+          
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/chequeBookInward`,
+            chequePayload
+          )
+        }      
+        
+        // ================= 8. SAVE CARD DETAILS =================
+        if (form.paymentMethod === "Card") {
+          const cardPayload = {
+            trxId: savedTrxId,
+            trxDate: form.receiptDate,
+            customerId: form.memberId,
+            cardType: form.cardType,
+            cardLast4Digits: form.cardLast4,
+            approvalCode: form.cardApprovalCode,
+            amount: form.receivedAmount,
+            status: "Pending"
+          }
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/card-payments`,
+            cardPayload
+          )
+        }        
+      } catch (err) {
+        console.error("Optional payment save failed:", err);
+      }
+
+      setReceiptNumber(savedTrxId);
+
       setIsSaved(true);
       toast.success("Payment recorded successfully");
 
     } catch (err) {
-      setIsSubmitting(false);
       console.error(err);
+      setIsSaved(false);
       toast.error("Error saving payment");
     } finally {
-      setIsSaved(true);
+      setIsSubmitting(false);
     }
   };
 
@@ -804,14 +899,14 @@ const normaliseBanks = (raw) => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Purchase Invoices..."
+              placeholder="Search Sales Invoices..."
               className="border px-3 py-2 pl-9 rounded-lg w-full"
             />
           </div>
 
           {viewMode === "create" && (
             <button
-              // onClick={handleDownloadPDF}
+              onClick={handleDownloadPDF}
               disabled={!isSaved}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white font-medium transition ${
                 isSaved
@@ -826,17 +921,16 @@ const normaliseBanks = (raw) => {
 
           <button
             onClick={async () => {
-
-              if ((viewMode === "create") && (isSaved)) {
-                setIsSaved(false);         
-               await fetchReceipt(); // now valid
-              }
+              // if ((viewMode === "create") && (isSaved)) {
+              //   setIsSaved(false);         
+              //   await fetchReceipts();
+              // }
               resetForm();  
               setViewMode(viewMode === "list" ? "create" : "list");
-            }}
+            }}           
             className={`px-4 py-2 rounded-lg flex items-center gap-2 text-white
               ${viewMode === "list" ? "bg-orange-500" : "bg-gray-700"}`}
-          >
+          >            
             {viewMode === "list" ? (
               <>
                 <FaPlus /> Add
@@ -851,12 +945,12 @@ const normaliseBanks = (raw) => {
 
 
       {/* ================= LIST VIEW ================= */}
-      {viewMode === "list" && (
+      {viewMode === "list" && (     
+        // console.log("filteredInvoices", filteredInvoices),
         <>
           {loading ? (
             <div className="space-y-3">
               <LoadingSpinner />
-
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
@@ -985,7 +1079,7 @@ const normaliseBanks = (raw) => {
           {/* HEADER */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h2 className="text-xl font-bold text-orange-600">
-              Customer Payment Receipt
+              Create Customer Receipt
             </h2>
 
             <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-lg">
@@ -993,7 +1087,7 @@ const normaliseBanks = (raw) => {
                 Receipt No
               </span>
               <p className="font-bold text-green-700">
-                {form.receiptNo}
+                {receiptNumber}
               </p>
             </div>
           </div>
@@ -1099,7 +1193,7 @@ const normaliseBanks = (raw) => {
                       });
 
                       // ✅ reset all invoices selection + payments
-                      setInvoices((prev) =>
+                      setDueInvoices((prev) =>
                         prev.map((inv) => ({
                           ...inv,
                           selected: false,
@@ -1262,28 +1356,60 @@ const normaliseBanks = (raw) => {
 
               {/* CARD DETAILS */}
               {form.paymentMethod === "Card" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Card First 4 Digits
+                    </label>
+
+                    <input
+                      placeholder="e.g. 4532"
+                      maxLength={4}
+                      inputMode="numeric"
+                      value={form.cardBin || ""}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+
+                        let cardType = "";
+
+                        if (/^4/.test(value)) {
+                          cardType = "Visa";
+                        } else if (/^5[1-5]/.test(value)) {
+                          cardType = "Mastercard";
+                        } else if (/^3[47]/.test(value)) {
+                          cardType = "American Express";
+                        } else if (/^62/.test(value)) {
+                          cardType = "UnionPay";
+                        } else if (/^(50|56|57|58|60|61)/.test(value)) {
+                          cardType = "LankaPay";
+                        }
+
+                        setForm((prev) => ({
+                          ...prev,
+                          cardBin: value,
+                          cardType,
+                        }));
+                      }}
+                      className="w-full border rounded-lg px-4 py-2"
+                    />
+
+                    {form.cardType && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Detected Card Type: <b>{form.cardType}</b>
+                      </p>
+                    )}
+                  </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Card Type
-                    </label>                    
-                      <select
-                      value={form.cardType}
-                      onChange={(e) =>
-                          setForm({ ...form, cardType: e.target.value })
-                      }
-                      className={`w-full border rounded-lg px-4 py-2 focus:outline-blue-500
-                          ${formErrors.cardType   ? 'border-red-500' : 'border-gray-400'}`}
+                    </label>
 
-                      >
-                      <option value="">-- Select Card --</option>
-                      <option value="visa">Visa</option>
-                      <option value="mastercard">Mastercard</option>
-                      <option value="lankapay">LankaPay</option>
-                      <option value="americanexpress">American Express</option>
-                      <option value="unionpay">UnionPay</option>
-                      </select>
+                    <input
+                      readOnly
+                      value={form.cardType || ""}
+                      className="w-full border rounded-lg px-4 py-2 bg-gray-100"
+                    />
                   </div>
 
                   <div>
@@ -1436,7 +1562,7 @@ const normaliseBanks = (raw) => {
                             disabled={form.receivedAmount <= 0}
                             type="checkbox"
                             checked={!!invoice.selected}
-                            onChange={() => toggleInvoice(invoice._id)}
+                            onChange={() => toggleInvoice(invoice._id)}                            
                           />
                         </td>
                         <td className="border p-2">{formatDate(invoice.trxDate)}</td>
@@ -1445,20 +1571,26 @@ const normaliseBanks = (raw) => {
                         <td className="border p-2 text-right">
                           {formatNumber(invoice.dueAmount)}
                         </td>
-                        <td className="border p-2">
-                          <input
-                            disabled={form.receivedAmount <= 0}
-                            type="number"
-                            value={invoice.payAmount ?? ""}
-                            onChange={(e) =>
-                              updatePayAmount(invoice._id, Number(e.target.value))
-                            }
-                            className={`w-full border rounded-lg px-4 py-2 ${
-                              form.receivedAmount <= 0
-                                ? "bg-gray-100 cursor-not-allowed" : "bg-white"
-                            }`}
-                          />                         
-                        </td>
+                          <td className="border p-2">
+                            <input
+                              disabled={form.receivedAmount <= 0}
+                              type="number"
+                              step="0.01"
+                              value={
+                                invoice.payAmount !== undefined && invoice.payAmount !== null
+                                  ? Number(invoice.payAmount).toFixed(2)
+                                  : ""
+                              }
+                              onChange={(e) =>
+                                updatePayAmount(invoice._id, Number(e.target.value))
+                              }
+                              className={`w-full border rounded-lg px-4 py-2 ${
+                                form.receivedAmount <= 0
+                                  ? "bg-gray-100 cursor-not-allowed"
+                                  : "bg-white"
+                              }`}
+                            />
+                          </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1503,8 +1635,13 @@ const normaliseBanks = (raw) => {
                 </h3>
 
               </div>
-
             </div>
+
+            <div>
+              <p className="text-xs font-semibold text-gray-500">
+                {numberToWords(form.receivedAmount)}
+              </p>
+            </div>            
 
 
             {/* ACTION BUTTONS */}
@@ -1602,8 +1739,8 @@ const normaliseBanks = (raw) => {
               {/* RIGHT */}
               <div style={colBox}>
                 <p><b>Receipt No:</b> {receiptNumber}</p>
-                <p><b>Date:</b> {formatDate(form.trxDate)}</p>
-                <p><b>Reference:</b> {form.referenceId}</p>
+                <p><b>Date:</b> {formatDate(form.receiptDate)}</p>
+                <p><b>Reference:</b> {form.referenceNo}</p>
               </div>
 
             </div>
@@ -1619,14 +1756,14 @@ const normaliseBanks = (raw) => {
               <p>
                 a sum of Rs.{" "}
                 <b>
-                  {numberToWords(Number(form.amount || 0))}
+                  {numberToWords(Number(form.receivedAmount || 0))}
                 </b>
               </p>
               
               <p style={{ marginTop: "10px" }}>
                 Paid Amount:{" "}
                 <b>
-                  {Number(form.amount || 0).toFixed(2)}
+                  {Number(form.receivedAmount || 0).toFixed(2)}
                 </b>
               </p>
 
@@ -1635,7 +1772,7 @@ const normaliseBanks = (raw) => {
               </p>
 
               <p>
-                Description: <b>{form.description || "N/A"}</b>
+                Description: <b>{description || "N/A"}</b>
               </p>
 
             </div>
@@ -1717,6 +1854,122 @@ const normaliseBanks = (raw) => {
           ))}
         </div>
       </Modal>
+
+
+      {/* VIEW MODAL */}
+      {isViewOpen && selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+
+            {/* Header */}
+            <div className="bg-orange-600 text-white px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  Member Payment Receipt
+                </h2>
+
+                <p className="text-xs opacity-90">
+                  Receipt Details
+                </p>
+              </div>
+
+              <button
+                onClick={closeViewModal}
+                className="text-white hover:text-gray-200 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+
+              {/* Customer */}
+              <div className="border rounded-xl p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Customer Information
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <span className="font-medium text-gray-500">
+                    Customer
+                  </span>
+
+                  <span className="col-span-2">
+                    {selected.memberName} ({selected.memberId})
+                  </span>
+                </div>
+              </div>
+
+              {/* Invoice */}
+              <div className="border rounded-xl p-4">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Receipt Information
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2 text-sm mb-4">
+                  <span className="font-medium text-gray-500">
+                    Receipt No
+                  </span>
+
+                  <span className="col-span-2 font-semibold text-orange-600">
+                    {selected.trxId}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Date
+                  </span>
+
+                  <span className="col-span-2">
+                    {formatDate(selected.trxDate)}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Reference
+                  </span>
+
+                  <span className="col-span-2">
+                    {selected.referenceId}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Description
+                  </span>
+
+                  <span className="col-span-2">
+                    {selected.description}
+                  </span>
+                </div>
+              </div>
+
+              {/* Amount Summary */}
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">
+                    Receipt Amount
+                  </span>
+
+                  <span className="text-2xl font-bold text-orange-600">
+                    Rs. {formatNumber(selected.amount)}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 flex justify-end bg-white">
+              <button
+                onClick={closeViewModal}
+                className="px-5 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
 
     </div>
