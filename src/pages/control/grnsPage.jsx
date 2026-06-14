@@ -109,7 +109,8 @@ export default function PurchaseEntryPage() {
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor`
       );
-      setVendors(res.data.data || res.data);
+      const sortedVendors = res.data.sort((a, b) => a.vendorName.localeCompare(b.vendorName));
+      setVendors(sortedVendors);
     } catch {
       toast.error("Failed to load vendors");
     }

@@ -16,6 +16,7 @@ import {
 import { formatNumber } from "../../utils/numberFormat.js";
 import { formatDate } from "../../utils/dateFormat.js";
 import html2pdf from "html2pdf.js";
+import { Receipt } from "lucide-react";
 
 Modal.setAppElement("#root");
 
@@ -187,7 +188,7 @@ export default function SaleInvoicePage() {
         i.memberName?.toLowerCase().includes(search.toLowerCase()) ||
         i.referenceId?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [invoices, search]);
+  }, [Receipt, search]);
 
 
   const filteredMembers = useMemo(() => {

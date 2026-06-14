@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Plus, Search, Edit, View, X, RefreshCw, Landmark } from "lucide-react";
+import { FaRegFilePdf, FaFileExcel } from "react-icons/fa";
+import { LuPrinter } from "react-icons/lu";
 import LoadingSpinner from "../../components/loadingSpinner";
 import Modal from "react-modal";
+import html2pdf from "html2pdf.js";
+import { formatDate } from "../../utils/dateFormat";
 import { formatNumber } from "../../utils/numberFormat.js";
+import * as XLSX from "xlsx";
 
 export default function LedgerAccountsPage() {
   window.scrollTo(0, 0);
@@ -22,6 +27,9 @@ export default function LedgerAccountsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+
+  const printRef = useRef();
+  const reportRef = useRef();
 
   const [form, setForm] = useState({
     _id: "",
@@ -202,6 +210,91 @@ export default function LedgerAccountsPage() {
   };
 
 
+  const handleDownloadPDF = async () => {
+    try {
+      await html2pdf()
+        .set({
+          margin: 0.3,
+          filename: "Ledger_Accounts_Report.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            backgroundColor: "#ffffff",
+          },
+          jsPDF: {
+            unit: "in",
+            format: "a4",
+            orientation: "landscape",
+          },
+        })
+        .from(reportRef.current)
+        .save();
+    } catch (err) {
+      console.error(err);
+      toast.error("PDF generation failed");
+    }
+  };
+
+  const pdfTh = {
+    border: "1px solid #ccc",
+    padding: "8px",
+    backgroundColor: "#f3f4f6",
+    textAlign: "left",
+  };
+
+  const pdfTd = {
+    border: "1px solid #ccc",
+    padding: "8px",
+  };
+
+
+  const handleDownloadExcel = () => {
+    try {
+      const data = filteredAccounts.map((acc) => ({
+        "Account ID": acc.accountId,
+        "Account Type": acc.accountType,
+        "Header Account": headerMap[acc.headerAccountId] || "N/A",
+        "Account Name": acc.accountName,
+        "Balance": Number(acc.accountBalance || 0),
+      }));
+
+      // ✅ ADD TOTAL ROW
+      const totalBalance = data.reduce(
+        (sum, item) => sum + Number(item.Balance || 0),
+        0
+      );
+
+      data.push({
+        "Account ID": "",
+        "Account Type": "",
+        "Header Account": "TOTAL",
+        "Account Name": "",
+        "Balance": totalBalance,
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+
+      worksheet["!cols"] = [
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 25 },
+        { wch: 15 },
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Ledger Accounts");
+
+      XLSX.writeFile(workbook, "Ledger_Accounts_Report.xlsx");
+
+      toast.success("Excel exported successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Excel export failed");
+    }
+  };
+  
+
   /* ───────── SAVE ───────── */
   const handleSave = async () => {      
     try {
@@ -284,14 +377,39 @@ export default function LedgerAccountsPage() {
               Manage financial accounts
             </p>
           </div>
+          
+          <div className="flex items-center gap-2">
+            {/* PDF BUTTON */}
+            <button
+              onClick={handleDownloadPDF}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+              title="Download as PDF"
+            >
+              <FaRegFilePdf className="w-5 h-5" />
+              PDF
+            </button>
 
-          <button
-            onClick={openCreate}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 rounded-xl flex items-center gap-2"
-          >
-            <Plus size={18} />
-            New Account
-          </button>
+            {/* EXCEL BUTTON */}
+            <button
+              onClick={handleDownloadExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+              title="Download as Excel"
+              disabled={loading}
+            >
+              <FaFileExcel className="w-5 h-5" />
+              Excel
+            </button>
+
+            {/* CREATE BUTTON */}
+            <button
+              onClick={openCreate}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-2"
+            >
+              <Plus size={18} />
+              New
+            </button>
+          </div>
+
         </div>
 
         {/* SEARCH */}
@@ -331,48 +449,65 @@ export default function LedgerAccountsPage() {
         {/* TABLE (DESKTOP + TABLET) */}
         <div className="hidden md:block bg-white border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <thead className="bg-orange-50">
-                <tr>
-                  <th className="px-4 py-3 text-left whitespace-nowrap">Account ID</th>
-                  <th className="px-4 py-3 text-left whitespace-nowrap">Type</th>
-                  <th className="px-4 py-3 text-left whitespace-nowrap">Header Account</th>
-                  <th className="px-4 py-3 text-left whitespace-nowrap">Name</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Balance</th>
-                  <th className="px-4 py-3 text-center whitespace-nowrap">Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredAccounts.map((acc) => (
-                  <tr key={acc._id} className="border-t hover:bg-orange-50">
-                    <td className="px-4 py-3 whitespace-nowrap">{acc.accountId}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{acc.accountType}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {headerMap[acc.headerAccountId] || "N/A"}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">{acc.accountName}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      {formatNumber(acc.accountBalance || 0)}
-                    </td>
-                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => openEdit(acc)}
-                        className="px-3 py-2 border rounded-xl"
-                      >
-                        <Edit size={16} />
-                      </button>
-                       <button
-                        onClick={() => openView(acc)}
-                        className="px-3 py-2 border rounded-xl ml-2"
-                      >
-                        <View size={16} />
-                      </button>
-                    </td>
+            <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
+              <table className="w-full min-w-[700px]">
+                <thead className="bg-orange-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-3 text-left whitespace-nowrap">Account ID</th>
+                    <th className="px-4 py-3 text-left whitespace-nowrap">Account Type</th>
+                    <th className="px-4 py-3 text-left whitespace-nowrap">Header Account</th>
+                    <th className="px-4 py-3 text-left whitespace-nowrap">Name</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Balance</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {filteredAccounts.map((acc) => (
+                    <tr
+                      key={acc._id}
+                      className="border-t hover:bg-orange-50"
+                    >
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {acc.accountId}
+                      </td>
+
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {acc.accountType}
+                      </td>
+
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {headerMap[acc.headerAccountId] || "N/A"}
+                      </td>
+
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {acc.accountName}
+                      </td>
+
+                      <td className="px-4 py-2 text-right whitespace-nowrap">
+                        {formatNumber(acc.accountBalance || 0)}
+                      </td>
+
+                      <td className="px-4 py-2 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => openEdit(acc)}
+                          className="px-4 py-2 border rounded-xl"
+                        >
+                          <Edit size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => openView(acc)}
+                          className="px-4 py-2 border rounded-xl ml-2"
+                        >
+                          <View size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -427,7 +562,7 @@ export default function LedgerAccountsPage() {
 
         {/* MODAL */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-lg rounded-2xl p-6 relative">
 
               <button
@@ -460,10 +595,13 @@ export default function LedgerAccountsPage() {
                 >
                   <option value="">Select Type</option>
                   <option value="Income">Income</option>
-                  <option value="Expense">Expense</option>
-                  <option value="Asset">Asset</option>
-                  <option value="Liability">Liability</option>
-                  <option value="Equity">Equity</option>
+                  <option value="Expenses">Expenses</option>                  
+                  <option value="CurrentAssets">Current Assets</option>
+                  <option value="FixedAssets">Fixed Assets</option>
+                  <option value="CurrentLiabilities">Current Liabilities</option>
+                  <option value="NonCurrentLiabilities">Non-Current Liabilities</option>
+                  <option value="EquityCapital">Equity / Capital</option>
+
                 </select>
 
                 {/* HEADER */}
@@ -669,9 +807,115 @@ export default function LedgerAccountsPage() {
           </div>
         </div>
         )}
-
-
       </div>
+
+      {/* PDF REPORT */}
+      <div style={{ display: "none" }}>
+        <div ref={reportRef}>
+          <div
+            style={{
+              padding: "20px",
+              fontFamily: "Arial",
+              background: "#fff",
+            }}
+          >
+            <h2
+              style={{
+                textAlign: "center",
+                marginBottom: "5px",
+              }}
+            >
+              Ledger Accounts Report
+            </h2>
+
+            <p
+              style={{
+                textAlign: "center",
+                marginBottom: "20px",
+                color: "#666",
+              }}
+            >
+              Generated on {new Date().toLocaleDateString()}
+            </p>
+
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "12px",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={pdfTh}>Account ID</th>
+                  <th style={pdfTh}>Type</th>
+                  <th style={pdfTh}>Header Account</th>
+                  <th style={pdfTh}>Account Name</th>
+                  <th style={pdfTh}>Balance</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredAccounts.map((acc) => (
+                  <tr key={acc._id}>
+                    <td style={pdfTd}>{acc.accountId}</td>
+                    <td style={pdfTd}>{acc.accountType}</td>
+                    <td style={pdfTd}>
+                      {headerMap[acc.headerAccountId] || "N/A"}
+                    </td>
+                    <td style={pdfTd}>{acc.accountName}</td>
+                    <td style={{ ...pdfTd, textAlign: "right" }}>
+                      {formatNumber(acc.accountBalance || 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <td
+                    colSpan="4"
+                    style={{
+                      ...pdfTd,
+                      fontWeight: "bold",
+                      textAlign: "right",
+                    }}
+                  >
+                    Total Balance
+                  </td>
+
+                  <td
+                    style={{
+                      ...pdfTd,
+                      fontWeight: "bold",
+                      textAlign: "right",
+                    }}
+                  >
+                    {formatNumber(
+                      filteredAccounts.reduce(
+                        (sum, a) => sum + Number(a.accountBalance || 0),
+                        0
+                      )
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+            <div
+              style={{
+                marginTop: "20px",
+                textAlign: "center",
+                fontWeight: "bold",
+                color: "#333",
+                fontSize: "12px",
+              }}
+            >
+              Software by nSoft Technology © 2026
+            </div>            
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
