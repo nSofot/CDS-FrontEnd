@@ -235,7 +235,7 @@ export default function ForgetPasswordPage() {
         <p className="mt-6 text-sm text-gray-500 text-center">
           © 2026 Collective Development Society
         </p>
-          <p className="mt-2 text-sm text-gray-600 text-center">
+          <p className="text-sm text-gray-600 text-center">
             Powered by nSoft Technologies.
           </p>         
         <div className="mt-4 text-center">
