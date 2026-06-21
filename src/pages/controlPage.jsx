@@ -41,6 +41,7 @@ import BagOrderManagementPage from "./control/bagOrderManagementPage";
 
 import LedgerAccountsPage from "./control/ledgerAccountsPage";
 
+import ReportsPage from "./reports/reportsPage";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -101,6 +102,8 @@ export default function ControlPage() {
         <Route path="bag-orders-management" element={<BagOrderManagementPage />} />
 
         <Route path="ledger-accounts" element={<LedgerAccountsPage />} />
+
+        <Route path="reports" element={<ReportsPage />} />
         
         <Route path="*" element={<NotFoundPage />} />
       </Route>

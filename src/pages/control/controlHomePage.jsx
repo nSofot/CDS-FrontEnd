@@ -11,7 +11,9 @@ import {
   FaSignOutAlt,
   FaTimes,
   FaFileAlt,
+  FaCog,
 } from "react-icons/fa";
+
 import { FaSackDollar, FaMoneyBillTransfer } from "react-icons/fa6";
 import { TbReport } from "react-icons/tb";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -48,174 +50,142 @@ export default function ControlHomePage() {
       label: "Home",
       to: "/",
       icon: <FaHome />,
-      roles: [
-        "admin",
-      ],
+      roles: ["admin"],
     },
 
     {
       label: "Dashboard",
       to: "/control/",
-      icon: <FaAtom />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaAtom />, // system overview / dashboard
+      roles: ["admin"],
     },
 
     {
       label: "Bag Production",
       to: "/control/mushroom-process",
-      icon: <FaUsersCog />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaSackDollar />, // production / inventory output
+      roles: ["admin"],
     },
 
     {
       label: "Batch Management",
       to: "/control/batch-list",
-      icon: <FaFileAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaFileAlt />, // documents / batches
+      roles: ["admin"],
     },
 
     {
       label: "Order Management",
       to: "/control/bag-orders-management",
-      icon: <FaFileAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaMoneyBillTransfer />, // transactions/orders
+      roles: ["admin"],
     },
 
     {
       label: "Members",
       to: "/control/members",
-      icon: <FaUsers />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaUsers />, // people
+      roles: ["admin"],
     },
 
     {
       label: "Vendors",
       to: "/control/vendors",
-      icon: <FaMoneyBillTransfer />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaUsersCog />, // business partners / admin users
+      roles: ["admin"],
     },
 
     {
       label: "Products",
       to: "/control/stock",
-      icon: <FaSackDollar />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaSackDollar />, // inventory / stock
+      roles: ["admin"],
     },
 
     {
       label: "Cash Book",
       to: "/control/cash-book",
-      icon: <FaMoneyCheckAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaMoneyCheckAlt />, // cash management
+      roles: ["admin"],
     },
 
     {
       label: "Bag Sale Invoices",
       to: "/control/bagSale-invoice",
-      icon: <FaMoneyCheckAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaReceipt />, // invoices
+      roles: ["admin"],
     },
 
     {
-      label: "Sales Invoices",
+      label: "Material Sales Invoices",
       to: "/control/sales-invoice",
-      icon: <FaMoneyCheckAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaReceipt />,
+      roles: ["admin"],
     },
 
     {
       label: "Purchase Invoices",
       to: "/control/grns",
-      icon: <FaReceipt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaFileAlt />, // purchase docs
+      roles: ["admin"],
     },
-        
+
     {
       label: "Other Invoices",
       to: "/control/other-invoice",
       icon: <FaFileAlt />,
-      roles: [
-        "admin",
-      ],
+      roles: ["admin"],
     },
 
     {
       label: "Member Receipts",
       to: "/control/member-receipt",
-      icon: <FaUserClock />,
-      roles: [
-        "admin",
-      ],
-    },    
-        
+      icon: <FaUserClock />, // payments tracking
+      roles: ["admin"],
+    },
+
     {
       label: "Other Receipts",
       to: "/control/other-receipt",
       icon: <FaUserClock />,
-      roles: [
-        "admin",
-      ],
+      roles: ["admin"],
     },
 
     {
       label: "Supplier Payments",
       to: "/control/vendor-payment",
-      icon: <FaMoneyCheckAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaMoneyBillTransfer />, // outgoing payments
+      roles: ["admin"],
     },
 
     {
       label: "Other Payments",
       to: "/control/other-payment",
-      icon: <FaMoneyCheckAlt />,
-      roles: [
-        "admin",
-      ],
+      icon: <FaMoneyBillTransfer />,
+      roles: ["admin"],
     },
-      
-    // {
-    //   label: "Stock Adjustments",
-    //   to: "/control/stock-adjustments",
-    //   icon: <TbReport />,
-    //   roles: [
-    //     "admin",
-    //   ],
-    // },
-    
+
     {
       label: "Ledger Accounts",
       to: "/control/ledger-accounts",
-      icon: <FaUsersCog />,
-      roles: [
-        "admin",
-      ]
-    }
-  ];
+      icon: <FaUsersCog />, // accounting control
+      roles: ["admin"],
+    },
 
+    {
+      label: "Reports",
+      to: "/control/reports",
+      icon: <TbReport />, // reports
+      roles: ["admin"],
+    },
+
+    {
+      label: "Settings",
+      to: "/control/settings",
+      icon: <FaCog />, // settings
+      roles: ["admin"],
+    },
+  ];
 
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item =>
@@ -237,55 +207,89 @@ export default function ControlHomePage() {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed md:static z-40 w-64 h-screen bg-white shadow-lg flex flex-col
-        transition-transform duration-300
-        ${
-          sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`
+          fixed md:static inset-y-0 left-0 z-40
+          w-70 bg-white border-r shadow-sm
+          flex flex-col h-screen
+          transition-transform duration-300
+          ${
+            sidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full md:translate-x-0"
+          }
+        `}
       >
-        {/* SIDEBAR HEADER */}
-        <div className="p-4 flex justify-between items-center font-bold text-orange-600 border-b shrink-0">
-          <span className="text-lg">CDS ERP</span>
+        {/* HEADER */}
+        <div className="border-b shrink-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <div className="flex items-center justify-between p-4">
+            <div>
+              <h1 className="text-xl font-bold tracking-wide">
+                CDS ERP
+              </h1>
+              <p className="text-xs text-orange-100">
+                Version 1.0.0
+              </p>
+            </div>
 
-          <button
-            className="md:hidden text-gray-600 hover:text-red-500"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <FaTimes />
-          </button>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden hover:bg-white/20 p-2 rounded-lg"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {/* USER CARD */}
+          <div className="px-4 pb-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-lg">
+                {user?.firstName?.charAt(0)}
+                {user?.lastName?.charAt(0)}
+              </div>
+
+              <div className="overflow-hidden">
+                <p className="text-xs text-orange-100">
+                  Welcome Back
+                </p>
+
+                <p className="font-medium truncate">
+                  {user?.firstName} {user?.lastName}
+                </p>
+
+                <p className="text-xs text-orange-100 truncate">
+                  {user?.memberRole || "User"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-
-        {/* SCROLLABLE MENU AREA */}
+        {/* MENU */}
         <nav
           className="
             flex-1
             overflow-y-auto
-            px-2
-            py-3
+            px-3
+            py-4
             space-y-1
-
             scrollbar-thin
             scrollbar-thumb-orange-300
-            scrollbar-track-gray-100
+            scrollbar-track-transparent
           "
         >
-          {filteredMenuItems.map((item)=>(
-              <SidebarLink
-                key={item.to}
-                to={item.to}
-                icon={item.icon}
-                label={item.label}
-                onClick={() => setSidebarOpen(false)}
-              />
-            ))}
+          {filteredMenuItems.map((item) => (
+            <SidebarLink
+              key={item.to}
+              to={item.to}
+              icon={item.icon}
+              label={item.label}
+              onClick={() => setSidebarOpen(false)}
+            />
+          ))}
         </nav>
 
-
-        {/* FIXED LOGOUT BUTTON */}
-        <div className="border-t p-3 shrink-0">
+        {/* FOOTER */}
+        <div className="border-t p-3 shrink-0 bg-gray-50">
           <button
             onClick={() => {
               localStorage.clear();
@@ -294,21 +298,22 @@ export default function ControlHomePage() {
             className="
               w-full
               flex
-              items-center
+              items-left
+              justify-left
               gap-3
               px-4
-              py-2
-              rounded-lg
+              py-3
+              rounded-xl
               text-red-600
+              font-medium
               hover:bg-red-50
-              transition
+              transition-all
             "
           >
             <FaSignOutAlt />
             Logout
           </button>
         </div>
-
       </aside>
 
       {/* MAIN CONTENT */}
