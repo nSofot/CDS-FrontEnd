@@ -420,6 +420,7 @@ export default function BagSaleInvoicePage() {
         { headers }
       );
 
+      // 4. Member transaction
       const customerTrxPromise = axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
         {
@@ -437,12 +438,14 @@ export default function BagSaleInvoicePage() {
         { headers }
       );
 
+      // 5. Member due
       const memberDuePromise = axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/member/${selectedCustomer.memberId}/due/add`,
         { amount: Number(totalAmount || 0) },
         { headers }
       );
 
+      // 6. Batch update
       const batchUpdatePromise = axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/batch/reduce-batch-balance-bags`,
         {
@@ -456,6 +459,7 @@ export default function BagSaleInvoicePage() {
         { headers }
       );
 
+      // 7. Order update
       const orderUpdatePromise = axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/bag-order/${selectedOrder._id}`,
         {
@@ -470,7 +474,7 @@ export default function BagSaleInvoicePage() {
       const detailsRes = await updateQuantityPromise;
       const updatedDetails = detailsRes?.data?.issueDetails || [];
 
-      // 4. Stock issue details (depends on updatedDetails)
+      // 8. Stock issue details (depends on updatedDetails)
       const stockIssuePromise = axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
         {
@@ -482,14 +486,166 @@ export default function BagSaleInvoicePage() {
         { headers }
       );
 
-      // 5. Run remaining independent tasks in parallel
+      // ================= 9. UPDATE LEDGER ACCOUNT - DEBIT Trade Debtors ==================
+      const updateLedgerDebitPromise = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: "304-001",
+              amount: totalAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 10. SAVE LEDGER TRANSACTION - DEBIT Trade Debtors ==================
+      const ledgerTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "BagInvoice",
+        accountId: "304-001",
+        accountName: "Trade Debtors",
+        description:`${selectedCustomer.firstName} ${selectedCustomer.lastName}`.trim(),
+        isCredit: false,
+        trxAmount: totalAmount,
+      };
+
+      const ledgerDebitTrxPromise = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerTrxPayload
+      ); 
+
+
+      // ================= 11. UPDATE LEDGER ACCOUNT - CREDIT Sales  ==================
+      const updateLedgerCreditPromise = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "101-001",
+              amount: totalAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 12. SAVE LEDGER TRANSACTION - CREDIT Sales Trx =================
+      const ledgerCreditSaleTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "BagInvoice",
+        accountId: "101-001",
+        accountName: "Substrate Bag Sales",
+        description: `${selectedCustomer.firstName} ${selectedCustomer.lastName}`.trim(),
+        isCredit: true,
+        trxAmount: totalAmount,
+      };
+
+      const ledgerCreditSaleTrxPromise = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditSaleTrxPayload
+      );      
+
+      // ================= 13. UPDATE LEDGER ACCOUNT - CREDIT Inventory ==================
+      const updateLedgerCreditInvPromise = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "305-005",
+              amount: costValue,
+            },
+          ],
+        }
+      );
+
+      // ================= 14. SAVE LEDGER TRANSACTION - CREDIT Inventory =================
+      const ledgerCreditInvTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "BagInvoice",
+        accountId: "305-005",
+        accountName: "Finished Goods - Substrate Bags",
+        description: `${selectedCustomer.firstName} ${selectedCustomer.lastName}`.trim(),
+        isCredit: true,
+        trxAmount: costValue,
+      };
+
+      const ledgerCreditInvTrxPromise = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditInvTrxPayload
+      );
+
+
+      // ================= 15. UPDATE LEDGER ACCOUNT - DEBIT Cost of Sales ==================
+      const updateLedgerCostPromise = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: "203-020",
+              amount: costValue,
+            },
+          ],
+        }
+      );
+
+      // ================= 16. SAVE LEDGER TRANSACTION - DEBIT Cost of Sales ==================
+      const ledgerCostTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "BagInvoice",
+        accountId: "203-020",
+        accountName: "Cost of Sales Substrate Bags",
+        description:`${selectedCustomer.firstName} ${selectedCustomer.lastName}`.trim(),
+        isCredit: false,
+        trxAmount: costValue,
+      };
+
+      const ledgerCostTrxPromise = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCostTrxPayload
+      ); 
+
+
+      // 17. Run remaining independent tasks in parallel
       await Promise.all([
+        // 2. Update Quantity
+        updateQuantityPromise,
+        // 3. Bulk operations
         stockReducePromise,
+        // 4. Member Trx
         customerTrxPromise,
+        // 5. Member due
         memberDuePromise,
+        // 6. Batch update
         batchUpdatePromise,
+        // 7. Order update
         orderUpdatePromise,
+        // 8. Stock issue details (depends on updatedDetails)
         stockIssuePromise,
+        // 9. Update Ledger Account - Debit Trade Debtors
+        updateLedgerDebitPromise,
+        // 10. Save Ledger Transaction - Debit Trade Debtors
+        ledgerDebitTrxPromise,
+        // 11. Update Ledger Account - Credit Sales
+        updateLedgerCreditPromise,
+        // 12. Save Ledger Transaction - Credit Sales
+        ledgerCreditSaleTrxPromise,
+        // 13. Update Ledger Account - Credit Inventory
+        updateLedgerCreditInvPromise,
+        // 14. Save Ledger Transaction - Credit Inventory
+        ledgerCreditInvTrxPayload,
+        // 15. Update Ledger Account - Debit Cost of Goods Sold
+        updateLedgerCostPromise,
+        // 16. Save Ledger Transaction - Debit Cost of Goods Sold
+        ledgerCostTrxPromise
+      
       ]);
 
       setIsSaved(true);

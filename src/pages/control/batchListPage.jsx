@@ -14,6 +14,7 @@ export default function BatchListPage() {
   const navigate = useNavigate();
 
   const [batches, setBatches] = useState([]);
+  const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");

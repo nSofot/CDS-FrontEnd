@@ -21,6 +21,7 @@ export default function MakeSterilizedBagPage() {
     const [materials, setMaterials] = useState([]);
     const [substrateStock, setSubstrateStock] = useState([]);
     const [batchTrx, setBatchTrx] = useState([]);
+    const [otherExpenses, setOtherExpenses] = useState([]);
    
     const [numberOfBags, setNumberOfBags] = useState("");
     const [batchNumber, setBatchNumber] = useState("");
@@ -107,18 +108,53 @@ export default function MakeSterilizedBagPage() {
       }
     };
 
+    const fetchOtherExpenses = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`,
+          {
+            headers: getAuthHeaders(),
+          }
+        );
+
+        const allExpenses = res.data.data || res.data || [];
+
+        const filteredExpenses = allExpenses
+          .filter(
+            (item) =>
+              item.accountId >= "203-011" &&
+              item.accountId <= "203-019"
+          )
+          .map((item) => ({
+            ...item,
+            price: 0,
+            qty: 0,
+            rowTotal: 0,
+          }));
+
+        setOtherExpenses(filteredExpenses);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load other expenses");
+      } finally {
+        setLoading(false);
+      }
+    }    
+
     useEffect(() => {
       fetchStocks();
+      fetchOtherExpenses();
     }, []);
 
-    const [otherExpenses, setOtherExpenses] = useState({
-      "9010": { expenseId: "9010", name: "Water for Sterilization", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9011": { expenseId: "9011", name: "Electricity for Sterilization", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9012": { expenseId: "9012", name: "Machine Depreciation for Sterilization", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9013": { expenseId: "9013", name: "Labor Cost for Sterilization", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9014": { expenseId: "9014", name: "Transport for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9015": { expenseId: "9015", name: "Other for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-    });
+    // const [otherExpenses, setOtherExpenses] = useState({
+    //   "9010": { expenseId: "9010", name: "Water for Sterilization", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9011": { expenseId: "9011", name: "Electricity for Sterilization", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9012": { expenseId: "9012", name: "Machine Depreciation for Sterilization", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9013": { expenseId: "9013", name: "Labor Cost for Sterilization", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9014": { expenseId: "9014", name: "Transport for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9015": { expenseId: "9015", name: "Other for Sterilization", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    // });
 
     const uomMap = {
       "kg": "Kg",
@@ -171,8 +207,8 @@ export default function MakeSterilizedBagPage() {
             ...item,
             qty: item.isSelected ? bagCount : 0,
             rowTotal:
-              item.isSelected && item.editablePrice > 0
-                ? bagCount * Number(item.editablePrice || 0)
+              item.isSelected && item.price > 0
+                ? bagCount * Number(item.price || 0)
                 : 0,
           };
         });
@@ -201,7 +237,7 @@ export default function MakeSterilizedBagPage() {
     };
 
     const handleOtherExpenseChange = (id, value) => {
-      const editablePrice = Number(value || 0);
+      const price = Number(value || 0);
       const bagCount = Number(numberOfBags || 0);
 
       setOtherExpenses((prev) => {
@@ -209,11 +245,11 @@ export default function MakeSterilizedBagPage() {
           ...prev,
           [id]: {
             ...prev[id],
-            editablePrice,
+            price,
             qty: bagCount,
-            rowTotal: bagCount > 0 ? bagCount * editablePrice : 0,
-          },
-        };
+            rowTotal: bagCount > 0 ? bagCount * price : 0,
+          },          
+        };       
       });
     };
 
@@ -281,7 +317,7 @@ export default function MakeSterilizedBagPage() {
           const item = prev[index];
 
           const price = checked
-            ? Number(item.editablePrice || item.price || 0)
+            ? Number(item.price || 0)
             : 0;
 
           return {
@@ -289,7 +325,7 @@ export default function MakeSterilizedBagPage() {
             [index]: {
               ...item,
               isSelected: checked,
-              editablePrice: price,
+              price,
               qty: checked ? bagCount : 0,
               rowTotal: checked ? bagCount * price : 0,
             },
@@ -387,8 +423,14 @@ export default function MakeSterilizedBagPage() {
         return;
       }
 
+      if (selectedOther.length === 0) {
+        toast.error("No other expenses found");
+        setIsSubmitting(false);
+        return;
+      }
+
       try {  
-          // 1. Create batch            
+          // 1. Create batch --------------------------------           
           const batchPayload = {
             batches: selectedBatch.map((item) => ({
               batchNo: item.batchNo,
@@ -401,7 +443,8 @@ export default function MakeSterilizedBagPage() {
             })),
             materials: selectedSubstrate,
             otherExpenses: selectedOther,
-          };        
+          };      
+                  
           const response = await axios.put(
             `${import.meta.env.VITE_BACKEND_URL}/api/batch/bulk-update`,
             batchPayload
@@ -412,7 +455,7 @@ export default function MakeSterilizedBagPage() {
           setBatchNumber(newBatchId);
 
 
-          // 2. Update stock quantities
+          // 2. Update stock quantities --------------------------------
           await axios.post(
               `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
               {
@@ -427,7 +470,7 @@ export default function MakeSterilizedBagPage() {
           );
 
 
-          // 3. Write stock movement logs - Issued
+          // 3. Write stock movement logs - Issued -----------------------
           const stockTrxPayload = {       
             referenceId: newBatchId,
             trxDate: trxDate,
@@ -451,7 +494,7 @@ export default function MakeSterilizedBagPage() {
           );
 
 
-          // 4. Update Add Sterilized Bag stock
+          // 4. Update Add Sterilized Bag stock ------------------------
           await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
             {
@@ -472,7 +515,7 @@ export default function MakeSterilizedBagPage() {
           );
 
 
-          // 5. Write stock movement logs - Received Sterilized bags
+          // 5. Write stock movement logs - Received Sterilized bags -------------------
           const bagSterilizedTrxPayload = {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
@@ -504,7 +547,7 @@ export default function MakeSterilizedBagPage() {
           );
 
           
-          // 6. Update Substract Substrate Bag stock
+          // 6. Update Substract Substrate Bag stock -----------------------
           await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
             {
@@ -521,7 +564,7 @@ export default function MakeSterilizedBagPage() {
           );   
 
 
-          // 7. Write stock movement logs - Issued Substract bags
+          // 7. Write stock movement logs - Issued Substract bags -----------------------
           const bagTrxPayload = {
             trxId: String(newBatchId),
             referenceId: String(newBatchId),
@@ -553,7 +596,7 @@ export default function MakeSterilizedBagPage() {
           );
 
 
-          // 8. Update stock quantity balance in GRN
+          // 8. Update stock quantity balance in GRN -------------------------------
           const payload = {
             items: materials,
           };
@@ -570,7 +613,7 @@ export default function MakeSterilizedBagPage() {
           const updatedDetails = detailsRes?.data?.issueDetails || [];
 
 
-          // 9. Update Stock Issue Details
+          // 9. Update Stock Issue Details -------------------------------------
           const issuedTrxId = issuedTrxResponse.data.data?.issuedTrxId;
           const issuedTrxDate = issuedTrxResponse.data.data?.trxDate;         
 
@@ -588,14 +631,140 @@ export default function MakeSterilizedBagPage() {
             }
           );
 
+          // 10. UPDATE LEDGER ACCOUNT - CREDIT Substrate Materials =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-001",
+                  amount: substrateTotals.cost
+                },
+              ],
+            }
+          );
 
-        setIsSubmitted(true);
-        toast.success("Substrate bag details prepared successfully");
+          // 11. SAVE LEDGER TRANSACTION - CREDIT Substrate Materials =================
+          const ledgerCreditTrxPayload = {
+            trxId: String(newBatchId),
+            referenceId: String(newBatchId),
+            trxDate: trxDate,
+            transactionType: "Sterilized",
+            accountId: "305-001",
+            accountName: "Substrate Materials",
+            description: 'Substrate bag production',
+            isCredit: true,
+            trxAmount: substrateTotals.cost,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerCreditTrxPayload
+          ); 
+
+
+          selectedOther.forEach(async (item) => {
+            // 12. UPDATE LEDGER ACCOUNT - CREDIT Other Expenses =================
+            await axios.put(
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+              {
+                updates: [
+                  {
+                    accountId: item.accountId,
+                    amount: item.rowTotal 
+                  },
+                ],
+              }
+            );
+
+            // 13. SAVE LEDGER TRANSACTION - CREDIT Other Expenses ==================
+            const ledgerOExTrxPayload = {
+              trxId: String(newBatchId),
+              referenceId: String(newBatchId),
+              trxDate: trxDate,
+              transactionType: "Sterilized",
+              accountId: item.accountId,
+              accountName: item.accountName + " - " + "Sterilization",
+              description: "Substrate bag Sterilization",
+              isCredit: true,
+              trxAmount: item.rowTotal,
+            };
+
+            await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+              ledgerOExTrxPayload
+            );             
+          })
+
+          // 14. UPDATE LEDGER ACCOUNT - CREDIT Substrate Bags =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-005",
+                  amount: Number(batchTotals.cost || 0),
+                },
+              ],
+            }
+          );
+
+          // 13. SAVE LEDGER TRANSACTION - CREDIT Substrate Bags ==================
+          const ledgerCreditSBTrxPayload = {
+            trxId: String(newBatchId),
+            referenceId: String(newBatchId),
+            trxDate: trxDate,
+            transactionType: "Sterilized",
+            accountId: "305-005",
+            accountName: "Finished Goods - Substrate Bags",
+            description: "Substrate bag Sterilization",
+            isCredit: true,
+            trxAmount: Number(batchTotals.cost),
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerCreditSBTrxPayload
+          );           
+
+          // 16. UPDATE LEDGER ACCOUNT - DEBIT Substrate Bags =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-006",
+                  amount: totalCostValue,
+                },
+              ],
+            }
+          );
+
+          // 17. SAVE LEDGER TRANSACTION - DEBIT =================
+          const ledgerTrxPayload = {
+            trxId: newBatchId,
+            referenceId: newBatchId,
+            trxDate: trxDate,
+            transactionType: "Sterilized",
+            accountId: "305-006",
+            accountName: "Finished Goods - Sterilized Bag",
+            description: "Substrate bag Sterilization",
+            isCredit: false,
+            trxAmount: totalCostValue,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerTrxPayload
+          ); 
+
+
+          setIsSubmitting(false);
+          setIsSubmitted(true);
+          toast.success("Substrate bag details prepared successfully");
       } catch (error) {
         console.error(error.response?.data || error);
         toast.error(error.response?.data?.message || "Failed to save");
-      } finally {
-        setIsSubmitting(false); // ✅ always reset
       }
     };
     
@@ -865,8 +1034,12 @@ export default function MakeSterilizedBagPage() {
                         <Fragment key="otherExpense-section">
                           <tr className="bg-orange-100 text-orange-500">
                             <th className="p-3 text-left">Use</th>
-                            <th className="p-3 text-left">Other Expense</th>
-                            <th className="p-3 text-right">Base Price</th>
+                            <th className="p-3 text-left">
+                              Other Expense
+                              <br />
+                              <span className="text-xs text-gray-500">(GL/ACC 203-011 to 203-019)</span>
+                            </th>
+                            <th className="p-3 text-right"></th>
                             <th className="p-3 text-left"></th>
                             <th className="p-3 text-left">Unit Price</th>
                             <th className="p-3 text-right"></th>
@@ -877,8 +1050,8 @@ export default function MakeSterilizedBagPage() {
                           {Object.entries(otherExpenses).map(([id, item]) => {
                             const bagCount = Number(numberOfBags || 0);
                             const rowTotal =
-                              item.isSelected && item.editablePrice > 0 && numberOfBags > 0
-                                ? Number(numberOfBags) * Number(item.editablePrice)
+                              item.isSelected && item.price > 0 && numberOfBags > 0
+                                ? Number(numberOfBags) * Number(item.price || 0)
                                 : 0;
 
                             return (
@@ -899,8 +1072,8 @@ export default function MakeSterilizedBagPage() {
                                 </td>
 
                                 {/* NAME */}
-                                <td className="p-3">{item.name}</td>
-                                <td className="p-3 text-right">{item.price.toFixed(2)}</td>
+                                <td className="p-3">{item.accountName}</td>
+                                <td className="p-3 text-right"></td>
                                 <td className="p-3"></td>
 
                                 {/* PRICE */}
@@ -908,7 +1081,7 @@ export default function MakeSterilizedBagPage() {
                                   <input
                                     type="number"
                                     step="0.01"
-                                    value={Number(item.editablePrice || 0)}
+                                    value={Number(item.price || 0)}
                                     disabled={
                                       !item.isSelected ||
                                       Number(numberOfBags) <= 0 ||

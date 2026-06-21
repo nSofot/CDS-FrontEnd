@@ -708,7 +708,7 @@ const normaliseBanks = (raw) => {
         amount: form.receivedAmount,
         dueAmount: 0,
       };
-     
+   
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
         memberTrxPayload
@@ -742,12 +742,12 @@ const normaliseBanks = (raw) => {
       );
 
 
-      // ================= 5. UPDATE LEDGER BALANCE =================
+      // ================= 5. UPDATE LEDGER BALANCE - CREDIT =================
       let accountId = "";
       let accountName = "";
       if (form.paymentMethod === "Cheque") {
-        accountId = "401-0001";
-        accountName = "Outward Cheque Register";
+        accountId = "307-004";
+        accountName = "Outward Cheques (Pending Clearance)";
       } else if (form.paymentMethod === "Cash" || form.paymentMethod === "BankTransfer") {
         accountId = form.accountId;
         accountName = form.accountName;
@@ -770,7 +770,7 @@ const normaliseBanks = (raw) => {
         }
       );
 
-      // ================= 6. SAVE LEDGER TRANSACTION =================
+      // ================= 6. SAVE LEDGER TRANSACTION - CREDIT =================
       const ledgerTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceNo,
@@ -779,7 +779,7 @@ const normaliseBanks = (raw) => {
         accountId: accountId,
         accountName: accountName,
         description: form.vName + " - " + description,
-        isCredit: false,
+        isCredit: true,
         trxAmount: form.receivedAmount,
       };    
 
@@ -789,8 +789,40 @@ const normaliseBanks = (raw) => {
       );      
 
 
+      // ================= 7. UPDATE LEDGER ACCOUNT - DEBIT SUPPLIER PAYABLE =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: "501-001",
+              amount: form.receivedAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 8. SAVE LEDGER TRANSACTION - DEBIT SUPPLIER PAYABLE ==================
+      const ledgerDrTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceNo,
+        trxDate: form.receiptDate,
+        transactionType: form.trxType,
+        accountId: "501-001",
+        accountName: "Supplier Payables",
+        description: form.vendorName,
+        isCredit: false,
+        trxAmount: form.receivedAmount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerDrTrxPayload
+      ); 
+      
+      
       try {
-        // ================= 7. SAVE CHEQUE =================
+        // ================= 9. SAVE CHEQUE =================
         if (form.paymentMethod === "Cheque") {
           const chequePayload = {
             voucherId: savedTrxId,
@@ -1568,119 +1600,138 @@ const normaliseBanks = (raw) => {
 
       {/* ================= PDF LAYOUT ================= */}
       <div style={{ display: "none" }}>
-
-        <div ref={reportRef} style={{ pageBreakInside: "avoid" }}>
+        <div ref={reportRef}>
           <div style={pdfPage}>
-   
-            <h2
-              style={{
-                ...center,
-                fontWeight: "bold",
-                fontSize: "14px",
-              }}
-            >
-              Collective Development Society
-            </h2>
-            <h2
-              style={{
-                ...center,
-                fontWeight: "normal",
-                fontSize: "10px",
-                marginBottom: "10px",
-              }}
-            >
-              Malmaduwa, Kotiyakumbura. Tel: 022-2222222
-            </h2>
-         
-            <h2
-              style={{
-                ...center,
-                fontWeight: "bold",
-                fontSize: "16px",
-                marginBottom: "25px",
-              }}
-            >
-              SUPPLIER PAYMENT VOUCHER
-            </h2>
 
-            {/* DETAILS BOX */}
-            <div style={twoCol}>
-              
-              {/* LEFT */}
-              <div style={colBox}>
-                <p><b>Supplier ID:</b> {form.vendorId || "N/A"}</p>
-                <p><b>Name:</b> {form.vendorName || "N/A"}</p>
+            {/* HEADER */}
+            <div style={{ textAlign: "center", marginBottom: "15px" }}>
+              <h2 style={{ fontSize: "15px", fontWeight: "bold", margin: 0 }}>
+                Collective Development Society
+              </h2>
+
+              <p style={{ fontSize: "11px", margin: "2px 0", color: "#444" }}>
+                Malmaduwa, Kotiyakumbura | Tel: 022-2222222
+              </p>
+
+              <h3 style={{ fontSize: "16px", marginTop: "10px", fontWeight: "bold" }}>
+                SUPPLIER PAYMENT VOUCHER
+              </h3>
+            </div>
+
+            {/* VOUCHER BOX */}
+            <div
+              style={{
+                border: "1px solid #ddd",
+                padding: "12px",
+                borderRadius: "6px",
+              }}
+            >
+
+              {/* TOP DETAILS */}
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "20px" }}>
+
+                {/* LEFT */}
+                <div style={{ width: "50%", fontSize: "12px", lineHeight: "1.8" }}>
+                  <p><b>Supplier ID:</b> {form.vendorId || "N/A"}</p>
+                  <p><b>Supplier Name:</b> {form.vendorName || "N/A"}</p>
+
+                  <p>
+                    <b>Address:</b>{" "}
+                    {form?.vendorAddress
+                      ? Object.values(form.vendorAddress).filter(Boolean).join(", ")
+                      : "N/A"}
+                  </p>
+                </div>
+
+                {/* RIGHT */}
+                <div style={{ width: "50%", fontSize: "12px", lineHeight: "1.8", textAlign: "right" }}>
+                  <p><b>Voucher No:</b> {receiptNumber}</p>
+                  <p><b>Date:</b> {formatDate(form.receiptDate)}</p>
+                  <p><b>Reference:</b> {form.referenceNo || "N/A"}</p>
+                </div>
+
+              </div>
+
+              <hr style={{ margin: "12px 0", border: "0.5px solid #ddd" }} />
+
+              {/* PAYMENT DETAILS */}
+              <div style={{ fontSize: "12.5px", lineHeight: "1.9" }}>
+
                 <p>
-                  <b>Address:</b>{" "}
-                  {form?.vendorAddress
-                    ? Object.values(form.vendorAddress)
-                        .filter(Boolean)
-                        .join(", ")
-                    : "N/A"}
+                  This is to certify that payment has been made to{" "}
+                  <b>{form.vendorName || "N/A"}</b>
                 </p>
+
+                <p>
+                  Amount in Words:{" "}
+                  <b>
+                    {numberToWords(Number(form.receivedAmount || 0))}
+                  </b>
+                </p>
+
+                <p>
+                  Amount Paid:{" "}
+                  <b>Rs. {Number(form.receivedAmount || 0).toFixed(2)}</b>
+                </p>
+
+                <p>
+                  Payment Mode: <b>{form.paymentMethod || "Cash"}</b>
+                </p>
+
+                <p>
+                  Description: <b>{description || "N/A"}</b>
+                </p>
+
               </div>
 
-              {/* RIGHT */}
-              <div style={colBox}>
-                <p><b>Receipt No:</b> {receiptNumber}</p>
-                <p><b>Date:</b> {formatDate(form.receiptDate)}</p>
-                <p><b>Reference:</b> {form.referenceNo}</p>
+              {/* SIGNATURE SECTION */}
+              <div
+                style={{
+                  marginTop: "35px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "12px",
+                }}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <p>____________________</p>
+                  <p>Prepared By</p>
+                </div>
+
+                <div style={{ textAlign: "center" }}>
+                  <p>____________________</p>
+                  <p>Approved By</p>
+                </div>
+
+                <div style={{ textAlign: "center" }}>
+                  <p>____________________</p>
+                  <p>Supplier Signature</p>
+                </div>
               </div>
 
             </div>
 
-
-            {/* RECEIPT TEXT BLOCK */}
-            <div style={{ fontSize: "13px", lineHeight: "1.8", marginTop: "25px" }}>
-
-              <p>
-                Received with thanks from <b>{form.memberName || "N/A"}</b>
-              </p>
-
-              <p>
-                a sum of Rs.{" "}
-                <b>
-                  {numberToWords(Number(form.receivedAmount || 0))}
-                </b>
-              </p>
-              
-              <p style={{ marginTop: "10px" }}>
-                Paid Amount:{" "}
-                <b>
-                  {Number(form.receivedAmount || 0).toFixed(2)}
-                </b>
-              </p>
-
-              <p>
-                Pay Mode: <b>{form.paymentMethod || "Cash"}</b>
-              </p>
-
-              <p>
-                Description: <b>{description || "N/A"}</b>
-              </p>
-
-            </div>
-
-            <hr style={{ marginTop: "30px", marginBottom: "10px", borderColor: "#ddd" }} />
             {/* FOOTER */}
             <div
               style={{
-                marginTop: "5px",
+                marginTop: "15px",
                 textAlign: "center",
                 fontSize: "11px",
                 color: "#555",
               }}
             >
-              <div>This is a computer-generated receipt and No signature is required.</div>
+              <p style={{ margin: 0 }}>
+                This is a computer-generated voucher. No signature required for system validation.
+              </p>
 
-              <div style={{ fontWeight: "bold", color: "#333" }}>
+              <p style={{ fontWeight: "bold", marginTop: "5px" }}>
                 Software by nSoft Technology © 2026
-              </div>              
+              </p>
             </div>
 
           </div>
         </div>
-      </div>
+      </div>      
 
 
       {/* CUSTOMER MODAL */}
