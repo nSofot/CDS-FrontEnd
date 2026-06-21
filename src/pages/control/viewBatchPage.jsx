@@ -94,9 +94,9 @@ export default function ViewBatchPage() {
   };
 
   const formatNumber = (value) =>
-  `Rs. ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  `${Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   })}`;
 
   const formatDate = (date) => {
@@ -352,16 +352,16 @@ export default function ViewBatchPage() {
                     <th className="px-4 py-3 text-left">
                       Material
                     </th>
-                    <th className="px-4 py-3 text-left">
+                    <th className="px-4 py-3 text-right">
                       Qty
                     </th>
                     <th className="px-4 py-3 text-left">
                       UOM
                     </th>
-                    <th className="px-4 py-3 text-left">
+                    <th className="px-4 py-3 text-right">
                       Cost
                     </th>
-                    <th className="px-4 py-3 text-left">
+                    <th className="px-4 py-3 text-right">
                       Value
                     </th>
                   </tr>
@@ -385,22 +385,22 @@ export default function ViewBatchPage() {
                             {item.stockName}
                           </td>
 
-                          <td className="px-4 py-3">
-                            {item.totalQty}
+                          <td className="px-4 py-3 text-right">
+                            {formatNumber(item.totalQty)}
                           </td>
 
                           <td className="px-4 py-3">
                             {item.stockUOM || "-"}
                           </td>
 
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-right">
                             Rs.{" "}
                             {formatCurrency(
                               item.rowCostValue
                             )}
                           </td>
 
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-right">
                             Rs.{" "}
                             {formatCurrency(
                               item.rowTotalValue
@@ -445,7 +445,7 @@ export default function ViewBatchPage() {
                                 <InfoBlock
                                   title="Issued Qty"
                                   value={
-                                    grn.issuedQuantity
+                                    formatNumber(grn.issuedQuantity)
                                   }
                                 />
                               </div>
@@ -504,7 +504,7 @@ export default function ViewBatchPage() {
                     (item, index) => (
                       <tr
                         key={`expense-${
-                          item.expenseId || index
+                          item.accountId || index
                         }`}
                         style={{
                           borderTop:
@@ -512,7 +512,7 @@ export default function ViewBatchPage() {
                         }}
                       >
                         <td className="px-4 py-3 font-medium">
-                          {item.name}
+                          {item.accountName}
                         </td>
 
                         <td className="px-4 py-3">

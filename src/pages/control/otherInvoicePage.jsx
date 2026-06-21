@@ -102,10 +102,12 @@ export default function OtherInvoicePage() {
     }
 
     try {
-      setLoading(true);
+      setLIsSubmitting(true);
 
       const total = Number(form.amount || 0);
 
+      
+      // ================= 1. SAVE VENDOR TRANSACTION =================      
       const vendorTrxPayload = {
         referenceId: form.referenceId || "N/A",
         trxDate: new Date(form.trxDate),
@@ -117,12 +119,13 @@ export default function OtherInvoicePage() {
         amount: Number(total),
         dueAmount: Number(total),
       };
- console.log("Vendor Transaction Payload:", vendorTrxPayload); 
+ 
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
         vendorTrxPayload
       );      
 
+      // ================= 2. UPDATE VENDOR BALANCE =================      
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/add-due`,
         {
@@ -130,6 +133,72 @@ export default function OtherInvoicePage() {
         }
       );
 
+      // ================= 5. UPDATE LEDGER ACCOUNT - DEBIT =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: form.accountId,
+              amount: Number(total),
+            },
+          ],
+        }
+      );
+
+      // ================= 6. SAVE LEDGER TRANSACTION - DEBIT =================
+      const ledgerTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: form.accountId,
+        accountName: form.accountName,
+        description: form.vendorName,
+        isCredit: false,
+        trxAmount: total,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerTrxPayload
+      ); 
+
+
+      // ================= 7. UPDATE LEDGER ACCOUNT - CREDIT =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "501-001",
+              amount: Number(total),
+            },
+          ],
+        }
+      );
+
+      // ================= 8. SAVE LEDGER TRANSACTION - CREDIT =================
+      const ledgerCreditTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: "501-001",
+        accountName: "Supplier Payables",
+        description: form.vendorName,
+        isCredit: true,
+        trxAmount: total,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditTrxPayload
+      );       
+
+
+      setIsSaved(true);
+      setIsSubmitting(false);
       toast.success("Invoice saved successfully");
 
       // Reset
@@ -143,10 +212,9 @@ export default function OtherInvoicePage() {
         amount: 0,
       });
     } catch (err) {
+      setIsSubmitting(false);
       console.error(err);
       toast.error("Error saving invoice");
-    } finally {
-      setLoading(false);
     }
   };
 

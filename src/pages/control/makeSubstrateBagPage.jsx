@@ -18,6 +18,7 @@ export default function MakeSubstrateBagPage() {
 
     const [substrateMaterials, setSubstrateMaterials] = useState([]);
     const [packingMaterials, setPackingMaterials] = useState([]);
+    const [otherExpenses, setOtherExpenses] = useState([]);
     const [materials, setMaterials] = useState([]);
     const [substrateStock, setSubstrateStock] = useState([]);
    
@@ -90,18 +91,54 @@ export default function MakeSubstrateBagPage() {
         setLoading(false);
       }
     };
+
+    const fetchOtherExpenses = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`,
+          {
+            headers: getAuthHeaders(),
+          }
+        );
+
+        const allExpenses = res.data.data || res.data || [];
+
+        const filteredExpenses = allExpenses
+          .filter(
+            (item) =>
+              item.accountId >= "203-011" &&
+              item.accountId <= "203-019"
+          )
+          .map((item) => ({
+            ...item,
+            price: 0,
+            qty: 0,
+            rowTotal: 0,
+          }));
+
+        setOtherExpenses(filteredExpenses);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load other expenses");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
     useEffect(() => {
       fetchStocks();
+      fetchOtherExpenses();
     }, []);
 
-    const [otherExpenses, setOtherExpenses] = useState({
-      "9000": { expenseId: "9000", name: "Water", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9001": { expenseId: "9001", name: "Electricity", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9002": { expenseId: "9002", name: "Machine Depreciation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9003": { expenseId: "9003", name: "Labor Cost", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9004": { expenseId: "9004", name: "Transport", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9005": { expenseId: "9005", name: "Other", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-    });
+    // const [otherExpenses, setOtherExpenses] = useState({
+    //   "9000": { expenseId: "9000", name: "Water", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9001": { expenseId: "9001", name: "Electricity", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9002": { expenseId: "9002", name: "Machine Depreciation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9003": { expenseId: "9003", name: "Labor Cost", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9004": { expenseId: "9004", name: "Transport", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9005": { expenseId: "9005", name: "Other", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    // });
 
     const uomMap = {
       "kg": "Kg",
@@ -179,8 +216,8 @@ export default function MakeSubstrateBagPage() {
             ...item,
             qty: item.isSelected ? bagCount : 0,
             rowTotal:
-              item.isSelected && item.editablePrice > 0
-                ? bagCount * Number(item.editablePrice || 0)
+              item.isSelected && item.price > 0
+                ? bagCount * Number(item.price || 0)
                 : 0,
           };
         });
@@ -212,7 +249,7 @@ export default function MakeSubstrateBagPage() {
     };
 
     const handleOtherExpenseChange = (id, value) => {
-      const editablePrice = Number(value || 0);
+      const price = Number(value || 0);
       const bagCount = Number(numberOfBags || 0);
 
       setOtherExpenses((prev) => {
@@ -220,9 +257,9 @@ export default function MakeSubstrateBagPage() {
           ...prev,
           [id]: {
             ...prev[id],
-            editablePrice,
+            price,
             qty: bagCount,
-            rowTotal: bagCount > 0 ? bagCount * editablePrice : 0,
+            rowTotal: bagCount > 0 ? bagCount * price : 0,
           },
         };
       });
@@ -271,8 +308,8 @@ export default function MakeSubstrateBagPage() {
           const item = prev[index];
           const bagCount = Number(numberOfBags || 0);
 
-          const editablePrice = checked
-            ? Number(item.editablePrice || item.price || 0)
+          const price = checked
+            ? Number(item.price || 0)
             : 0;
 
           return {
@@ -280,10 +317,10 @@ export default function MakeSubstrateBagPage() {
             [index]: {
               ...item,
               isSelected: checked,
-              editablePrice,
+              price,
               qty: checked ? bagCount : 0,
               rowTotal: checked
-                ? bagCount * editablePrice
+                ? bagCount * price
                 : 0,
             },
           };
@@ -371,7 +408,6 @@ export default function MakeSubstrateBagPage() {
 
 
     const handleSubmit = async () => {
-      setIsSubmitting(true);
 
       if (!numberOfBags || Number(numberOfBags) <= 0) {
         toast.error("Please enter number of bags");
@@ -389,7 +425,14 @@ export default function MakeSubstrateBagPage() {
         return;
       }
 
+      if (selectedOther.length === 0) {
+        toast.error("No other expenses found");
+        return;
+      }
+
       try {  
+        setIsSubmitting(true);
+
           // 1. Create batch            
           const batchPayload = {
             batchDate: trxDate,
@@ -524,16 +567,17 @@ export default function MakeSubstrateBagPage() {
           const updatedDetails = detailsRes?.data?.issueDetails || [];
 
 
-          // 7. Update Stock Issue Details
+          // 7. Update Stock Issue Details -------------------------------
           const issuedTrxId = issuedTrxResponse.data.data?.issuedTrxId;
           const issuedTrxDate = issuedTrxResponse.data.data?.trxDate;         
 
           const updatePayload = {
             issueTrxId: issuedTrxId,
             issueReferenceId: newBatchId,
-            issueDate: new Date(),
+            issueDate: new Date(trxDate),
             items: updatedDetails,
-          };         
+          };    
+             
           const updateRes = await axios.post(
             `${import.meta.env.VITE_BACKEND_URL}/api/stock-issue-details`,
             updatePayload,
@@ -544,7 +588,106 @@ export default function MakeSubstrateBagPage() {
             }
           );
 
+          // 8. UPDATE LEDGER ACCOUNT - CREDIT Substrate Materials =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-001",
+                  amount: substrateTotals.cost + packingTotals.cost 
+                },
+              ],
+            }
+          );
+
+          // 9. SAVE LEDGER TRANSACTION - CREDIT Substrate Materials =================
+          const ledgerCreditTrxPayload = {
+            trxId: newBatchId,
+            referenceId: newBatchId,
+            trxDate: trxDate,
+            transactionType: "Substrate",
+            accountId: "305-001",
+            accountName: "Substrate Materials",
+            description: 'Substrate bag production',
+            isCredit: true,
+            trxAmount: substrateTotals.cost + packingTotals.cost,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerCreditTrxPayload
+          ); 
+
+
+          selectedOther.forEach(async (item) => {
+            // 10. UPDATE LEDGER ACCOUNT - CREDIT Other Expenses =================
+            await axios.put(
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+              {
+                updates: [
+                  {
+                    accountId: item.accountId,
+                    amount: item.rowTotal 
+                  },
+                ],
+              }
+            );
+
+            // 11. SAVE LEDGER TRANSACTION - CREDIT Other Expenses ==================
+            const ledgerCreditTrxPayload = {
+              trxId: newBatchId,
+              referenceId: newBatchId,
+              trxDate: trxDate,
+              transactionType: "Substrate",
+              accountId: item.accountId,
+              accountName: item.accountName,
+              description: "Substrate bag production",
+              isCredit: true,
+              trxAmount: item.rowTotal,
+            };
+
+            await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+              ledgerCreditTrxPayload
+            );             
+          })
+
+          // 12. UPDATE LEDGER ACCOUNT - DEBIT Substrate Bags =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-005",
+                  amount: totalCostValue,
+                },
+              ],
+            }
+          );
+
+          // ================= 9. SAVE LEDGER TRANSACTION - DEBIT =================
+          const ledgerTrxPayload = {
+            trxId: newBatchId,
+            referenceId: newBatchId,
+            trxDate: trxDate,
+            transactionType: "Substrate",
+            accountId: "305-005",
+            accountName: "Finished Goods - Substrate Bags",
+            description: "Substrate bag production",
+            isCredit: false,
+            trxAmount: totalCostValue,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerTrxPayload
+          ); 
+
+      
+      
           setIsSubmitted(true);
+          setIsSubmitting(false);
           toast.success(
               "Substrate bag details prepared successfully"
           );
@@ -555,7 +698,6 @@ export default function MakeSubstrateBagPage() {
         toast.error(
           error.response?.data?.message || "Failed to save"
         );
-
         setIsSubmitting(false);
       }
     };
@@ -825,8 +967,14 @@ export default function MakeSubstrateBagPage() {
                         <Fragment key="otherExpense-section">
                           <tr className="bg-orange-100 text-orange-500">
                             <th className="p-3 text-left">Use</th>
-                            <th className="p-3 text-left">Other Expense</th>
-                            <th className="p-3 text-right">Base Price</th>
+
+                            <th className="p-3 text-left">
+                              Other Expense
+                              <br />
+                              <span className="text-xs text-gray-500">(GL/ACC 203-011 to 203-019)</span>
+                            </th>
+
+                            <th className="p-3 text-right"></th>
                             <th className="p-3 text-left"></th>
                             <th className="p-3 text-left">Unit Price</th>
                             <th className="p-3 text-right"></th>
@@ -837,8 +985,8 @@ export default function MakeSubstrateBagPage() {
                           {Object.entries(otherExpenses).map(([id, item]) => {
                             const bagCount = Number(numberOfBags || 0);
                             const rowTotal =
-                              item.isSelected && item.editablePrice > 0 && numberOfBags > 0
-                                ? Number(numberOfBags) * Number(item.editablePrice)
+                              item.isSelected && item.price > 0 && numberOfBags > 0
+                                ? Number(numberOfBags) * Number(item.price)
                                 : 0;
 
                             return (
@@ -859,8 +1007,8 @@ export default function MakeSubstrateBagPage() {
                                 </td>
 
                                 {/* NAME */}
-                                <td className="p-3">{item.name}</td>
-                                <td className="p-3 text-right">{item.price.toFixed(2)}</td>
+                                <td className="p-3">{item.accountName}</td>
+                                <td className="p-3 text-right"></td>
                                 <td className="p-3"></td>
 
                                 {/* PRICE */}
@@ -868,7 +1016,7 @@ export default function MakeSubstrateBagPage() {
                                   <input
                                     type="number"
                                     step="0.01"
-                                    value={Number(item.editablePrice || 0)}
+                                    value={Number(item.price || 0)}
                                     disabled={
                                       !item.isSelected ||
                                       Number(numberOfBags) <= 0 ||

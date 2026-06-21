@@ -755,29 +755,29 @@ const normaliseBanks = (raw) => {
       );
 
 
-      // ================= 5. UPDATE LEDGER BALANCE =================
+      // ================= 5. UPDATE LEDGER BALANCE - DEBIT =================
       let accountId = "";
       let accountName = "";
       if (form.paymentMethod === "Card") {
         if (form.cardType === "Visa") {
-          accountId = "303-0001";
+          accountId = "303-001";
           accountName = "Visa";
         } else if (form.cardType === "Mastercard") {
-          accountId = "303-0002";
+          accountId = "303-002";
           accountName = "Mastercard";
         } else if (form.cardType === "American Express") {
-          accountId = "303-0003";
+          accountId = "303-003";
           accountName = "American Express";
         } else if (form.cardType === "UnionPay") {
-          accountId = "303-0004";
+          accountId = "303-004";
           accountName = "UnionPay";
         } else if (form.cardType === "LankaPay") {
-          accountId = "303-0005";
+          accountId = "303-005";
           accountName = "LankaPay";
         }
       } else if (form.paymentMethod === "Cheque") {
-        accountId = "304-0001";
-        accountName = "Inward Cheque Register";
+        accountId = "307-003";
+        accountName = "Inward Cheques (Pending Deposit)";
       } else if (form.paymentMethod === "Cash" || form.paymentMethod === "BankTransfer") {
         accountId = form.accountId;
         accountName = form.accountName;
@@ -800,7 +800,7 @@ const normaliseBanks = (raw) => {
         }
       );
 
-      // ================= 6. SAVE LEDGER TRANSACTION =================
+      // ================= 6. SAVE LEDGER TRANSACTION - DEBIT =================
       const ledgerTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceNo,
@@ -819,8 +819,40 @@ const normaliseBanks = (raw) => {
       );      
 
 
+      // ================= 7. UPDATE LEDGER ACCOUNT - CREDIT Trade Debtors ==================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "304-001",
+              amount: form.receivedAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 8. SAVE LEDGER TRANSACTION - CREDIT Trade Debtors =================
+      const ledgerCreditTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceNo,
+        trxDate: form.receiptDate,
+        transactionType: form.trxType,
+        accountId: "304-001",
+        accountName: "Trade Debtors",
+        description: description,
+        isCredit: true,
+        trxAmount: form.receivedAmount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditTrxPayload
+      ); 
+
+
       try {
-        // ================= 7. SAVE CHEQUE =================
+        // ================= 9. SAVE CHEQUE =================
         if (form.paymentMethod === "Cheque") {
           const chequePayload = {
             receiptId: savedTrxId,

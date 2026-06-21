@@ -20,6 +20,7 @@ export default function MakeIncubatingBagPage() {
     const [sterilizingMmaterial, setSterilizingMmaterial] = useState([]);
     const [materials, setMaterials] = useState([]);
     const [substrateStock, setSubstrateStock] = useState([]);
+    const [otherExpenses, setOtherExpenses] = useState([]);
    
     const [numberOfBags, setNumberOfBags] = useState("");
     const [batchNumber, setBatchNumber] = useState("");
@@ -92,18 +93,53 @@ export default function MakeIncubatingBagPage() {
       }
     };
 
+    const fetchOtherExpenses = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account`,
+          {
+            headers: getAuthHeaders(),
+          }
+        );
+
+        const allExpenses = res.data.data || res.data || [];
+
+        const filteredExpenses = allExpenses
+          .filter(
+            (item) =>
+              item.accountId >= "203-011" &&
+              item.accountId <= "203-019"
+          )
+          .map((item) => ({
+            ...item,
+            price: 0,
+            qty: 0,
+            rowTotal: 0,
+          }));
+
+        setOtherExpenses(filteredExpenses);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to load other expenses");
+      } finally {
+        setLoading(false);
+      }
+    }     
+
     useEffect(() => {
       fetchStocks();
+      fetchOtherExpenses();
     }, []);
 
-    const [otherExpenses, setOtherExpenses] = useState({
-      "9030": { expenseId: "9030", name: "Water for Incubation", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9031": { expenseId: "9031", name: "Electricity for Incubation", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9032": { expenseId: "9032", name: "Machine Depreciation for Incubation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9033": { expenseId: "9033", name: "Labor Cost for Incubation", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9034": { expenseId: "9034", name: "Transport for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-      "9035": { expenseId: "9035", name: "Other for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
-    });
+    // const [otherExpenses, setOtherExpenses] = useState({
+    //   "9030": { expenseId: "9030", name: "Water for Incubation", price: 2.5, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9031": { expenseId: "9031", name: "Electricity for Incubation", price: 3.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9032": { expenseId: "9032", name: "Machine Depreciation for Incubation", price: 5.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9033": { expenseId: "9033", name: "Labor Cost for Incubation", price: 6.0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9034": { expenseId: "9034", name: "Transport for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    //   "9035": { expenseId: "9035", name: "Other for Incubation", price: 0, editablePrice: 0, qty: 0, rowTotal: 0 },
+    // });
 
     const uomMap = {
       "kg": "Kg",
@@ -157,8 +193,8 @@ export default function MakeIncubatingBagPage() {
             ...item,
             qty: item.isSelected ? bagCount : 0,
             rowTotal:
-              item.isSelected && item.editablePrice > 0
-                ? bagCount * Number(item.editablePrice || 0)
+              item.isSelected && item.price > 0
+                ? bagCount * Number(item.price || 0)
                 : 0,
           };
         });
@@ -187,7 +223,7 @@ export default function MakeIncubatingBagPage() {
     };
 
     const handleOtherExpenseChange = (id, value) => {
-      const editablePrice = Number(value || 0);
+      const price = Number(value || 0);
       const bagCount = Number(numberOfBags || 0);
 
       setOtherExpenses((prev) => {
@@ -195,9 +231,9 @@ export default function MakeIncubatingBagPage() {
           ...prev,
           [id]: {
             ...prev[id],
-            editablePrice,
+            price,
             qty: bagCount,
-            rowTotal: bagCount > 0 ? bagCount * editablePrice : 0,
+            rowTotal: bagCount > 0 ? bagCount * price : 0,
           },
         };
       });
@@ -267,7 +303,7 @@ export default function MakeIncubatingBagPage() {
           const item = prev[index];
 
           const price = checked
-            ? Number(item.editablePrice || item.price || 0)
+            ? Number(item.price || 0)
             : 0;
 
           return {
@@ -275,7 +311,7 @@ export default function MakeIncubatingBagPage() {
             [index]: {
               ...item,
               isSelected: checked,
-              editablePrice: price,
+              price,
               qty: checked ? bagCount : 0,
               rowTotal: checked ? bagCount * price : 0,
             },
@@ -367,11 +403,17 @@ export default function MakeIncubatingBagPage() {
       const selectedOther = Object.values(otherExpenses).filter((item) => item.isSelected);
       const materials = [...selectedSubstrate];
 
-    //   if (materials.length === 0) {
-    //     toast.error("No materials found");
-    //     setIsSubmitting(false);
-    //     return;
-    //   }
+      // if (materials.length === 0) {
+      //   toast.error("No materials found");
+      //   setIsSubmitting(false);
+      //   return;
+      // }
+
+      if (selectedOther.length === 0) {
+        toast.error("No other expenses found");
+        setIsSubmitting(false);
+        return;
+      }
 
       try {  
           // 1. Create batch            
@@ -388,6 +430,7 @@ export default function MakeIncubatingBagPage() {
             materials: selectedSubstrate,
             otherExpenses: selectedOther,
           };
+         
           const response = await axios.put(
             `${import.meta.env.VITE_BACKEND_URL}/api/batch/bulk-update`,
             batchPayload
@@ -579,6 +622,134 @@ export default function MakeIncubatingBagPage() {
             }
           );
         };
+
+          // 10. UPDATE LEDGER ACCOUNT - CREDIT Substrate Materials =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-001",
+                  amount: substrateTotals.cost
+                },
+              ],
+            }
+          );
+
+          // 11. SAVE LEDGER TRANSACTION - CREDIT Substrate Materials =================
+          const ledgerCreditTrxPayload = {
+            trxId: String(newBatchId),
+            referenceId: String(newBatchId),
+            trxDate: trxDate,
+            transactionType: "Incubating",
+            accountId: "305-001",
+            accountName: "Substrate Materials",
+            description: 'Incubating Substrate Bag',
+            isCredit: true,
+            trxAmount: substrateTotals.cost,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerCreditTrxPayload
+          ); 
+
+
+          selectedOther.forEach(async (item) => {
+            // 12. UPDATE LEDGER ACCOUNT - CREDIT Other Expenses =================
+            await axios.put(
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+              {
+                updates: [
+                  {
+                    accountId: item.accountId,
+                    amount: item.rowTotal 
+                  },
+                ],
+              }
+            );
+
+            // 13. SAVE LEDGER TRANSACTION - CREDIT Other Expenses ==================
+            const ledgerOExTrxPayload = {
+              trxId: String(newBatchId),
+              referenceId: String(newBatchId),
+              trxDate: trxDate,
+              transactionType: "Incubating",
+              accountId: item.accountId,
+              accountName: item.accountName,
+              description: "Incubating Substrate Bag",
+              isCredit: true,
+              trxAmount: item.rowTotal,
+            };
+
+            await axios.post(
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+              ledgerOExTrxPayload
+            );             
+          })
+
+          // 14. UPDATE LEDGER ACCOUNT - CREDIT Substrate Bags =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-007",
+                  amount: Number(batchTotals.cost || 0),
+                },
+              ],
+            }
+          );
+
+          // 13. SAVE LEDGER TRANSACTION - CREDIT Substrate Bags ==================
+          const ledgerCreditSBTrxPayload = {
+            trxId: String(newBatchId),
+            referenceId: String(newBatchId),
+            trxDate: trxDate,
+            transactionType: "Incubating",
+            accountId: "305-007",
+            accountName: "Finished Goods - Inoculated Bags",
+            description: "Incubating Substrate Bag",
+            isCredit: true,
+            trxAmount: Number(batchTotals.cost),
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerCreditSBTrxPayload
+          );           
+
+          // 16. UPDATE LEDGER ACCOUNT - DEBIT Substrate Bags =================
+          await axios.put(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+            {
+              updates: [
+                {
+                  accountId: "305-008",
+                  amount: totalCostValue,
+                },
+              ],
+            }
+          );
+
+          // 17. SAVE LEDGER TRANSACTION - DEBIT =================
+          const ledgerTrxPayload = {
+            trxId: newBatchId,
+            referenceId: newBatchId,
+            trxDate: trxDate,
+            transactionType: "Incubating",
+            accountId: "305-008",
+            accountName: "Finished Goods - Incubating Bags",
+            description: "Incubating Substrate Bag",
+            isCredit: false,
+            trxAmount: totalCostValue,
+          };
+
+          await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+            ledgerTrxPayload
+          ); 
+
 
 
         setIsSubmitted(true);
@@ -852,7 +1023,7 @@ export default function MakeIncubatingBagPage() {
                           <tr className="bg-orange-100 text-orange-500">
                             <th className="p-3 text-left">Use</th>
                             <th className="p-3 text-left">Other Expense</th>
-                            <th className="p-3 text-right">Base Price</th>
+                            <th className="p-3 text-right"></th>
                             <th className="p-3 text-left"></th>
                             <th className="p-3 text-left">Unit Price</th>
                             <th className="p-3 text-right"></th>
@@ -863,8 +1034,8 @@ export default function MakeIncubatingBagPage() {
                           {Object.entries(otherExpenses).map(([id, item]) => {
                             const bagCount = Number(numberOfBags || 0);
                             const rowTotal =
-                              item.isSelected && item.editablePrice > 0 && numberOfBags > 0
-                                ? Number(numberOfBags) * Number(item.editablePrice)
+                              item.isSelected && item.price > 0 && numberOfBags > 0
+                                ? Number(numberOfBags) * Number(item.price || 0)
                                 : 0;
 
                             return (
@@ -885,8 +1056,8 @@ export default function MakeIncubatingBagPage() {
                                 </td>
 
                                 {/* NAME */}
-                                <td className="p-3">{item.name}</td>
-                                <td className="p-3 text-right">{item.price.toFixed(2)}</td>
+                                <td className="p-3">{item.accountName}</td>
+                                <td className="p-3 text-right"></td>
                                 <td className="p-3"></td>
 
                                 {/* PRICE */}
@@ -894,7 +1065,7 @@ export default function MakeIncubatingBagPage() {
                                   <input
                                     type="number"
                                     step="0.01"
-                                    value={Number(item.editablePrice || 0)}
+                                    value={Number(item.price || 0)}
                                     disabled={
                                       !item.isSelected ||
                                       Number(numberOfBags) <= 0 ||
