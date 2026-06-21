@@ -30,7 +30,7 @@ export default function PurchaseEntryPage() {
       referenceId: "",
       trxType: "Purchase",
       vendorId: "",
-      vendorsName: "",
+      vendorName: "",
       costValue: "",
       totalAmount: "",
       items: [],
@@ -41,7 +41,7 @@ export default function PurchaseEntryPage() {
       referenceId: "",
       trxType: "Purchase",
       vendorId: "",
-      vendorsName: "",
+      vendorName: "",
       costValue: "",
       totalAmount: "",
       items: [],
@@ -121,7 +121,13 @@ export default function PurchaseEntryPage() {
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock`
       );
-      const filteredProducts = res.data.filter((p) => p.stockCategory !== "finished products");    
+
+      const filteredProducts = res.data
+        .filter((p) => p.stockCategory !== "finished products")
+        .sort((a, b) => {
+          return (a.stockName || "").localeCompare(b.stockName || "");
+        });
+
       setProducts(filteredProducts);
     } catch {
       toast.error("Failed to load products");
@@ -259,13 +265,15 @@ export default function PurchaseEntryPage() {
     }
 
     try {
+      setIsSubmitting(true);
+      // ================= 1. STOCK TRANSACTION =================
       const stockTrxPayload = {
         referenceId: form.referenceId,
         trxDate: form.trxDate,
         trxType: form.trxType,
         description: form.vendorName,
-        isAdded: form.isAdded,
-        vendorId: form.vendorId,
+        isAdded: true,
+        clientId: form.vendorId,
         items: form.items.map((i) => ({
           stockId: i.productId,
           stockName: i.productName,
@@ -284,6 +292,7 @@ export default function PurchaseEntryPage() {
 
       const savedTrxId = res.data.data.issuedTrxId || res.data.issuedTrxId;
 
+      // ================= 2. UPDATE STOCK =================
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-add`,
         {
@@ -296,6 +305,7 @@ export default function PurchaseEntryPage() {
         }
       );
 
+      // ================= 3. UPDATE VENDOR TRANSACTION =================
       const vendorTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceId,
@@ -314,6 +324,7 @@ export default function PurchaseEntryPage() {
         vendorTrxPayload
       );
 
+      // ================= 4. UPDATE VENDOR DUE =================
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/add-due`,
         {
@@ -321,13 +332,81 @@ export default function PurchaseEntryPage() {
         }
       );
 
+
+      // ================= 5. UPDATE LEDGER ACCOUNT - DEBIT Inventory ==================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: "305-001",
+              amount: total,
+            },
+          ],
+        }
+      );
+
+      // ================= 6. SAVE LEDGER TRANSACTION - DEBIT Inventory ==================
+      const ledgerTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: "305-001",
+        accountName: "Substrate Materials",
+        description: form.vendorName,
+        isCredit: false,
+        trxAmount: total,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerTrxPayload
+      ); 
+
+
+      // ================= 7. UPDATE LEDGER ACCOUNT - CREDIT Supplier Payables ==================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "501-001",
+              amount: total,
+            },
+          ],
+        }
+      );
+
+      // ================= 8. SAVE LEDGER TRANSACTION - CREDIT Supplier Payables ==================
+      const ledgerCreditTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: "501-001",
+        accountName: "Supplier Payables",
+        description: form.vendorName,
+        isCredit: true,
+        trxAmount: total,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditTrxPayload
+      );       
+
+
       setIsSaved(true);
+      setIsSubmitting(false);
       toast.success("Purchase Invoice Created Successfully");
     } catch (err) {
+      setIsSubmitting(false);
       console.error(err.response?.data || err.message);
       toast.error("Failed to save");
     }
   };
+
 
   // ================= UI =================
   return (

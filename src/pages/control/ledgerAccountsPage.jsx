@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Plus, Search, Edit, View, X, RefreshCw, Landmark } from "lucide-react";
 import { FaRegFilePdf, FaFileExcel } from "react-icons/fa";
-import { LuPrinter } from "react-icons/lu";
-import LoadingSpinner from "../../components/loadingSpinner";
-import Modal from "react-modal";
 import html2pdf from "html2pdf.js";
-import { formatDate } from "../../utils/dateFormat";
 import { formatNumber } from "../../utils/numberFormat.js";
 import * as XLSX from "xlsx";
 
 export default function LedgerAccountsPage() {
-  window.scrollTo(0, 0);
   const [accounts, setAccounts] = useState([]);
   const [headerAccounts, setHeaderAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,16 +16,27 @@ export default function LedgerAccountsPage() {
   const [transactions, setTransactions] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [trxLoading, setTrxLoading] = useState(false);  
+  const [trxLoading, setTrxLoading] = useState(false);
 
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
 
-  const printRef = useRef();
   const reportRef = useRef();
+  const modalRef = useRef();
+
+  const location = useLocation();
+
+  const token = localStorage.getItem("token");
+  const API = import.meta.env.VITE_BACKEND_URL;
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const [form, setForm] = useState({
     _id: "",
@@ -42,45 +49,79 @@ export default function LedgerAccountsPage() {
     isNewHeader: false,
   });
 
-  const token = localStorage.getItem("token");
-  const API = import.meta.env.VITE_BACKEND_URL;
 
-  /* ───────── FETCH DATA ───────── */
-  const fetchAccounts = async () => {
+  /* ───────── PDF TABLE STYLES (FIXED MISSING ERROR) ───────── */
+  const pdfTh = {
+    border: "1px solid #ccc",
+    padding: "8px",
+    backgroundColor: "#f3f4f6",
+    textAlign: "left",
+  };
+
+  const pdfTd = {
+    border: "1px solid #ccc",
+    padding: "8px",
+  };
+  
+  
+  /* ───────── FETCH ACCOUNTS ───────── */
+  const fetchAccounts = async (signal) => {
     try {
       setLoading(true);
 
       const [accRes, headerRes] = await Promise.all([
         axios.get(`${API}/api/ledger-account`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal,
         }),
         axios.get(`${API}/api/ledger-header-account`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal,
         }),
       ]);
-
-      const sortedAccounts = (accRes.data || []).sort((a, b) =>
-        a.accountId.localeCompare(b.accountId)
-      );
-
-      const sortedHeaders = (headerRes.data || []).sort((a, b) =>
-        a.headerAccountName.localeCompare(b.headerAccountName)
-      );
-
-      setAccounts(sortedAccounts);
-      setHeaderAccounts(sortedHeaders);
+      const sortedAccounts = [...accRes.data].sort((a, b) => a.accountId.localeCompare(b.accountId));
+      setAccounts(sortedAccounts ?? []);
+      setHeaderAccounts(headerRes.data ?? []);
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to load accounts");
+      if (err.name !== "CanceledError") {
+        toast.error("Failed to load accounts");
+        console.error(err);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchAccounts(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
 
   useEffect(() => {
-    fetchAccounts();
-  }, [token]);
+    window.scrollTo(0, 0);
+  }, [location.pathname]);  
+  
+
+  useEffect(() => {
+    if (isModalOpen || isViewModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [isModalOpen, isViewModalOpen]);  
+  
+
+  useEffect(() => {
+    if (isModalOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isModalOpen]);  
 
   const fetchTransactions = async (accountId, from, to) => {
     try {
@@ -93,31 +134,56 @@ export default function LedgerAccountsPage() {
         }
       );
 
-      let data = res.data || [];
+      const raw = res.data || [];
 
-      // date filter (frontend filter for flexibility)
+      // 1. normalize once (fast + safe)
+      let data = raw.map((t) => ({
+        ...t,
+        trxDateObj: new Date(t.trxDate),
+      }));
+
+      // 2. filter
       if (from) {
-        data = data.filter((t) => new Date(t.trxDate) >= new Date(from));
+        const fromDate = new Date(from);
+        data = data.filter((t) => t.trxDateObj >= fromDate);
       }
+
       if (to) {
-        data = data.filter((t) => new Date(t.trxDate) <= new Date(to));
+        const toDate = new Date(to);
+        data = data.filter((t) => t.trxDateObj <= toDate);
       }
 
-      // sort by date
-      data.sort((a, b) => new Date(a.trxDate) - new Date(b.trxDate));
+      const fromTime = from ? new Date(from).getTime() : null;
+      const toTime = to ? new Date(to).getTime() : null;
 
-      // calculate running balance
       let balance = 0;
 
-      const enriched = data.map((t) => {
-        if (t.isCredit) {
-          balance += t.trxAmount;
-        } else {
-          balance -= t.trxAmount;
-        }
+      const enriched = [];
 
-        return { ...t, balance };
-      });
+      for (let i = 0; i < raw.length; i++) {
+        const t = raw[i];
+        const time = new Date(t.trxDate).getTime();
+
+        if (fromTime && time < fromTime) continue;
+        if (toTime && time > toTime) continue;
+
+        enriched.push({
+          ...t,
+          trxDateObj: time,
+        });
+      }
+
+      // sort once
+      enriched.sort((a, b) => a.trxDateObj - b.trxDateObj);
+
+      // running balance
+      for (let i = 0; i < enriched.length; i++) {
+        balance += enriched[i].isCredit
+          ? enriched[i].trxAmount
+          : -enriched[i].trxAmount;
+
+        enriched[i].balance = balance;
+      }
 
       setTransactions(enriched);
     } catch (err) {
@@ -131,16 +197,19 @@ export default function LedgerAccountsPage() {
 
   /* ───────── FILTER ACCOUNTS ───────── */
   const filteredAccounts = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return accounts;
+
     return accounts.filter((a) =>
-      `${a.accountName} ${a.accountId}`
-        .toLowerCase()
-        .includes(search.toLowerCase())
+      (a.accountName + a.accountId).toLowerCase().includes(q)
     );
   }, [accounts, search]);
 
 
   /* ───────── FILTER HEADERS ───────── */
   const filteredHeaders = useMemo(() => {
+    if (!form.accountType) return headerAccounts;
+
     return headerAccounts.filter(
       (h) => h.accountType === form.accountType
     );
@@ -148,12 +217,22 @@ export default function LedgerAccountsPage() {
 
 
   const headerMap = useMemo(() => {
-    const map = {};
-    headerAccounts.forEach((h) => {
+    return headerAccounts.reduce((map, h) => {
       map[h.headerAccountId] = h.headerAccountName;
-    });
-    return map;
+      return map;
+    }, {});
   }, [headerAccounts]);
+
+
+  const typeMap = {
+    Income: "Income",
+    Expenses: "Expenses",
+    CurrentAssets: "Current Assets",
+    FixedAssets: "Fixed Assets",
+    CurrentLiabilities: "Current Liabilities",
+    NonCurrentLiabilities: "Non-Current Liabilities",
+    EquityCapital: "Equity / Capital",
+  };
 
 
   /* ───────── RESET FORM ───────── */
@@ -210,46 +289,37 @@ export default function LedgerAccountsPage() {
   };
 
 
+  /* ───────── PDF DOWNLOAD ───────── */
   const handleDownloadPDF = async () => {
     try {
+      toast.loading("Generating PDF...");
+
+      await new Promise((r) => setTimeout(r, 100)); // allow UI paint
+
+      const element = reportRef.current;
+
       await html2pdf()
         .set({
           margin: 0.3,
           filename: "Ledger_Accounts_Report.pdf",
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            backgroundColor: "#ffffff",
-          },
-          jsPDF: {
-            unit: "in",
-            format: "a4",
-            orientation: "landscape",
-          },
+          html2canvas: { scale: 1.5 }, // reduce from 2
+          jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
         })
-        .from(reportRef.current)
+        .from(element)
         .save();
-    } catch (err) {
-      console.error(err);
+
+      toast.dismiss();
+      toast.success("PDF generated");
+    } catch {
       toast.error("PDF generation failed");
     }
   };
 
-  const pdfTh = {
-    border: "1px solid #ccc",
-    padding: "8px",
-    backgroundColor: "#f3f4f6",
-    textAlign: "left",
-  };
 
-  const pdfTd = {
-    border: "1px solid #ccc",
-    padding: "8px",
-  };
-
-
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     try {
+      await new Promise((resolve) => setTimeout(resolve, 0)); // yield thread
+
       const data = filteredAccounts.map((acc) => ({
         "Account ID": acc.accountId,
         "Account Type": acc.accountType,
@@ -258,11 +328,7 @@ export default function LedgerAccountsPage() {
         "Balance": Number(acc.accountBalance || 0),
       }));
 
-      // ✅ ADD TOTAL ROW
-      const totalBalance = data.reduce(
-        (sum, item) => sum + Number(item.Balance || 0),
-        0
-      );
+      const totalBalance = data.reduce((sum, item) => sum + item.Balance, 0);
 
       data.push({
         "Account ID": "",
@@ -273,14 +339,6 @@ export default function LedgerAccountsPage() {
       });
 
       const worksheet = XLSX.utils.json_to_sheet(data);
-
-      worksheet["!cols"] = [
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 25 },
-        { wch: 25 },
-        { wch: 15 },
-      ];
 
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Ledger Accounts");
@@ -344,7 +402,8 @@ export default function LedgerAccountsPage() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success("Account updated");
-      } else {         
+      } else {      
+    
         await axios.post(`${API}/api/ledger-account`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -403,7 +462,7 @@ export default function LedgerAccountsPage() {
             {/* CREATE BUTTON */}
             <button
               onClick={openCreate}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-2"
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-2 ml-4"
             >
               <Plus size={18} />
               New
@@ -473,7 +532,7 @@ export default function LedgerAccountsPage() {
                       </td>
 
                       <td className="px-4 py-2 whitespace-nowrap">
-                        {acc.accountType}
+                        {typeMap[acc.accountType] || "N/A"}
                       </td>
 
                       <td className="px-4 py-2 whitespace-nowrap">
@@ -525,7 +584,7 @@ export default function LedgerAccountsPage() {
               <div className="mt-3 text-sm grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-gray-500">Type</p>
-                  <p>{acc.accountType}</p>
+                  <p>{typeMap[acc.accountType] || "N/A"}</p>
                 </div>
 
                 <div>
@@ -563,10 +622,17 @@ export default function LedgerAccountsPage() {
         {/* MODAL */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-lg rounded-2xl p-6 relative">
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              className="bg-white w-full max-w-lg rounded-2xl p-6 relative"
+            >
 
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  document.activeElement?.blur();
+                  setIsModalOpen(false);
+                }}
                 className="absolute right-4 top-4"
               >
                 <X />
@@ -594,14 +660,12 @@ export default function LedgerAccountsPage() {
                   className="w-full p-3 border rounded-xl"
                 >
                   <option value="">Select Type</option>
-                  <option value="Income">Income</option>
-                  <option value="Expenses">Expenses</option>                  
-                  <option value="CurrentAssets">Current Assets</option>
-                  <option value="FixedAssets">Fixed Assets</option>
-                  <option value="CurrentLiabilities">Current Liabilities</option>
-                  <option value="NonCurrentLiabilities">Non-Current Liabilities</option>
-                  <option value="EquityCapital">Equity / Capital</option>
 
+                  {Object.entries(typeMap).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
                 </select>
 
                 {/* HEADER */}
@@ -719,7 +783,7 @@ export default function LedgerAccountsPage() {
               {/* ACCOUNT INFO */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5 bg-gray-50 p-4 rounded-xl">
                 <Info label="Account ID" value={form.accountId} />
-                <Info label="Type" value={form.accountType} />
+                <Info label="Type" value={typeMap[form.accountType] || "N/A"} />
                 <Info label="Header" value={headerMap[form.headerAccountId] || "N/A"} />
                 <Info label="Balance" value={formatNumber(form.accountBalance || 0)} />
               </div>
@@ -809,40 +873,35 @@ export default function LedgerAccountsPage() {
         )}
       </div>
 
-      {/* PDF REPORT */}
-      <div style={{ display: "none" }}>
+
+      {/* ================= PDF REPORT (FIXED) ================= */}
+      {/* hidden PDF container */}
+      <div
+        style={{
+          position: "fixed",
+          left: "-10000px",
+          top: 0,
+          width: "1100px", // important for proper A4 landscape rendering
+          background: "#fff",
+        }}
+      >
         <div ref={reportRef}>
-          <div
-            style={{
-              padding: "20px",
-              fontFamily: "Arial",
-              background: "#fff",
-            }}
-          >
-            <h2
-              style={{
-                textAlign: "center",
-                marginBottom: "5px",
-              }}
-            >
+          <div style={{ padding: "20px", fontFamily: "Arial", background: "#fff" }}>
+
+            {/* HEADER */}
+            <h2 style={{ textAlign: "center", marginBottom: "5px" }}>
               Ledger Accounts Report
             </h2>
 
-            <p
-              style={{
-                textAlign: "center",
-                marginBottom: "20px",
-                color: "#666",
-              }}
-            >
+            <p style={{ textAlign: "center", marginBottom: "20px", color: "#666" }}>
               Generated on {new Date().toLocaleDateString()}
             </p>
 
+            {/* TABLE */}
             <table
               style={{
                 width: "100%",
                 borderCollapse: "collapse",
-                fontSize: "12px",
               }}
             >
               <thead>
@@ -859,10 +918,8 @@ export default function LedgerAccountsPage() {
                 {filteredAccounts.map((acc) => (
                   <tr key={acc._id}>
                     <td style={pdfTd}>{acc.accountId}</td>
-                    <td style={pdfTd}>{acc.accountType}</td>
-                    <td style={pdfTd}>
-                      {headerMap[acc.headerAccountId] || "N/A"}
-                    </td>
+                    <td style={pdfTd}>{typeMap[acc.accountType] || "N/A"}</td>
+                    <td style={pdfTd}>{headerMap[acc.headerAccountId] || "N/A"}</td>
                     <td style={pdfTd}>{acc.accountName}</td>
                     <td style={{ ...pdfTd, textAlign: "right" }}>
                       {formatNumber(acc.accountBalance || 0)}
@@ -871,6 +928,7 @@ export default function LedgerAccountsPage() {
                 ))}
               </tbody>
 
+              {/* TOTAL */}
               <tfoot>
                 <tr>
                   <td
@@ -901,20 +959,23 @@ export default function LedgerAccountsPage() {
                 </tr>
               </tfoot>
             </table>
+
+            {/* FOOTER */}
             <div
               style={{
                 marginTop: "20px",
                 textAlign: "center",
                 fontWeight: "bold",
-                color: "#333",
                 fontSize: "12px",
               }}
             >
               Software by nSoft Technology © 2026
-            </div>            
+            </div>
           </div>
         </div>
       </div>
+
+
 
     </div>
   );

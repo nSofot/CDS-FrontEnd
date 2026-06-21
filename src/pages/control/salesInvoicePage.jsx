@@ -125,7 +125,7 @@ export default function SaleInvoicePage() {
       );
 
       const filtered = res.data.filter(
-        (item) => item.stockCategory !== "finished products"
+        (item) => item.stockCategory !== "Substrate Material"
       );
 
       setProducts(filtered || []);
@@ -178,7 +178,21 @@ export default function SaleInvoicePage() {
     }
   };
   
-  
+
+const deleteInvoice = async (trxId) => {
+  try {
+    // await axios.delete(
+    //   `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction/${trxId}`,
+    //   { headers }
+    // );
+
+    toast.success("Invoice deleted section is not yet implemented");
+    fetchInvoices();
+  } catch (err) {
+    toast.error("Failed to delete invoice");
+  }
+};
+
 
   // ---------------- FILTERS ----------------
   const filteredInvoices = useMemo(() => {    
@@ -188,7 +202,7 @@ export default function SaleInvoicePage() {
         i.memberName?.toLowerCase().includes(search.toLowerCase()) ||
         i.referenceId?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [Receipt, search]);
+  }, [invoices, search]);
 
 
   const filteredMembers = useMemo(() => {
@@ -217,12 +231,22 @@ export default function SaleInvoicePage() {
   }, [products, productSearch]);
 
 
-  const closeViewModal = () => {
-    setIsViewOpen(false);
-    setStockTrx(null);
-    setSelected(null);
-  };
+  // const closeViewModal = () => {
+  //   setIsViewOpen(false);
+  //   setStockTrx(null);
+  //   setSelected(null);
+  // };
   
+  const closeCustomerModal = () => {
+    setCustomerModalOpen(false);
+    setCustomerSearch("");
+  };
+
+  const closeProductModal = () => {
+    setProductModalOpen(false);
+    setProductSearch("");
+  };
+
 
   useEffect(() => {
     if (isViewOpen && selected?.trxId) {
@@ -233,19 +257,21 @@ export default function SaleInvoicePage() {
   
   
   
+  const numericFields = ["qty", "rate"];
+
   const updateItemField = (index, field, value) => {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
 
-        const updated = {
-          ...item,
-          [field]: Number(value || 0),
-        };
+        const updatedValue = numericFields.includes(field)
+          ? Number(value || 0)
+          : value;
+
+        const updated = { ...item, [field]: updatedValue };
 
         updated.amount =
-          Number(updated.qty || 0) *
-          Number(updated.rate || 0);
+          Number(updated.qty || 0) * Number(updated.rate || 0);
 
         return updated;
       })
@@ -280,7 +306,7 @@ export default function SaleInvoicePage() {
         productName: "",
         qty: 0,
         inStock: 0,
-        productUom: "",
+        productUOM: "",
         rate: 0,
         amount: 0,
         cost: 0,
@@ -291,30 +317,6 @@ export default function SaleInvoicePage() {
 
   const removeItem = (index) => {
     setItems(items.filter((_, i) => i !== index));
-  };
-
-  const updateItem = (index, field, value) => {
-    const updated = [...items];
-
-    if (field === "qty") {
-      const max = Number(updated[index].inStock || 0);
-
-      value = Math.min(
-        Math.max(Number(value || 0), 0),
-        max
-      );
-    }
-
-    updated[index][field] = value;
-
-    const qty = Number(updated[index].qty || 0);
-    const rate = Number(updated[index].rate || 0);
-    const cost = Number(updated[index].cost || 0);
-
-    updated[index].amount = qty * rate;
-    updated[index].rowCost = qty * cost;
-
-    setItems(updated);
   };
 
   // ---------------- SELECT PRODUCT ----------------
@@ -344,11 +346,19 @@ export default function SaleInvoicePage() {
     setProductModalOpen(false);
   };
 
-  // ---------------- TOTALS ----------------
 
+  // ---------------- TOTALS ----------------
   const totalAmount = useMemo(() => {
     return items.reduce(
       (sum, item) => sum + Number(item.amount || 0),
+      0
+    );
+  }, [items]);
+
+
+  const totalCost = useMemo(() => {
+    return items.reduce(
+      (sum, item) => sum + Number(item.rowCost || 0),
       0
     );
   }, [items]);
@@ -380,7 +390,7 @@ export default function SaleInvoicePage() {
       await html2pdf()
         .set({
           margin: 0.3,
-          filename: `Invoice_${invoiceNumber}.pdf`,
+          filename: `Invoice_${newTrxId || form.orderNo}.pdf`,
           image: {
             type: "jpeg",
             quality: 0.98,
@@ -410,7 +420,12 @@ export default function SaleInvoicePage() {
     if (!form.invoiceDate) return toast.error("Select invoice date");
     if (!form.orderNo?.trim()) return toast.error("Enter order number");
     if (!selectedMember) return toast.error("Select a member/customer");
-    if (items.length === 0) return toast.error("Add items");
+    const validItems = items.filter(
+      (i) => i.productId && i.qty > 0
+    );
+
+    if (validItems.length === 0)
+      return toast.error("Add valid items");
 
     try {
       setIsSubmitting(true);
@@ -442,6 +457,7 @@ export default function SaleInvoicePage() {
       const newTrxId = stockTrxRes.data.data.issuedTrxId;
       setInvoiceNumber(newTrxId);
      
+
       // 2. STOCK UPDATE - SUBSTRACT
       await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/stock/bulk-reduce`,
@@ -453,6 +469,7 @@ export default function SaleInvoicePage() {
           },
       );  
 
+
       // 3. Customer Transaction Write
       const cusTrxPayload = {
           trxId: newTrxId,
@@ -461,7 +478,7 @@ export default function SaleInvoicePage() {
           trxType: "SalesInvoice",
           memberId: selectedMember.memberId,
           memberName: `${selectedMember.firstName} ${selectedMember.lastName}`,
-          description: "Sales Invoice",
+          description: "Material Sales",
           isCredit: false,
           amount: totalAmount,
           dueAmount: totalAmount,
@@ -471,12 +488,14 @@ export default function SaleInvoicePage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`,
         cusTrxPayload
       )
+
       
       // 4. Member/Customer balance update
       await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/member/${selectedMember.memberId}/due/add`,
         {amount: totalAmount}
       );
+
 
       // 5. Update stock quantity balance in GRN
       const payload = {
@@ -519,7 +538,136 @@ export default function SaleInvoicePage() {
         }
       );
 
+
+      // ================= 7. UPDATE LEDGER ACCOUNT - DEBIT Trade Debtors =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: "304-001",
+              amount: totalAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 8. SAVE LEDGER TRANSACTION - DEBIT Trade Debtors ==================
+      const ledgerTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "SalesInvoice",
+        accountId: "304-001",
+        accountName: "Trade Debtors",
+        description: `${selectedMember.firstName} ${selectedMember.lastName}`,
+        isCredit: false,
+        trxAmount: totalAmount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerTrxPayload
+      ); 
+
+
+      // ================= 9. UPDATE LEDGER ACCOUNT - CREDIT Sales Materials ==================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "101-002",
+              amount: totalAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 10. SAVE LEDGER TRANSACTION - CREDIT Sales Materials =================
+      const ledgerCreditTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "SalesInvoice",
+        accountId: "101-002",
+        accountName: "Sales Materials",
+        description: `${selectedMember.firstName} ${selectedMember.lastName}`,
+        isCredit: true,
+        trxAmount: totalAmount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditTrxPayload
+      );
+
+      // ================= 12. UPDATE LEDGER ACCOUNT - CREDIT Inventory ==================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: "305-001",
+              amount: totalCost,
+            },
+          ],
+        }
+      );
+
+      // ================= 14. SAVE LEDGER TRANSACTION - CREDIT Inventory =================
+      const ledgerCreditInvTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "BagInvoice",
+        accountId: "305-001",
+        accountName: "Substrate Materials",
+        description: `${selectedMember.firstName} ${selectedMember.lastName}`.trim(),
+        isCredit: true,
+        trxAmount: totalCost,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCreditInvTrxPayload
+      );
+
+
+      // ================= 15. UPDATE LEDGER ACCOUNT - DEBIT Cost of Sales ==================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: "203-021",
+              amount: totalCost,
+            },
+          ],
+        }
+      );
+      
+    // ================= 16. SAVE LEDGER TRANSACTION - DEBIT Cost of Sales ==================
+      const ledgerCostTrxPayload = {
+        trxId: newTrxId,
+        referenceId: form.orderNo,
+        trxDate: form.invoiceDate,
+        transactionType: "BagInvoice",
+        accountId: "203-021",
+        accountName: "Cost of Sales Materials",
+        description:`${selectedMember.firstName} ${selectedMember.lastName}`.trim(),
+        isCredit: false,
+        trxAmount: totalCost,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerCostTrxPayload
+      );       
+
+
       setIsSaved(true);
+      setIsSubmitting(false);
       toast.success("Invoice created successfully");
 
     } catch (err) {
@@ -530,6 +678,7 @@ export default function SaleInvoicePage() {
     }
   };
 
+  
   // ---------------- UI ----------------
   return (
     <div className="w-full space-y-4">

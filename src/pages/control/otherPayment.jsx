@@ -694,6 +694,7 @@ const normaliseBanks = (raw) => {
             : "";
       setDescription(description);
 
+
       // ================= 1. SAVE MEMBER TRANSACTION =================            
       const memberTrxPayload = {
         referenceId: form.referenceNo,
@@ -740,12 +741,12 @@ const normaliseBanks = (raw) => {
       );
 
 
-      // ================= 5. UPDATE LEDGER BALANCE =================
+      // ================= 5. UPDATE LEDGER BALANCE - CREDIT ==================
       let accountId = "";
       let accountName = "";
       if (form.paymentMethod === "Cheque") {
-        accountId = "401-0001";
-        accountName = "Outward Cheque Register";
+        accountId = "307-004";
+        accountName = "Outward Cheques (Pending Clearance)";
       } else if (form.paymentMethod === "Cash" || form.paymentMethod === "BankTransfer") {
         accountId = form.accountId;
         accountName = form.accountName;
@@ -757,7 +758,7 @@ const normaliseBanks = (raw) => {
       }
 
       await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
         {
           updates: [
             {
@@ -768,7 +769,7 @@ const normaliseBanks = (raw) => {
         }
       );
 
-      // ================= 6. SAVE LEDGER TRANSACTION =================
+      // ================= 6. SAVE LEDGER TRANSACTION - CREDIT =================
       const ledgerTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceNo,
@@ -777,7 +778,7 @@ const normaliseBanks = (raw) => {
         accountId: accountId,
         accountName: accountName,
         description: form.vName + " - " + description,
-        isCredit: false,
+        isCredit: true,
         trxAmount: form.receivedAmount,
       };    
 
@@ -787,8 +788,40 @@ const normaliseBanks = (raw) => {
       );      
 
 
+      // ================= 7. UPDATE LEDGER ACCOUNT - DEBIT =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        {
+          updates: [
+            {
+              accountId: form.vendorId,
+              amount: form.receivedAmount,
+            },
+          ],
+        }
+      );
+
+      // ================= 8. SAVE LEDGER TRANSACTION - DEBIT =================
+      const ledgerDrTrxPayload = {
+        trxId: savedTrxId,
+        referenceId: form.referenceNo,
+        trxDate: form.receiptDate,
+        transactionType: form.trxType,
+        accountId: form.vendorId,
+        accountName: form.vendorName,
+        description: "",
+        isCredit: false,
+        trxAmount: form.receivedAmount,
+      };
+
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerDrTrxPayload
+      ); 
+
+
       try {
-        // ================= 7. SAVE CHEQUE =================
+        // ================= 9. SAVE CHEQUE =================
         if (form.paymentMethod === "Cheque") {
           const chequePayload = {
             voucherId: savedTrxId,
@@ -805,6 +838,8 @@ const normaliseBanks = (raw) => {
             chequePayload
           )
         }      
+
+
                
       } catch (err) {
         console.error("Optional payment save failed:", err);
