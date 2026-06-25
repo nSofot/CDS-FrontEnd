@@ -38,7 +38,6 @@ export default function ViewIncomePage() {
         `${import.meta.env.VITE_BACKEND_URL}/api/member-transaction`
       );
 
-      console.log(res.data);
 
       // SAFE ARRAY SET
       if (Array.isArray(res.data)) {
