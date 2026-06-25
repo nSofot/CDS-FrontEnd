@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { FaEdit, FaTrash, FaSearch, FaPlus } from "react-icons/fa";
 import Modal from "react-modal";
 
 Modal.setAppElement("#root");
@@ -18,37 +18,19 @@ export default function VendorListPage() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  const getAuthHeaders = () => {
-    if (!token) return null;
-    return { Authorization: `Bearer ${token}` };
-  };
-
-  const handleAuthError = (err) => {
-    if (err.response?.status === 403) {
-      toast.error("Session expired. Please login again.");
-      localStorage.removeItem("token");
-      navigate("/login");
-    } else {
-      toast.error("Something went wrong");
-    }
-  };
-  
-  
-  // 🔄 Fetch vendors
   const fetchVendors = async () => {
     try {
       setLoading(true);
+
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const data = res.data.data || res.data || [];
       setVendors(data);
       setFilteredVendors(data);
-    } catch (err) {
+    } catch {
       toast.error("Failed to load vendors");
     } finally {
       setLoading(false);
@@ -59,143 +41,141 @@ export default function VendorListPage() {
     fetchVendors();
   }, []);
 
-  // 🔍 Search filter
   useEffect(() => {
-    const filtered = vendors.filter((v) =>
-      `${v.vendorId} ${v.vendorName} ${v.vendorContact}`
-        .toLowerCase()
-        .includes(search.toLowerCase())
+    const q = search.toLowerCase();
+
+    setFilteredVendors(
+      vendors.filter((v) =>
+        `${v.vendorId} ${v.vendorName} ${v.vendorPhone} ${v.vendorEmail}`
+          .toLowerCase()
+          .includes(q)
+      )
     );
-    setFilteredVendors(filtered);
   }, [search, vendors]);
 
-  // 🗑 Delete vendor
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this vendor?"))
-      return;
+    if (!window.confirm("Delete this vendor?")) return;
 
     try {
       await axios.delete(
         `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast.success("Vendor deleted");
       fetchVendors();
-    } catch (err) {
+    } catch {
       toast.error("Delete failed");
     }
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex md:flex-row flex-col justify-between gap-2">
+    <div className="max-w-6xl mx-auto p-4 space-y-5">
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">🏢 Vendor List</h1>
-          <p className="text-sm text-gray-600">
-            View and manage your vendors
+          <h1 className="text-2xl font-bold">🏢 Vendors</h1>
+          <p className="text-gray-500 text-sm">
+            Manage supplier/vendor directory
           </p>
         </div>
 
-        <div className="flex md:flex-row flex-col gap-4">
-            <button
-              onClick={() => navigate("/control/add-vendor")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-            >
-              + Add Vendor
-            </button>    
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/control/add-vendor")}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg flex items-center gap-2 w-fit"
+          >
+            <FaPlus /> Add Vendor
+          </button>
 
-            <button
-              onClick={() => navigate("/control/vendor-ledger")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-            >
-              ⌕ Vendor Ledger
-            </button>
-
-            <button
-              onClick={() => navigate("/control")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
-            >
-              ← Go Back
-            </button>
+          <button
+            onClick={() => navigate("/control")}
+            className="px-5 py-2 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+          >
+            ← Go Back
+        </button>
         </div>
-
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
+      {/* SEARCH */}
+      <div className="relative">
+        <FaSearch className="absolute left-3 top-3 text-gray-400" />
         <input
-          type="text"
-          placeholder="Search by ID, Name, Contact..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/3 p-2 border rounded-lg"
+          placeholder="Search vendor by ID, name, phone..."
+          className="w-full md:w-1/3 pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
         />
       </div>
 
-      {/* Loading */}
+      {/* LOADING */}
       {loading && (
-        <p className="text-center text-gray-500 py-4">Loading vendors...</p>
+        <p className="text-center text-gray-500 py-6">Loading vendors...</p>
       )}
 
-      {/* Desktop Table */}
+      {/* TABLE */}
       {!loading && (
-        <div className="hidden md:block bg-white shadow rounded-lg overflow-hidden">
+        <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-100 text-left">
+            <thead className="bg-orange-100 text-gray-600">
               <tr>
-                <th className="p-3">ID</th>
-                <th className="p-3">Name</th>
-                <th className="p-3">Contact</th>
-                <th className="p-3">Phone</th>
-                <th className="p-3">Email</th>
-                <th className="p-3">Due</th>
+                <th className="p-3 text-left">ID</th>
+                <th className="p-3 text-left">Name</th>
+                <th className="p-3 text-left">Phone</th>
+                <th className="p-3 text-left">Email</th>
+                <th className="p-3 text-right">Due</th>
                 <th className="p-3 text-center">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {filteredVendors.map((v) => (
+              {filteredVendors.map((v, i) => (
                 <tr
                   key={v._id}
                   onClick={() => {
                     setActiveRecord(v);
                     setIsModalOpen(true);
                   }}
-                  className="border-t hover:bg-gray-50 cursor-pointer"
+                  className={`border-t cursor-pointer hover:bg-orange-50 ${
+                    i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  }`}
                 >
-                  <td className="p-3">{v.vendorId}</td>
+                  <td className="p-3 font-medium">{v.vendorId}</td>
                   <td className="p-3">{v.vendorName}</td>
-                  <td className="p-3">{v.vendorContact}</td>
                   <td className="p-3">{v.vendorPhone}</td>
                   <td className="p-3">{v.vendorEmail}</td>
-                  <td className="p-3 text-red-600 font-semibold">
-                    Rs. {v.vendorDueAmount || 0}
+
+                  <td className="p-3 text-right">
+                    <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-semibold">
+                      Rs. {v.vendorDueAmount || 0}
+                    </span>
                   </td>
 
-                  <td className="p-3 flex justify-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/control/edit-vendor`, { state: { vendor: v } });
-                      }}
-                      className="text-blue-600 hover:bg-blue-600 hover:text-white px-2 py-1 rounded"
-                    >
-                      <FaEdit />
-                    </button>
+                  <td className="p-3">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/control/edit-vendor", {
+                            state: { vendor: v },
+                          });
+                        }}
+                        className="text-blue-600 hover:bg-blue-100 p-2 rounded"
+                      >
+                        <FaEdit />
+                      </button>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(v._id);
-                      }}
-                      className="text-red-600 hover:bg-red-600 hover:text-white px-2 py-1 rounded"
-                    >
-                      <FaTrash />
-                    </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(v._id);
+                        }}
+                        className="text-red-600 hover:bg-red-100 p-2 rounded"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -203,16 +183,16 @@ export default function VendorListPage() {
           </table>
 
           {filteredVendors.length === 0 && (
-            <p className="text-center p-4 text-gray-500">
+            <p className="text-center py-6 text-gray-500">
               No vendors found
             </p>
           )}
         </div>
       )}
 
-      {/* Mobile Cards */}
+      {/* MOBILE CARDS */}
       {!loading && (
-        <div className="md:hidden flex flex-col gap-3">
+        <div className="md:hidden space-y-3">
           {filteredVendors.map((v) => (
             <div
               key={v._id}
@@ -220,26 +200,29 @@ export default function VendorListPage() {
                 setActiveRecord(v);
                 setIsModalOpen(true);
               }}
-              className="border rounded-lg p-3 shadow-sm bg-white cursor-pointer"
+              className="bg-white border rounded-xl p-4 shadow-sm active:scale-[0.99] transition"
             >
               <div className="flex justify-between">
                 <div>
                   <p className="font-semibold">{v.vendorName}</p>
-                  <p className="text-sm text-gray-500">{v.vendorId}</p>
+                  <p className="text-xs text-gray-500">{v.vendorId}</p>
                 </div>
-                <p className="text-red-600 font-semibold">
+
+                <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs">
                   Rs. {v.vendorDueAmount || 0}
-                </p>
+                </span>
               </div>
 
-              <p className="text-sm mt-2">📞 {v.vendorPhone}</p>
-              <p className="text-sm">✉️ {v.vendorEmail}</p>
+              <p className="text-sm mt-2 text-gray-600">📞 {v.vendorPhone}</p>
+              <p className="text-sm text-gray-600">✉️ {v.vendorEmail}</p>
 
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/control/edit-vendor`, { state: { vendor: v } });
+                    navigate("/control/edit-vendor", {
+                      state: { vendor: v },
+                    });
                   }}
                   className="flex-1 bg-blue-500 text-white py-1 rounded"
                 >
@@ -260,64 +243,36 @@ export default function VendorListPage() {
           ))}
 
           {filteredVendors.length === 0 && (
-            <p className="text-center text-gray-500">
-              No vendors found
-            </p>
+            <p className="text-center text-gray-500">No vendors found</p>
           )}
         </div>
       )}
 
-      {/* Modal */}
+      {/* MODAL (polished) */}
       <Modal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
-        overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center p-3"
-        className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5"
+        overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center p-4"
+        className="bg-white rounded-xl shadow-xl max-w-lg w-full p-5"
       >
         {activeRecord && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-orange-600">
+            <div className="flex justify-between">
+              <h2 className="text-lg font-bold text-orange-600">
                 Vendor Details
               </h2>
-              <button onClick={() => setIsModalOpen(false)}>✖</button>
+              <button onClick={() => setIsModalOpen(false)}>✕</button>
             </div>
 
-            <table className="w-full text-sm">
-              <tbody>
-                {[
-                  ["Vendor ID", activeRecord.vendorId],
-                  ["Name", activeRecord.vendorName],
-                  [
-                    "Address",
-                    Array.isArray(activeRecord.vendorAddress)
-                      ? activeRecord.vendorAddress
-                          .filter(Boolean)
-                          .join(", ")
-                      : activeRecord.vendorAddress,
-                  ],
-                  ["Contact", activeRecord.vendorContact],
-                  ["Mobile", activeRecord.vendorPhone],
-                  ["Email", activeRecord.vendorEmail],
-                  ["Note", activeRecord.vendorNote || "None"],
-                  [
-                    "Due Amount",
-                    activeRecord.vendorDueAmount
-                      ? `Rs. ${activeRecord.vendorDueAmount}`
-                      : "None",
-                  ],
-                ].map(([label, value]) => (
-                  <tr key={label} className="border-b">
-                    <td className="py-2 font-medium text-orange-600">
-                      {label}
-                    </td>
-                    <td className="py-2 text-right">
-                      {value || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="space-y-2 text-sm">
+              <p><b>ID:</b> {activeRecord.vendorId}</p>
+              <p><b>Name:</b> {activeRecord.vendorName}</p>
+              <p><b>Phone:</b> {activeRecord.vendorPhone}</p>
+              <p><b>Email:</b> {activeRecord.vendorEmail}</p>
+              <p className="text-red-600 font-semibold">
+                Due: Rs. {activeRecord.vendorDueAmount || 0}
+              </p>
+            </div>
           </div>
         )}
       </Modal>

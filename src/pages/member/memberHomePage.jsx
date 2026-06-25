@@ -53,7 +53,7 @@ export default function MemberHomePage() {
       roles: ["member", "admin"],
     },
     {
-      label: "උපකරණ පුවරුව",
+      label: "ප්‍රධාන පුවරුව",
       to: "/member",
       icon: <FaAtom />,
       roles: ["member", "admin"],
@@ -110,42 +110,56 @@ export default function MemberHomePage() {
       {/* SIDEBAR */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0
-          z-40
-          w-64
-          min-h-screen
-          bg-white/90
+          fixed md:sticky top-0 left-0 z-40
+          w-64 min-h-screen
+          bg-gradient-to-b from-white to-emerald-50/30
           backdrop-blur-md
-          shadow-xl
-          border-r border-emerald-100
+          shadow-lg border-r border-emerald-100
           overflow-y-auto
           transition-transform duration-300 ease-in-out
-          ${sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full md:translate-x-0"}
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
       >
+        {/* ───── HEADER ───── */}
+        <div className="p-4 flex items-center justify-between border-b border-emerald-100 bg-white/70 backdrop-blur-sm">
 
-        {/* HEADER */}
-        <div className="p-4 flex justify-between items-center font-bold text-emerald-700 border-b border-emerald-100">
-            <div className="flex flex-col">
-                <span className="tracking-wide">Member Portal</span>
-                <span className="text-sm text-gray-500">{userName}</span>
-            </div>
-          <button className="md:hidden text-emerald-700" onClick={() => setSidebarOpen(false)}>
-            <FaTimes />
+          {/* BRAND */}
+          <div className="flex flex-col leading-tight">
+
+            <span className="text-emerald-700 font-extrabold tracking-widest text-lg">
+              CDS ERP
+            </span>
+
+            <span className="text-gray-500 text-[12px] font-medium">
+              සාමාජික යෙදුම
+            </span>
+            <span className="text-[11px] text-gray-400 truncate max-w-[170px]">
+              අනුවාදය 1.0.0
+            </span>
+            <span className="mt-4 text-[11px] text-gray-400 truncate max-w-[170px]">
+              Hello, {userName}
+            </span>
+
+
+
+          </div>
+
+          {/* CLOSE */}
+          <button
+            className="md:hidden text-emerald-700 hover:bg-emerald-100 active:scale-95 transition p-2 rounded-lg"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <FaTimes className="text-lg" />
           </button>
+
         </div>
 
-        {/* NAV */}
+        {/* ───── NAVIGATION ───── */}
         <nav className="flex flex-col p-3 gap-1">
 
+          {/* MENU */}
           {menuItems
-            .filter(
-              (item) =>
-                !normalizedRole ||
-                item.roles.includes(normalizedRole)
-            )
+            .filter((item) => normalizedRole && item.roles.includes(normalizedRole))
             .map((item) => (
               <SidebarLink
                 key={item.to}
@@ -156,17 +170,27 @@ export default function MemberHomePage() {
               />
             ))}
 
+          {/* Divider */}
+          <div className="my-3 border-t border-emerald-100" />
+
           {/* LOGOUT */}
           <button
             onClick={() => {
               localStorage.clear();
               navigate("/login");
             }}
-            className="flex items-center gap-3 px-4 py-2 mt-4 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200"
+            className="
+              flex items-center gap-3 px-4 py-2
+              rounded-lg text-red-600
+              hover:bg-red-50 hover:pl-5
+              transition-all duration-200
+              font-medium
+            "
           >
             <FaSignOutAlt />
             පිටවීම
           </button>
+
         </nav>
       </aside>
 
