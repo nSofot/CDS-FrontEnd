@@ -72,12 +72,10 @@ export default function LedgerAccountsPage() {
       const [accRes, headerRes] = await Promise.all([
         axios.get(`${API}/api/ledger-account`, {
           headers: { Authorization: `Bearer ${token}` },
-          signal,
         }),
         axios.get(`${API}/api/ledger-header-account`, {
           headers: { Authorization: `Bearer ${token}` },
-          signal,
-        }),
+        })
       ]);
       const sortedAccounts = [...accRes.data].sort((a, b) => a.accountId.localeCompare(b.accountId));
       setAccounts(sortedAccounts ?? []);
@@ -302,7 +300,7 @@ export default function LedgerAccountsPage() {
         .set({
           margin: 0.3,
           filename: "Ledger_Accounts_Report.pdf",
-          html2canvas: { scale: 1.5 }, // reduce from 2
+          html2canvas: { scale: 1 },
           jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
         })
         .from(element)
@@ -440,7 +438,7 @@ export default function LedgerAccountsPage() {
           <div className="flex items-center gap-2">
             {/* PDF BUTTON */}
             <button
-              onClick={handleDownloadPDF}
+              onClick={() => setTimeout(handleDownloadPDF, 0)}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
               title="Download as PDF"
             >
@@ -450,7 +448,7 @@ export default function LedgerAccountsPage() {
 
             {/* EXCEL BUTTON */}
             <button
-              onClick={handleDownloadExcel}
+              onClick={() => setTimeout(handleDownloadExcel, 0)}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
               title="Download as Excel"
               disabled={loading}

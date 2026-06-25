@@ -9,7 +9,6 @@ import DashboardPage from "./control/dashboardPage";
 import MembersPage from "./control/membersPage";
 import AddNewMembers from "./control/addCustomerBySecratary";
 import EditMembers from "./control/editCustomerBySecratary";
-import MemberLedgerPage from "./control/memberLedgerPage";
 import StockPage from "./control/stockPage";
 import AddStockPage from "./control/addStockPage";
 import EditStockPage from "./control/editStockPage";
@@ -17,7 +16,6 @@ import StockBinCardPage from "./control/stockBinCardPage";
 import VendorListPage from "./control/vendorPage";
 import AddVendorPage from "./control/addVendorPage";
 import EditVendorPage from "./control/editVendorPage";
-import VendorLedgerPage from "./control/vendorLedgerPage";
 
 import CashBookPage from "./control/cashBookPage";
 
@@ -42,6 +40,7 @@ import BagOrderManagementPage from "./control/bagOrderManagementPage";
 import LedgerAccountsPage from "./control/ledgerAccountsPage";
 
 import ReportsPage from "./reports/reportsPage";
+import CustomerLedgerPage from "./reports/customerLedgerPage";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -70,7 +69,6 @@ export default function ControlPage() {
         <Route path="members" element={<MembersPage />} />
         <Route path="add-member" element={<AddNewMembers />} />
         <Route path="edit-member" element={<EditMembers />} />   
-        <Route path="member-ledger" element={<MemberLedgerPage />} />
 
         <Route path="stock" element={<StockPage />} />
         <Route path="add-stock" element={<AddStockPage />} />
@@ -80,7 +78,6 @@ export default function ControlPage() {
         <Route path="vendors" element={<VendorListPage />} />
         <Route path="add-vendor" element={<AddVendorPage />} />
         <Route path="edit-vendor" element={<EditVendorPage />} />
-        <Route path="vendor-ledger" element={<VendorLedgerPage />} />
 
         <Route path="cash-book" element={<CashBookPage />} />
     
@@ -104,6 +101,7 @@ export default function ControlPage() {
         <Route path="ledger-accounts" element={<LedgerAccountsPage />} />
 
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="customer-ledger" element={<CustomerLedgerPage />} />
         
         <Route path="*" element={<NotFoundPage />} />
       </Route>
