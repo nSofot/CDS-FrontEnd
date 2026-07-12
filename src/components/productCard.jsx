@@ -1,13 +1,13 @@
 import "./productCard.css";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
+import { FiShoppingBag } from "react-icons/fi";
 
 export default function ProductCard({ product }) {
     const {
         stockId,
         stockName,
         stockDescription,
-        stockCategory,
         stockImage,
         stockPrice,
         labelledPrice,
@@ -20,80 +20,62 @@ export default function ProductCard({ product }) {
     const stars = Array.from({ length: 5 }, (_, i) => (
         <FaStar
             key={i}
-            size={14}
-            className={i < Math.round(rating) ? "text-yellow-400" : "text-gray-300"}
+            size={13}
+            className={i < Math.round(rating) ? "text-[#f5b544]" : "text-[#d6ded7]"}
         />
     ));
 
+    const available = isAvailable !== false && Number(stock || 0) > 0;
+
     return (
         <Link
-            to={`/overview/${stockId}`}
-            className="w-[300px] h-[460px] bg-white shadow-lg rounded-xl overflow-hidden m-2 flex flex-col transition-transform hover:scale-105 duration-300"
+            to={"/overview/" + stockId}
+            className="group flex h-full min-h-[420px] w-full flex-col overflow-hidden rounded-lg border border-[#dfe7df] bg-white shadow-[0_10px_28px_rgba(31,54,36,0.07)] transition duration-200 hover:-translate-y-1 hover:border-[#a9c6af] hover:shadow-xl"
         >
-            {/* -------- product image -------- */}
-            <div className="h-[50%] w-full bg-gray-100 flex items-center justify-center">
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#f2f7f3]">
                 <img
                     src={stockImage?.[0] || "/placeholder.png"}
                     alt={stockName}
-                    className="object-contain h-full"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
+                <span className={"absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-extrabold " + (available ? "bg-[#e6f4e9] text-[#276b3b]" : "bg-[#fff1f0] text-[#b42318]") }>
+                    {available ? "Available" : "Out of stock"}
+                </span>
             </div>
 
-            {/* -------- product details -------- */}
-            <div className="p-4 flex flex-col flex-1">
-                {/* <h1 className="text-lg font-semibold mb-1">
-                    {stockCategory}
-                </h1> */}
-                <h2 className="text-base font-semibold truncate">{stockName}</h2>
-
-                <p className="text-sm text-gray-600 mb-2 h-[42px] overflow-hidden">
-                    {stockDescription || ""}
+            <div className="flex flex-1 flex-col p-4">
+                <p className="text-[0.68rem] font-bold uppercase tracking-[0.1em] text-[#6b7b70]">Fresh Harvest</p>
+                <h2 className="mt-1 line-clamp-2 text-base font-extrabold text-[#172017]">{stockName}</h2>
+                <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-[#627069]">
+                    {stockDescription || "Locally produced mushroom product from CDS."}
                 </p>
 
-                {/* price */}
-                <div className="flex items-center space-x-2 mb-1">
-                    {labelledPrice > stockPrice && (
-                        <span className="text-sm text-gray-400 line-through">
-                            Rs.{labelledPrice}
-                        </span>
-                    )}
-                    <span className="text-base font-bold text-green-600">Rs.{stockPrice}</span>
-                </div>
-
-                {/* NEW ───────────── reviews */}
-                <div className="flex items-center gap-1 text-xs mb-2">
+                <div className="mt-3 flex items-center gap-1 text-xs">
                     {reviewCount > 0 ? (
                         <>
                             {stars}
-                            <span className="text-gray-500 ml-1">({reviewCount})</span>
+                            <span className="ml-1 text-[#627069]">({reviewCount})</span>
                         </>
                     ) : (
-                        <span className="text-gray-400 italic">No reviews</span>
+                        <span className="text-[#8a978e]">No reviews yet</span>
                     )}
                 </div>
 
-                {/* stock + CTA */}
-                <div className="flex items-center justify-between mt-auto">
-                    <span
-                        className={`text-sm ${
-                            isAvailable && stock > 0 ? "text-green-500" : "text-red-500"
-                        }`}
-                    >
-                        {isAvailable && stock > 0
-                            ? `In Stock (${stock})`
-                            : "Out of Stock"}
-                    </span>
+                <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+                    <div>
+                        {labelledPrice > stockPrice && (
+                            <p className="text-xs font-semibold text-[#8a978e] line-through">Rs.{Number(labelledPrice).toFixed(2)}</p>
+                        )}
+                        <p className="text-xl font-extrabold text-[#2f7d46]">Rs.{Number(stockPrice || 0).toFixed(2)}</p>
+                    </div>
 
                     <button
-                        // placeholder — hook up to cart/checkout later
-                        onClick={(e) => {
-                            e.preventDefault(); // prevent link navigation
-                            // handleAddToCart(productId);
-                        }}
-                        disabled={!isAvailable || stock <= 0}
-                        className="text-sm bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        onClick={(e) => e.preventDefault()}
+                        disabled={!available}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2f7d46] text-white transition hover:bg-[#276b3b] disabled:bg-[#cad8cc]"
+                        aria-label="View product"
                     >
-                        Buy Now
+                        <FiShoppingBag />
                     </button>
                 </div>
             </div>

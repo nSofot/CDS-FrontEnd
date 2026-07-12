@@ -1,234 +1,156 @@
 import { Fragment, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-    FiShoppingBag,
-    FiCreditCard,
-    FiTruck,
-} from "react-icons/fi";
+import { FiShoppingBag, FiShield, FiTruck, FiArrowRight } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-// import Header from "../components/header";
-// import ProductsPage from "./client/productsPage";
-// import ProductOverview from "./client/productOverview";
-// import CartPage from "./client/cart";
-// import CheckOutPage from "./client/checkOut";
-// import About from "./client/about";
-// import Contact from "./client/contact";
 
 export default function HomePage() {
     const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [brands, setBrands] = useState([]);  
     const [isLoading, setIsLoading] = useState(true);
 
-    /* ------------------ dummy spotlight data (fallback) ------------------ */
     const spotlight = [
-      {
-        productId: "spotlight-1",
-        name: "Hydra Glow Serum",
-        price: 4990,
-        image: ["/products/serum.jpg"],
-      },
-      {
-        productId: "spotlight-2",
-        name: "Velvet Matte Lipstick",
-        price: 2450,
-        image: ["/products/lipstick.jpg"],
-      },
-      {
-        productId: "spotlight-3",
-        name: "Renew Night Cream",
-        price: 5600,
-        image: ["/products/nightcream.jpg"],
-      },
+        { productId: "spotlight-1", stockId: "spotlight-1", stockName: "Fresh Oyster Mushrooms", stockPrice: 650, stockImage: ["/mainBanner.jpg"] },
+        { productId: "spotlight-2", stockId: "spotlight-2", stockName: "Dried Mushroom Pack", stockPrice: 950, stockImage: ["/mainBanner.jpg"] },
+        { productId: "spotlight-3", stockId: "spotlight-3", stockName: "Mushroom Value Pack", stockPrice: 1200, stockImage: ["/mainBanner.jpg"] },
     ];
 
     useEffect(() => {
-      const fetchProducts = async () => {
-        try {
-          const [prodRes] = await Promise.all([
-            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/stock`),
-          ]);
+        const fetchProducts = async () => {
+            try {
+                const [prodRes] = await Promise.all([
+                    axios.get(import.meta.env.VITE_BACKEND_URL + "/api/stock"),
+                ]);
 
-          const filteredProducts = prodRes.data.filter((p) => p.stockCategory === "harvested products");
-          setProducts(filteredProducts);
-        } catch (err) {
-          console.error("Search request failed:", err);
-          toast.error("Failed to fetch products. Showing featured picks.");
-          setProducts(spotlight); // fallback spotlight data
-        } finally {
-          setIsLoading(false);
+                const filteredProducts = prodRes.data.filter((p) => p.stockCategory === "harvested products");
+                setProducts(filteredProducts);
+            } catch (err) {
+                console.error("Search request failed:", err);
+                toast.error("Failed to fetch products. Showing featured picks.");
+                setProducts(spotlight);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (isLoading) {
+            fetchProducts();
         }
-      };
-
-      if (isLoading) {
-        fetchProducts();
-      }
     }, [isLoading]);
-
 
     return (
         <Fragment>
-          {/* <Header /> */}
-          {/* ---------- HERO ---------- */}
-          <section className="relative w-full h-[70vh] bg-gradient-to-r from-red-600 to-indigo-600 flex items-center justify-center overflow-hidden">
-              <motion.img
-                src="/mainBanner.jpg"
-                alt="Beauty banner"
-                className="absolute inset-0 w-full h-full object-cover opacity-40"
-                initial={{ scale: 1.2 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 1 }}
-              />
+            <section className="relative flex min-h-[72vh] w-full items-center overflow-hidden bg-[#142116]">
+                <motion.img
+                    src="/mainBanner.jpg"
+                    alt="Fresh mushroom production"
+                    className="absolute inset-0 h-full w-full object-cover opacity-55"
+                    initial={{ scale: 1.08 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 1.1 }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#101810]/90 via-[#101810]/65 to-transparent" />
 
-              <div className="relative text-center text-white px-4">
-                <motion.h1
-                  className="text-4xl md:text-6xl font-extrabold drop-shadow-lg"
-                  initial={{ opacity: 0, y: 60 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  නැවුම්ව වැඩෙන්න, සෞඛ්‍ය සම්පන්නව &nbsp;කන්න
-                </motion.h1>
-
-                <motion.p
-                  className="mt-4 max-w-xl mx-auto text-lg md:text-xl"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  සාමූහික සංවර්ධන සමිතිය විසින් ප්‍රවේශමෙන් වගා කරන ලද උසස් තත්ත්වයේ හතු සොයා ගන්න - නැවුම්, පෝෂ්‍යදායී සහ තිරසාර ලෙස වගා කරන ලද.
-                </motion.p>
-
-                <motion.div
-                  className="mt-8 flex justify-center gap-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                >
-                  <Link
-                    to="/products"
-                    className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-full shadow hover:bg-gray-100"
-                  >
-                    Shop Now
-                  </Link>
-                  <Link
-                    to="/about"
-                    className="px-6 py-3 border border-white font-semibold rounded-full hover:bg-white hover:text-indigo-600"
-                  >
-                    Learn More
-                  </Link>
-                </motion.div>
-              </div>
-            </section>
-
-            {/* ---------- FEATURES ---------- */}
-            <section className="bg-white py-12">
-              <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-8 text-center">
-                {[
-                  {
-                    icon: <FiTruck size={36} />,
-                    title: "මිත්‍රශීලී සහ වෙළඳපොළ විලාසය",
-                    desc: "ගොවිපලෙන් මේසයට නැවුම්. නැවුම්, සෞඛ්‍ය සම්පන්න සහ වගකීමෙන් යුතුව නිෂ්පාදනය කරන ලද උසස් තත්ත්වයේ, දේශීයව වගා කරන ලද හතු භුක්ති විඳින්න.",
-                  },
-                  {
-                    icon: <FiCreditCard size={36} />,
-                    title: "වෘත්තීය සහ ව්‍යාපෘති කේන්ද්‍ර කරගත්",
-                    desc: "නැවුම් නිෂ්පාදන හරහා ප්‍රජාවන් සවිබල ගැන්වීම. ගුණාත්මකභාවය, පෝෂණය සහ ප්‍රජා වර්ධනය සහතික කරමින් තිරසාරව වගා කරන ලද හතු ගවේෂණය කරන්න.",
-                  },
-                  {
-                    icon: <FiShoppingBag size={36} />,
-                    title: "කෙටි සහ ආකර්ශනීය",
-                    desc: "පිරිසිදු. නැවුම්. දේශීය. පරිස්සමෙන් වගා කරන ලද උසස් හතු.",
-                  },
-                ].map(({ icon, title, desc }) => (
-                  <div key={title} className="flex flex-col items-center">
-                    <div className="text-indigo-600">{icon}</div>
-                    <h3 className="mt-3 font-bold">{title}</h3>
-                    <p className="mt-1 text-gray-600 text-sm text-center px-4">
-                      {desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* ---------- SPOTLIGHT / BESTSELLERS ---------- */}
-            <section className="max-w-6xl mx-auto px-6 py-16">
-              <h2 className="text-3xl font-bold text-center mb-10">Trending Now</h2>
-
-              {isLoading ? (
-                <p className="text-center">Loading products...</p>
-              ) : products.length === 0 ? (
-                <p className="text-center text-gray-500">No products available at the moment.</p>
-              ) : (
-                <div className="grid md:grid-cols-3 gap-10">
-                  {products.slice(0, 3).map((item, idx) => (
-                    <motion.article
-                      key={item.stockId}
-                      className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-                      initial={{ opacity: 0, y: 40 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: idx * 0.1 }}
+                <div className="relative mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                    <motion.div
+                        className="max-w-2xl text-white"
+                        initial={{ opacity: 0, y: 36 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7 }}
                     >
-                      <Link to={`/overview/${item.stockId}`}>
-                        <img
-                          src={item.stockImage[0]}
-                          alt={item.stockName}
-                          className="w-full h-64 object-cover"
-                        />
-                        <div className="p-6">
-                          {/* <h2 className="text-lg font-semibold">{getBrandName(item.brandId)} {getCategoryName(item.categoryId)}</h2> */}
-                          <h3 className="text-lg font-semibold">{item.stockName}</h3>
-                          <p className="mt-2 text-indigo-600 font-bold">
-                            Rs.{item.stockPrice}
-                          </p>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#b9dfbf]">Collective Development Society</p>
+                        <h1 className="mt-4 text-4xl font-extrabold leading-tight md:text-6xl">
+                            Fresh mushroom harvests from a community-led production network.
+                        </h1>
+                        <p className="mt-5 max-w-xl text-base leading-7 text-white/85 md:text-lg">
+                            Discover carefully grown, locally supplied mushroom products with reliable quality, responsible production, and direct society support.
+                        </p>
 
-                          <p className="mt-2 flex items-center gap-1 text-yellow-500">
-                            {[...Array(5)].map((_, i) => (
-                              <FaStar key={i} size={14} />
-                            ))}
-                            <span className="ml-1 text-sm text-gray-600">
-                              (1k reviews)
-                            </span>
-                          </p>
+                        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                            <Link to="/products" className="erp-btn erp-btn-primary">
+                                <FiShoppingBag /> Shop Products
+                            </Link>
+                            <Link to="/about" className="erp-btn border border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20">
+                                Learn More <FiArrowRight />
+                            </Link>
                         </div>
-                      </Link>
-                    </motion.article>
-                  ))}
+                    </motion.div>
                 </div>
-              )}
-
-              <div className="text-center mt-12">
-                <Link
-                  to="/products"
-                  className="inline-block px-8 py-3 border border-indigo-600 text-indigo-600 font-semibold rounded-full hover:bg-indigo-50"
-                >
-                  Browse All Products
-                </Link>
-              </div>
             </section>
 
-            {/* ---------- CTA BANNER ---------- */}
-            <section className="w-full bg-indigo-600 text-white py-16 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold bg-indigo-600">
-                  අපේ හතු ආදරවන්තයින්ගේ කවයට එකතු වෙන්න
-              </h2>
-              <p className="mt-4 max-w-2xl mx-auto">
-                  ඔබගේ පළමු ඇණවුමට 10% වට්ටමක් ලබාගන්න, 
-                  විශේෂ ප්‍රවර්ධන සඳහා පෙර ප්‍රවේශය ලබාගන්න, 
-                  තවද seasonal offers සහ රසවත් recipes හා flavor tips 
-                  ඔබගේ inbox එකට සෘජුවම ලබාගන්න.
-              </p>
-              <Link
-                to="/register"
-                className="mt-8 inline-block px-8 py-3 bg-white text-indigo-600 font-semibold rounded-full shadow hover:bg-gray-100"
-              >
-                Sign&nbsp;Up&nbsp;Free
-              </Link>
+            <section className="bg-white py-12">
+                <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:grid-cols-3 sm:px-6 lg:px-8">
+                    {[
+                        { icon: <FiTruck />, title: "Local Supply", desc: "Fresh products handled through a society-managed production and distribution flow." },
+                        { icon: <FiShield />, title: "Quality Focused", desc: "Harvests and prepared products are presented with consistent product information." },
+                        { icon: <FiShoppingBag />, title: "Simple Ordering", desc: "Browse, add to cart, and checkout through a responsive storefront experience." },
+                    ].map(({ icon, title, desc }) => (
+                        <div key={title} className="rounded-lg border border-[#dfe7df] bg-[#f8fbf8] p-5 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-[#e6f4e9] text-2xl text-[#2f7d46]">{icon}</div>
+                            <h3 className="mt-4 text-lg font-extrabold text-[#172017]">{title}</h3>
+                            <p className="mt-2 text-sm leading-6 text-[#627069]">{desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                <div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                    <div>
+                        <p className="erp-eyebrow">Marketplace</p>
+                        <h2 className="erp-title">Featured Products</h2>
+                    </div>
+                    <Link to="/products" className="erp-btn erp-btn-secondary">Browse All Products</Link>
+                </div>
+
+                {isLoading ? (
+                    <p className="text-center text-[#627069]">Loading products...</p>
+                ) : products.length === 0 ? (
+                    <p className="rounded-lg bg-white p-10 text-center text-[#627069]">No products available at the moment.</p>
+                ) : (
+                    <div className="grid gap-5 md:grid-cols-3">
+                        {products.slice(0, 3).map((item, idx) => (
+                            <motion.article
+                                key={item.stockId || item.productId}
+                                className="group overflow-hidden rounded-lg border border-[#dfe7df] bg-white shadow-[0_10px_28px_rgba(31,54,36,0.07)] transition hover:-translate-y-1 hover:shadow-xl"
+                                initial={{ opacity: 0, y: 28 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.08 }}
+                            >
+                                <Link to={"/overview/" + item.stockId}>
+                                    <div className="aspect-[4/3] overflow-hidden bg-[#f2f7f3]">
+                                        <img
+                                            src={item.stockImage?.[0] || item.image?.[0] || "/mainBanner.jpg"}
+                                            alt={item.stockName || item.name}
+                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                        />
+                                    </div>
+                                    <div className="p-5">
+                                        <h3 className="text-lg font-extrabold text-[#172017]">{item.stockName || item.name}</h3>
+                                        <p className="mt-2 text-xl font-extrabold text-[#2f7d46]">Rs.{Number(item.stockPrice || item.price || 0).toFixed(2)}</p>
+                                        <p className="mt-3 flex items-center gap-1 text-[#f5b544]">
+                                            {[...Array(5)].map((_, i) => <FaStar key={i} size={14} />)}
+                                            <span className="ml-1 text-sm text-[#627069]">Featured</span>
+                                        </p>
+                                    </div>
+                                </Link>
+                            </motion.article>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            <section className="bg-[#142116] px-4 py-16 text-white sm:px-6 lg:px-8">
+                <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#b9dfbf]">Join the network</p>
+                    <h2 className="mt-3 text-3xl font-extrabold md:text-4xl">Support local mushroom production with every order.</h2>
+                    <p className="mt-4 max-w-2xl text-white/75">
+                        Shop fresh harvests, learn about the society, or contact the team for supply and production inquiries.
+                    </p>
+                    <Link to="/contact" className="erp-btn mt-8 bg-white text-[#276b3b] hover:bg-[#eef8f0]">Contact CDS</Link>
+                </div>
             </section>
         </Fragment>
     );

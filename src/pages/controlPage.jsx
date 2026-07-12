@@ -41,6 +41,9 @@ import LedgerAccountsPage from "./control/ledgerAccountsPage";
 
 import ReportsPage from "./reports/reportsPage";
 import CustomerLedgerPage from "./reports/customerLedgerPage";
+import CustomerOutstandingReport from "./reports/customerOutstandingReport";
+import CustomerOutstandingTransaction from "./reports/cusmtoerOutstandingTransactions";
+import CustomerReceiptPage from "./reports/customerReceiptsReport";
 
 import NotFoundPage from "./notFoundPage";
 
@@ -102,6 +105,9 @@ export default function ControlPage() {
 
         <Route path="reports" element={<ReportsPage />} />
         <Route path="customer-ledger" element={<CustomerLedgerPage />} />
+        <Route path="customer-outstanding-report" element={<CustomerOutstandingReport />} />
+        <Route path="customer-outstanding-transaction" element={<CustomerOutstandingTransaction />} />
+        <Route path="customer-receipts-report" element={<CustomerReceiptPage />} />
         
         <Route path="*" element={<NotFoundPage />} />
       </Route>
