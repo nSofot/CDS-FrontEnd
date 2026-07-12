@@ -10,41 +10,30 @@ export default function CheckOutPage() {
 
     const [cart, setCart] = useState(() => {
         const items = location.state?.cart || [];
-        
-        return items.map(item => {
+        return items.map((item) => {
             const info = item.productInfo || item;
             return {
                 productId: info.productId,
                 name: info.name,
                 description: info.description || "",
                 image: Array.isArray(info.image) ? info.image : [info.image || ""],
-                altName: Array.isArray(info.altName) ? info.altName : [info.altName || ""], // 👈 ensure array
+                altName: Array.isArray(info.altName) ? info.altName : [info.altName || ""],
                 labelledPrice: info.labelledPrice || info.price,
                 price: info.price,
-                qty: info.qty || info.quantity || 1
+                qty: info.qty || info.quantity || 1,
             };
         });
-
     });
 
     const [phoneNumber, setPhoneNumber] = useState("");
     const [address, setAddress] = useState("");
 
-    const getItemsTotal = () =>
-        cart.reduce((total, item) => total + item.labelledPrice * item.qty, 0);
+    const getItemsTotal = () => cart.reduce((total, item) => total + item.labelledPrice * item.qty, 0);
+    const getItemsDiscount = () => cart.reduce((total, item) => total + (item.labelledPrice - item.price) * item.qty, 0);
+    const getSubTotal = () => cart.reduce((total, item) => total + item.price * item.qty, 0);
+    const getEstimatedTotal = () => cart.reduce((total, item) => total + item.price * item.qty, 0);
 
-    const getItemsDiscount = () =>
-        cart.reduce((total, item) => total + (item.labelledPrice - item.price) * item.qty, 0);
-
-    const getSubTotal = () =>
-        cart.reduce((total, item) => total + item.price * item.qty, 0);
-
-    const getEstimatedTotal = () =>
-        cart.reduce((total, item) => total + item.price * item.qty, 0);
-
-    const removeFromCart = (index) => {
-        setCart(cart.filter((_, i) => i !== index));
-    };
+    const removeFromCart = (index) => setCart(cart.filter((_, i) => i !== index));
 
     const changeQty = (index, delta) => {
         const updated = [...cart];
@@ -58,12 +47,10 @@ export default function CheckOutPage() {
             toast.error("Please login first");
             return;
         }
-
         if (!phoneNumber || !address) {
             toast.error("Please enter phone number and address");
             return;
         }
-
         if (cart.length === 0) {
             toast.error("Your cart is empty");
             return;
@@ -72,32 +59,24 @@ export default function CheckOutPage() {
         const orderInformation = {
             phone: phoneNumber,
             address: address,
-            products: cart.map(item => ({
+            products: cart.map((item) => ({
                 productInfo: {
                     productId: item.productId,
                     name: item.name,
-                    altNames: Array.isArray(item.altName) ? item.altName : [item.altName], // ✅ fix here
+                    altNames: Array.isArray(item.altName) ? item.altName : [item.altName],
                     quantity: item.qty,
                     description: item.description,
                     price: item.price,
-                    images: Array.isArray(item.image) ? item.image : [item.image], // ✅ fix here
-                    labelledPrice: item.labelledPrice
-                }
-            }))
+                    images: Array.isArray(item.image) ? item.image : [item.image],
+                    labelledPrice: item.labelledPrice,
+                },
+            })),
         };
 
-
         try {
-            await axios.post(
-                `${import.meta.env.VITE_BACKEND_URL}/api/order`,
-                orderInformation,
-                {
-                    headers: {
-                        Authorization: "Bearer " + token,
-                    },
-                }
-            );
-
+            await axios.post(import.meta.env.VITE_BACKEND_URL + "/api/order", orderInformation, {
+                headers: { Authorization: "Bearer " + token },
+            });
             toast.success("Order placed successfully!");
             navigate("/products");
         } catch (err) {
@@ -106,104 +85,88 @@ export default function CheckOutPage() {
     };
 
     return (
-        <div className="bg-gray-200 w-[95%] md:w-full md:h-full flex flex-col md:flex-row justify-between items-center p-1 md:p-4">
-            {/* Cart Section */}
-            <div className="bg-gray-100 w-full md:w-[65%] h-full flex flex-col rounded-md p-1 md:p-6 md:overflow-y-scroll">
-               
-                {cart.map((item, index) => (
-                    <div key={item.productId || index} className="w-full h-full md:h-[115px] bg-white my-1 rounded-md flex flex-col md:flex-row md:justify-between items-center p-2">
-                        <div className="w-[15%] h-full ml-4">
-                            <img src={item.image[0]} alt={item.image[0]} className="w-[100px] h-[100px] object-cover rounded-md" />
-                        </div>
-
-                        <div className="w-full md:w-[65%] h-full flex flex-col justify-top item-center md:items-start ml-4 mr-4">
-                            <h1 className="text-1xl text-secondary font-semibold flex justify-center md:justify-start">{item.name}</h1>
-                            {/* <p className="text-xs text-gray-600">{item.description}</p>
-                            <p className="text-xs text-gray-600">{item.altName}</p> */}
-                            <p className="text-xs text-gray-600 flex justify-center md:justify-start">{item.productId}</p>
-                            <div className="w-full flex flex-col md:flex-row md:justify-between items-center">
-                                {item.labelledPrice > item.price ? (
-                                    <div>
-                                        <span className="text-lg font-semibold text-secondary ">Rs.{item.price.toFixed(2)}</span>
-                                        <span className="text-md mx-2 text-gray-500 line-through">Rs.{item.labelledPrice.toFixed(2)}</span>
-                                    </div>
-                                ) : (
-                                    <span className="text-lg font-semibold text-accent">Rs.{item.price.toFixed(2)}</span>
-                                )}
-                                <span className="text-sm font-semibold text-gray-600">Rs.{(item.price * item.qty).toFixed(2)}</span>
-                            </div>
-                        </div>
-
-                        <div className="w-[100px] h-[100px] flex flex-col justify-between items-center md:items-end space-y-2">
-                            <button className="text-2xl hover:bg-red-600 hover:text-white rounded-full"
-                                onClick={() => removeFromCart(index)}><BiTrash />
-                            </button>
-                            <div className="flex border rounded-xl p-1 items-center">
-                                <button onClick={() => changeQty(index, -1)} className="p-1 hover:bg-blue-400 rounded-xl"><BiMinus /></button>
-                                <span className="mx-2">{item.qty}</span>
-                                <button onClick={() => changeQty(index, 1)} className="p-1 hover:bg-blue-400 rounded-xl"><BiPlus /></button>
-                            </div>
-                        </div>
+        <main className="min-h-screen bg-[#f4f7f4]">
+            <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_24rem] lg:px-8">
+                <div>
+                    <div className="mb-5">
+                        <p className="erp-eyebrow">Checkout</p>
+                        <h1 className="erp-title">Confirm Your Order</h1>
+                        <p className="erp-subtitle">Review quantities and add delivery contact details.</p>
                     </div>
-                ))}
 
-            </div>
-
-            {/* Summary Section */}
-            <div className="bg-gray-100 w-full md:w-[33%] h-full mt-4 md:mt-0 mb-4 md:mb-0 flex flex-col rounded-md p-8">
-                <h1 className="text-2xl font-semibold text-gray-900">Summary</h1>
-                <div className="pt-8 space-y-2">
-                    <SummaryRow label="Total Items" value={cart.length} />
-                    <SummaryRow label="Items Total" value={`Rs.${getItemsTotal().toFixed(2)}`} strike />
-                    <SummaryRow label="Items Discount" value={`- Rs.${getItemsDiscount().toFixed(2)}`} highlight />
-                    <SummaryRow label="Sub Total" value={`Rs.${getSubTotal().toFixed(2)}`} bold />
-                    <SummaryRow label="Shipping" value="Rs.00.00" bold />
-                    <SummaryRow label="Estimated Total" value={`Rs.${getEstimatedTotal().toFixed(2)}`} bold large />
+                    <div className="space-y-3">
+                        {cart.length === 0 ? (
+                            <div className="rounded-lg border border-[#dfe7df] bg-white p-10 text-center text-[#627069]">No items selected for checkout.</div>
+                        ) : (
+                            cart.map((item, index) => (
+                                <article key={item.productId || index} className="rounded-lg border border-[#dfe7df] bg-white p-4 shadow-[0_10px_28px_rgba(31,54,36,0.07)]">
+                                    <div className="grid gap-4 md:grid-cols-[7rem_1fr_auto] md:items-center">
+                                        <img src={item.image[0]} alt={item.name} className="h-28 w-full rounded-lg object-cover md:h-24 md:w-24" />
+                                        <div className="min-w-0 text-center md:text-left">
+                                            <h2 className="text-lg font-extrabold text-[#172017]">{item.name}</h2>
+                                            <p className="mt-1 text-sm font-semibold text-[#627069]">{item.productId}</p>
+                                            <div className="mt-3 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+                                                {item.labelledPrice > item.price ? (
+                                                    <>
+                                                        <span className="text-base font-extrabold text-[#172017]">Rs.{item.price.toFixed(2)}</span>
+                                                        <span className="text-sm font-semibold text-[#8a978e] line-through">Rs.{item.labelledPrice.toFixed(2)}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-base font-extrabold text-[#2f7d46]">Rs.{item.price.toFixed(2)}</span>
+                                                )}
+                                                <span className="rounded-full bg-[#eef8f0] px-3 py-1 text-xs font-extrabold text-[#276b3b]">Line: Rs.{(item.price * item.qty).toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-3 md:flex-col md:items-end">
+                                            <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#ffd5d1] text-[#b42318] transition hover:bg-[#fff1f0]" onClick={() => removeFromCart(index)}>
+                                                <BiTrash />
+                                            </button>
+                                            <div className="flex items-center rounded-lg border border-[#dfe7df] bg-[#f8fbf8] p-1">
+                                                <button onClick={() => changeQty(index, -1)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-white"><BiMinus /></button>
+                                                <span className="min-w-8 text-center font-extrabold">{item.qty}</span>
+                                                <button onClick={() => changeQty(index, 1)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-white"><BiPlus /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))
+                        )}
+                    </div>
                 </div>
 
-                <input
-                    className="w-full text-sm rounded-md border-2 border-gray-200 py-2 px-4 mt-8"
-                    type="text"
-                    placeholder="Phone Number"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-                <input
-                    className="w-full text-sm rounded-md border-2 border-gray-200 py-2 px-4 mt-4"
-                    type="text"
-                    placeholder="Address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                />
+                <aside className="h-fit rounded-lg border border-[#dfe7df] bg-white p-6 shadow-[0_14px_32px_rgba(31,54,36,0.08)] lg:sticky lg:top-6">
+                    <h2 className="text-2xl font-extrabold text-[#172017]">Order Summary</h2>
+                    <div className="mt-6 space-y-3">
+                        <SummaryRow label="Total Items" value={cart.length} />
+                        <SummaryRow label="Items Total" value={"Rs." + getItemsTotal().toFixed(2)} strike />
+                        <SummaryRow label="Items Discount" value={"- Rs." + getItemsDiscount().toFixed(2)} highlight />
+                        <SummaryRow label="Sub Total" value={"Rs." + getSubTotal().toFixed(2)} bold />
+                        <SummaryRow label="Shipping" value="Rs.00.00" bold />
+                    </div>
+                    <div className="mt-5 border-t border-[#edf2ed] pt-5">
+                        <SummaryRow label="Estimated Total" value={"Rs." + getEstimatedTotal().toFixed(2)} bold large />
+                    </div>
 
-                <button
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md mt-8"
-                    disabled={cart.length === 0}
-                    onClick={placeOrder}
-                >
-                    Place Order
-                </button>
+                    <div className="mt-8 space-y-4">
+                        <input className="erp-input" type="text" placeholder="Phone Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                        <input className="erp-input" type="text" placeholder="Delivery Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+                    </div>
 
-                <p className="text-sm font-semibold text-gray-600 mt-4">
-                    * Shipping and taxes are calculated at checkout.
-                </p>
-            </div>
-        </div>
+                    <button className="erp-btn erp-btn-primary mt-8 w-full" disabled={cart.length === 0} onClick={placeOrder}>
+                        Place Order
+                    </button>
+                    <p className="mt-4 text-xs leading-5 text-[#627069]">Shipping and taxes are calculated at checkout.</p>
+                </aside>
+            </section>
+        </main>
     );
 }
 
-// Helper component to reduce repetition
 function SummaryRow({ label, value, strike, bold, highlight, large }) {
-    const baseStyle = "text-sm";
-    const labelStyle = `${baseStyle} ${bold ? "font-semibold" : "font-normal"} text-gray-400`;
-    const valueStyle = `${baseStyle} ${bold ? "font-semibold" : "font-normal"} ${
-        highlight ? "text-red-600" : "text-gray-900"
-    } ${strike ? "line-through" : ""} ${large ? "text-lg" : ""}`;
-
     return (
-        <div className="w-full flex justify-between">
-            <p className={labelStyle}>{label}</p>
-            <p className={valueStyle}>{value}</p>
+        <div className="flex w-full items-center justify-between gap-4">
+            <p className={(bold ? "font-bold" : "font-medium") + " text-sm text-[#627069]"}>{label}</p>
+            <p className={(bold ? "font-extrabold" : "font-semibold") + " " + (highlight ? "text-[#b42318]" : "text-[#172017]") + " " + (strike ? "line-through text-[#8a978e]" : "") + " " + (large ? "text-xl" : "text-sm")}>{value}</p>
         </div>
     );
 }

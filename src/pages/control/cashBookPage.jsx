@@ -71,25 +71,25 @@ export default function CashBookPage() {
 
 
   return (
-    <div className="w-full max-w-7xl mx-auto min-h-screen flex flex-col gap-4 p-4">
+    <div className="erp-page-shell flex min-h-screen flex-col gap-4">
 
       {/* HEADER */}
-      <div className="bg-white rounded-xl shadow border border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-6 py-4">
+      <div className="erp-panel">
+        <div className="erp-page-header m-0 p-5">
 
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
-              📦 Cash Book
+            <h1 className="erp-title">
+              Cash Book
             </h1>
 
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="erp-subtitle">
               View and manage all registered cash book accounts
             </p>
           </div>
 
           <button
             onClick={() => navigate("/control")}
-            className="px-6 h-11 rounded-lg border border-orange-500 text-orange-500 font-medium hover:bg-orange-500 hover:text-white transition"
+            className="erp-btn erp-btn-secondary"
           >
             ← Go Back
           </button>
@@ -107,7 +107,7 @@ export default function CashBookPage() {
           <div className="md:hidden space-y-3">
 
             {ledgerAccounts.length === 0 ? (
-              <div className="bg-white rounded-xl shadow p-6 text-center text-gray-500">
+              <div className="erp-panel p-6 text-center text-[#627069]">
                 No ledger accounts found
               </div>
             ) : (
@@ -118,9 +118,9 @@ export default function CashBookPage() {
                     setActiveRecord(item);
                     setIsModalOpen(true);
                   }}
-                  className="bg-white border rounded-xl p-4 shadow-sm cursor-pointer hover:bg-orange-50 transition"
+                  className="erp-mobile-card cursor-pointer p-4"
                 >
-                  <div className="font-semibold text-orange-600 text-lg">
+                  <div className="text-lg font-extrabold text-[#2f7d46]">
                     {item.accountName || "Unnamed Account"}
                   </div>
 
@@ -141,13 +141,13 @@ export default function CashBookPage() {
           </div>
 
           {/* DESKTOP TABLE */}
-          <div className="hidden md:block bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+          <div className="erp-table-wrap hidden md:block">
 
             <div className="overflow-auto max-h-[70vh]">
 
-              <table className="w-full text-sm">
+              <table className="erp-table">
 
-                <thead className="bg-orange-100 sticky top-0 z-10">
+                <thead className="sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 text-center font-semibold w-20">
                       #
@@ -167,7 +167,7 @@ export default function CashBookPage() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="">
 
                   {ledgerAccounts.length === 0 ? (
                     <tr>
@@ -186,7 +186,7 @@ export default function CashBookPage() {
                           setActiveRecord(item);
                           setIsModalOpen(true);
                         }}
-                        className="hover:bg-orange-50 transition-colors cursor-pointer"
+                        className="cursor-pointer"
                       >
                         <td className="px-4 py-3 text-center">
                           {index + 1}
@@ -224,13 +224,13 @@ export default function CashBookPage() {
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
-        className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto outline-none"
+        className="erp-panel max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 outline-none"
       >
         {activeRecord && (
           <>
             <div className="flex justify-between items-center mb-5">
 
-              <h2 className="text-xl font-bold text-orange-600">
+              <h2 className="text-xl font-extrabold text-[#2f7d46]">
                 Account Details
               </h2>
 
@@ -257,7 +257,7 @@ export default function CashBookPage() {
                     key={key}
                     className="border-b border-gray-200"
                   >
-                    <td className="py-3 font-medium text-orange-600">
+                    <td className="py-3 font-bold text-[#2f7d46]">
                       {key}
                     </td>
 
@@ -273,7 +273,7 @@ export default function CashBookPage() {
 
             <button
               onClick={() => setIsModalOpen(false)}
-              className="w-full mt-6 h-11 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition"
+              className="erp-btn erp-btn-primary mt-6 w-full"
             >
               Close
             </button>
@@ -284,7 +284,7 @@ export default function CashBookPage() {
       {/* FOOTER BUTTON */}
       <button
         onClick={() => navigate("/")}
-        className="h-12 rounded-lg bg-orange-100 hover:bg-orange-200 font-semibold transition"
+        className="erp-btn erp-btn-secondary"
       >
         Close
       </button>
