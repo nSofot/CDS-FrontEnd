@@ -128,30 +128,30 @@ export default function MembersPage() {
 
   
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
+    <div className="erp-page-shell flex min-h-screen flex-col gap-4">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="flex md:flex-row flex-col justify-between gap-2 px-4 py-3">
+      <div className="erp-panel">
+        <div className="erp-page-header m-0 p-5">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
-              🧑‍🤝‍🧑 Members List
+            <h1 className="erp-title">
+              Members List
             </h1>
-            <p className="text-gray-600 text-sm">
+            <p className="erp-subtitle">
               View and manage all registered members
             </p>
           </div>
 
-          <div className="flex md:flex-row flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => navigate("/control/add-member")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+              className="erp-btn erp-btn-secondary"
             >
               + Add Member
             </button>
 
             <button
               onClick={() => navigate("/control")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+              className="erp-btn erp-btn-secondary"
             >
               ← Go Back
             </button>
@@ -160,7 +160,7 @@ export default function MembersPage() {
       </div>
 
       {/* Members List */}
-      <div className="bg-white rounded-lg shadow flex-1 overflow-hidden">
+      <div className="erp-table-wrap flex-1">
         <div className="h-full max-h-[65vh] overflow-y-auto">
           {isLoading ? (
             <div className="flex justify-center py-10">
@@ -170,8 +170,8 @@ export default function MembersPage() {
             <>
               {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-orange-200 table-fixed">
-                  <thead className="bg-orange-100">
+                <table className="erp-table min-w-full table-fixed">
+                  <thead className="">
                     <tr>
                       <th className="px-3 py-2 text-left">#</th>
                       <th className="px-3 py-2 text-center">Image</th>
@@ -184,7 +184,7 @@ export default function MembersPage() {
                       <th className="px-3 py-2 text-left">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-orange-200">
+                  <tbody className="">
                     {customers.map((item, index) => (
                       <tr
                         key={item.memberId}
@@ -192,9 +192,9 @@ export default function MembersPage() {
                           setActiveRecord(item);
                           setIsModalOpen(true);
                         }}
-                        className="hover:bg-orange-50 cursor-pointer"
+                        className="cursor-pointer"
                       >
-                        <td className="px-3 py-2">{index + 1}</td>
+                        <td className="px-3 py-2 text-left">{index + 1}</td>
                         <td className="px-3 py-2 text-center">
                           <img
                             src={
@@ -209,9 +209,7 @@ export default function MembersPage() {
                           {item.memberId}
                         </td>
                         <td className="px-3 py-2">
-                          {item.nameInSinhala
-                            ? item.nameInSinhala
-                            : `${item.firstName} ${item.lastName}`}
+                          {`${item.firstName} ${item.lastName}`}
                         </td>
 
 
@@ -221,9 +219,9 @@ export default function MembersPage() {
 
                         <td className="px-3 py-2">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                            className={`erp-chip ${getTypeStyle(
                               item.memberType
-                            )}`}
+                            )}` }
                           >
                             {item.memberType || "N/A"}
                           </span>
@@ -265,7 +263,7 @@ export default function MembersPage() {
               </div>
 
               {/* Mobile Cards */}
-              <div className="md:hidden flex flex-col gap-3 p-3">
+              <div className="flex flex-col gap-3 p-3 md:hidden">
                 {customers.map((item) => (
                   <div
                     key={item.memberId}
@@ -273,7 +271,7 @@ export default function MembersPage() {
                       setActiveRecord(item);
                       setIsModalOpen(true);
                     }}
-                    className="flex items-center gap-3 p-3 border border-orange-200 rounded-lg shadow-sm hover:bg-orange-50 cursor-pointer"
+                    className="erp-mobile-card flex cursor-pointer items-center gap-3 p-3"
                   >
                     <img
                       src={
@@ -297,9 +295,9 @@ export default function MembersPage() {
 
                       <p className="text-sm text-gray-600">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                          className={`erp-chip ${getTypeStyle(
                             item.memberType
-                          )}`}
+                          )}` }
                         >
                           {item.memberType || "N/A"}
                         </span>
@@ -350,12 +348,12 @@ export default function MembersPage() {
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center p-3"
-        className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5"
+        className="erp-panel max-h-[90vh] w-full max-w-lg overflow-y-auto p-5 outline-none"
       >
         {activeRecord && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-orange-600">
+              <h2 className="text-xl font-extrabold text-[#2f7d46]">
                 Member Details
               </h2>
               <button onClick={() => setIsModalOpen(false)}>✖</button>
@@ -408,7 +406,7 @@ export default function MembersPage() {
       {/* Bottom Close Button */}
       <button
         onClick={() => navigate("/")}
-        className="h-12 rounded-lg border bg-orange-100 hover:bg-orange-200 font-semibold"
+        className="erp-btn erp-btn-secondary"
       >
         Close
       </button>

@@ -111,20 +111,20 @@ export default function AddStockPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="erp-page-shell min-h-screen">
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+      <div className="erp-page-header">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold">
-            📦 Add Product
+          <h1 className="erp-title">
+            Add Product
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="erp-subtitle">
             Create new product item
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={handleAddStock}
             disabled={isAdding}
@@ -139,7 +139,7 @@ export default function AddStockPage() {
 
           <Link
             to="/control/stock"
-            className="px-5 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white"
+            className="erp-btn erp-btn-danger"
           >
             Cancel
           </Link>
@@ -147,13 +147,13 @@ export default function AddStockPage() {
       </div>
 
       {/* FORM */}
-      <div className="bg-white rounded-xl shadow border p-4 md:p-6 space-y-5">
+      <div className="erp-panel space-y-5 p-4 md:p-6">
 
         {/* ROW 1 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
           <div>
-            <label className="text-sm font-medium">
+            <label className="erp-label">
               Category *
             </label>
             <select
@@ -161,7 +161,7 @@ export default function AddStockPage() {
               onChange={(e) =>
                 setStockCategory(e.target.value)
               }
-              className="w-full p-2 border rounded-lg"
+              className="erp-input"
             >
               <option value="">Select category</option>
               <option value="packing material">Packing Material</option>
@@ -175,7 +175,7 @@ export default function AddStockPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">
+            <label className="erp-label">
               Stock Name *
             </label>
             <input
@@ -184,12 +184,12 @@ export default function AddStockPage() {
               onChange={(e) =>
                 setStockName(e.target.value)
               }
-              className="w-full p-2 border rounded-lg"
+              className="erp-input"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">
+            <label className="erp-label">
               UOM *
             </label>
             <select
@@ -197,7 +197,7 @@ export default function AddStockPage() {
               onChange={(e) =>
                 setStockUOM(e.target.value)
               }
-              className="w-full p-2 border rounded-lg"
+              className="erp-input"
             >
               <option value="">Select UOM</option>
               <option value="kg">Kilogram</option>
@@ -218,7 +218,7 @@ export default function AddStockPage() {
 
         {/* DESCRIPTION */}
         <div>
-          <label className="text-sm font-medium">
+          <label className="erp-label">
             Description
           </label>
           <textarea
@@ -226,13 +226,13 @@ export default function AddStockPage() {
             onChange={(e) =>
               setStockDescription(e.target.value)
             }
-            className="w-full p-2 border rounded-lg min-h-[60px]"
+            className="erp-input min-h-[90px]"
           />
         </div>
 
         {/* IMAGE */}
         <div>
-          <label className="text-sm font-medium">
+          <label className="erp-label">
             Stock Images
           </label>
 
@@ -241,7 +241,7 @@ export default function AddStockPage() {
             multiple
             accept="image/*"
             onChange={handleImageChange}
-            className="w-full p-2 border rounded-lg"
+            className="erp-input"
           />
 
           {previewImages.length > 0 && (
@@ -250,12 +250,12 @@ export default function AddStockPage() {
                 <div key={index} className="relative">
                   <img
                     src={img}
-                    className="w-full h-full object-cover rounded-lg border"
+                    className="aspect-video w-full rounded-lg border border-[#dfe7df] object-cover"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 text-xs rounded"
+                    className="absolute right-2 top-2 rounded bg-[#b42318] px-2 py-1 text-xs font-bold text-white"
                   >
                     Remove
                   </button>
@@ -275,7 +275,7 @@ export default function AddStockPage() {
             onChange={(e) =>
               setStockQuantity(e.target.value)
             }
-            className="w-full p-2 border rounded-lg"
+            className="erp-input"
           /> */}
 
           <input
@@ -285,7 +285,7 @@ export default function AddStockPage() {
             onChange={(e) =>
               setBaseQuantity(e.target.value)
             }
-            className="w-full p-2 border rounded-lg"
+            className="erp-input"
           />
 
           <input
@@ -295,7 +295,7 @@ export default function AddStockPage() {
             onChange={(e) =>
               setStockPrice(e.target.value)
             }
-            className="w-full p-2 border rounded-lg"
+            className="erp-input"
           />
 
           <input
@@ -305,7 +305,7 @@ export default function AddStockPage() {
             onChange={(e) =>
               setLabelledPrice(e.target.value)
             }
-            className="w-full p-2 border rounded-lg"
+            className="erp-input"
           />
         </div>
       </div>

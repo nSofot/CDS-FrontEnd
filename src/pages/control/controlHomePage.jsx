@@ -13,12 +13,9 @@ import {
   FaFileAlt,
   FaCog,
 } from "react-icons/fa";
-
 import { FaSackDollar, FaMoneyBillTransfer } from "react-icons/fa6";
 import { TbReport } from "react-icons/tb";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-
-/* ───────── MAIN PAGE ───────── */
 
 export default function ControlHomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,279 +33,109 @@ export default function ControlHomePage() {
 
   let memberRoll = user?.memberRole || "";
 
-
-  // Override role for a specific email
   if (user?.email === "nihalranathunge@gmail.com") {
     memberRoll = "admin";
   }
 
   const normalizedRole = memberRoll?.toLowerCase().trim();
 
-  /* ───── MENU CONFIG ───── */
   const menuItems = [
-    {
-      label: "Home",
-      to: "/",
-      icon: <FaHome />,
-      roles: ["admin"],
-    },
-
-    {
-      label: "Dashboard",
-      to: "/control/",
-      icon: <FaAtom />, // system overview / dashboard
-      roles: ["admin"],
-    },
-
-    {
-      label: "Bag Production",
-      to: "/control/mushroom-process",
-      icon: <FaSackDollar />, // production / inventory output
-      roles: ["admin"],
-    },
-
-    {
-      label: "Batch Management",
-      to: "/control/batch-list",
-      icon: <FaFileAlt />, // documents / batches
-      roles: ["admin"],
-    },
-
-    {
-      label: "Order Management",
-      to: "/control/bag-orders-management",
-      icon: <FaMoneyBillTransfer />, // transactions/orders
-      roles: ["admin"],
-    },
-
-    {
-      label: "Members",
-      to: "/control/members",
-      icon: <FaUsers />, // people
-      roles: ["admin"],
-    },
-
-    {
-      label: "Vendors",
-      to: "/control/vendors",
-      icon: <FaUsersCog />, // business partners / admin users
-      roles: ["admin"],
-    },
-
-    {
-      label: "Products",
-      to: "/control/stock",
-      icon: <FaSackDollar />, // inventory / stock
-      roles: ["admin"],
-    },
-
-    {
-      label: "Cash Book",
-      to: "/control/cash-book",
-      icon: <FaMoneyCheckAlt />, // cash management
-      roles: ["admin"],
-    },
-
-    {
-      label: "Bag Sale Invoices",
-      to: "/control/bagSale-invoice",
-      icon: <FaReceipt />, // invoices
-      roles: ["admin"],
-    },
-
-    {
-      label: "Material Sales Invoices",
-      to: "/control/sales-invoice",
-      icon: <FaReceipt />,
-      roles: ["admin"],
-    },
-
-    {
-      label: "Purchase Invoices",
-      to: "/control/grns",
-      icon: <FaFileAlt />, // purchase docs
-      roles: ["admin"],
-    },
-
-    {
-      label: "Other Invoices",
-      to: "/control/other-invoice",
-      icon: <FaFileAlt />,
-      roles: ["admin"],
-    },
-
-    {
-      label: "Member Receipts",
-      to: "/control/member-receipt",
-      icon: <FaUserClock />, // payments tracking
-      roles: ["admin"],
-    },
-
-    {
-      label: "Other Receipts",
-      to: "/control/other-receipt",
-      icon: <FaUserClock />,
-      roles: ["admin"],
-    },
-
-    {
-      label: "Supplier Payments",
-      to: "/control/vendor-payment",
-      icon: <FaMoneyBillTransfer />, // outgoing payments
-      roles: ["admin"],
-    },
-
-    {
-      label: "Other Payments",
-      to: "/control/other-payment",
-      icon: <FaMoneyBillTransfer />,
-      roles: ["admin"],
-    },
-
-    {
-      label: "Ledger Accounts",
-      to: "/control/ledger-accounts",
-      icon: <FaUsersCog />, // accounting control
-      roles: ["admin"],
-    },
-
-    {
-      label: "Reports",
-      to: "/control/reports",
-      icon: <TbReport />, // reports
-      roles: ["admin"],
-    },
-
-    {
-      label: "Settings",
-      to: "/control/settings",
-      icon: <FaCog />, // settings
-      roles: ["admin"],
-    },
+    { label: "Home", to: "/", icon: <FaHome />, roles: ["admin"] },
+    { label: "Dashboard", to: "/control/", icon: <FaAtom />, roles: ["admin"] },
+    { label: "Bag Production", to: "/control/mushroom-process", icon: <FaSackDollar />, roles: ["admin"] },
+    { label: "Batch Management", to: "/control/batch-list", icon: <FaFileAlt />, roles: ["admin"] },
+    { label: "Order Management", to: "/control/bag-orders-management", icon: <FaMoneyBillTransfer />, roles: ["admin"] },
+    { label: "Members", to: "/control/members", icon: <FaUsers />, roles: ["admin"] },
+    { label: "Vendors", to: "/control/vendors", icon: <FaUsersCog />, roles: ["admin"] },
+    { label: "Products", to: "/control/stock", icon: <FaSackDollar />, roles: ["admin"] },
+    { label: "Cash Book", to: "/control/cash-book", icon: <FaMoneyCheckAlt />, roles: ["admin"] },
+    { label: "Bag Sale Invoices", to: "/control/bagSale-invoice", icon: <FaReceipt />, roles: ["admin"] },
+    { label: "Material Sales Invoices", to: "/control/sales-invoice", icon: <FaReceipt />, roles: ["admin"] },
+    { label: "Purchase Invoices", to: "/control/grns", icon: <FaFileAlt />, roles: ["admin"] },
+    { label: "Other Invoices", to: "/control/other-invoice", icon: <FaFileAlt />, roles: ["admin"] },
+    { label: "Member Receipts", to: "/control/member-receipt", icon: <FaUserClock />, roles: ["admin"] },
+    { label: "Other Receipts", to: "/control/other-receipt", icon: <FaUserClock />, roles: ["admin"] },
+    { label: "Supplier Payments", to: "/control/vendor-payment", icon: <FaMoneyBillTransfer />, roles: ["admin"] },
+    { label: "Other Payments", to: "/control/other-payment", icon: <FaMoneyBillTransfer />, roles: ["admin"] },
+    { label: "Ledger Accounts", to: "/control/ledger-accounts", icon: <FaUsersCog />, roles: ["admin"] },
+    { label: "Reports", to: "/control/reports", icon: <TbReport />, roles: ["admin"] },
+    { label: "Settings", to: "/control/settings", icon: <FaCog />, roles: ["admin"] },
   ];
 
   const filteredMenuItems = useMemo(() => {
-    return menuItems.filter(item =>
-      !normalizedRole ||
-      item.roles.includes(normalizedRole)
-    );
+    return menuItems.filter((item) => !normalizedRole || item.roles.includes(normalizedRole));
   }, [normalizedRole]);
 
-
   return (
-    <div className="flex w-full h-screen overflow-hidden bg-gray-100">
-      {/* MOBILE OVERLAY */}
+    <div className="flex h-screen w-full overflow-hidden bg-[#f4f7f4] text-[#172017]">
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 bg-opacity-40 z-30 md:hidden"
+          className="fixed inset-0 z-30 bg-[#101810]/55 backdrop-blur-sm md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* SIDEBAR */}
       <aside
-        className={`
-          fixed md:static inset-y-0 left-0 z-40
-          w-70 bg-white border-r shadow-sm
-          flex flex-col h-screen
-          transition-transform duration-300
-          ${
-            sidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full md:translate-x-0"
-          }
-        `}
+        className={
+          "fixed inset-y-0 left-0 z-40 flex h-screen w-[18.5rem] flex-col border-r border-[#d8e3d9] bg-[#142116] text-white shadow-2xl shadow-black/15 transition-transform duration-300 md:static md:translate-x-0 " +
+          (sidebarOpen ? "translate-x-0" : "-translate-x-full")
+        }
       >
-        {/* HEADER */}
-        <div className="border-b shrink-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-          <div className="flex items-center justify-between p-4">
-            <div>
-              <h1 className="text-xl font-bold tracking-wide">
-                CDS ERP
-              </h1>
-              <p className="text-xs text-orange-100">
-                Version 1.0.0
-              </p>
+        <div className="shrink-0 border-b border-white/10 p-4">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <img src="/CDSLogo.png" alt="CDS logo" loading="lazy" className="h-11 w-11 rounded-lg bg-white p-1" />
+              <div>
+                <h1 className="text-lg font-extrabold leading-tight">CDS ERP</h1>
+                <p className="text-xs font-medium text-[#b9cbbb]">Version 1.0.0</p>
+              </div>
             </div>
 
             <button
               onClick={() => setSidebarOpen(false)}
-              className="md:hidden hover:bg-white/20 p-2 rounded-lg"
+              className="rounded-lg p-2 text-white/80 transition hover:bg-white/10 md:hidden"
+              aria-label="Close menu"
             >
               <FaTimes />
             </button>
           </div>
 
-          {/* USER CARD */}
-          <div className="px-4 pb-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold text-lg">
-                {user?.firstName?.charAt(0)}
-                {user?.lastName?.charAt(0)}
+          <div className="rounded-lg border border-white/10 bg-white/[0.06] p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#e6f4e9] text-sm font-extrabold text-[#276b3b]">
+                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
               </div>
-
-              <div className="overflow-hidden">
-                <p className="text-xs text-orange-100">
-                  Welcome Back
-                </p>
-
-                <p className="font-medium truncate">
-                  {user?.firstName} {user?.lastName}
-                </p>
-
-                <p className="text-xs text-orange-100 truncate">
-                  {user?.memberRole || "User"}
-                </p>
+              <div className="min-w-0">
+                <p className="text-[0.68rem] font-bold uppercase tracking-[0.08em] text-[#9db39f]">Signed in</p>
+                <p className="truncate text-sm font-bold">{user?.firstName} {user?.lastName}</p>
+                <p className="truncate text-xs text-[#b9cbbb]">{user?.memberRole || "User"}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* MENU */}
-        <nav
-          className="
-            flex-1
-            overflow-y-auto
-            px-3
-            py-4
-            space-y-1
-            scrollbar-thin
-            scrollbar-thumb-orange-300
-            scrollbar-track-transparent
-          "
-        >
-          {filteredMenuItems.map((item) => (
-            <SidebarLink
-              key={item.to}
-              to={item.to}
-              icon={item.icon}
-              label={item.label}
-              onClick={() => setSidebarOpen(false)}
-            />
-          ))}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="mb-2 px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-[#8fa292]">Workspace</div>
+          <div className="space-y-1">
+            {filteredMenuItems.map((item) => (
+              <SidebarLink
+                key={item.to}
+                to={item.to}
+                icon={item.icon}
+                label={item.label}
+                onClick={() => setSidebarOpen(false)}
+              />
+            ))}
+          </div>
         </nav>
 
-        {/* FOOTER */}
-        <div className="border-t p-3 shrink-0 bg-gray-50">
+        <div className="shrink-0 border-t border-white/10 p-3">
           <button
             onClick={() => {
               localStorage.clear();
               navigate("/login");
             }}
-            className="
-              w-full
-              flex
-              items-left
-              justify-left
-              gap-3
-              px-4
-              py-3
-              rounded-xl
-              text-red-600
-              font-medium
-              hover:bg-red-50
-              transition-all
-            "
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold text-[#ffd5d1] transition hover:bg-[#b42318]/20"
           >
             <FaSignOutAlt />
             Logout
@@ -316,28 +143,31 @@ export default function ControlHomePage() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="sticky top-0 z-20 bg-white px-4 py-3 flex gap-4 shadow-sm">
-          <button
-            className="md:hidden text-orange-600 text-4xl"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <FaBars />
-          </button>
-          <img
-            src="/CDSLogo.png"
-            alt="logo"
-            loading="lazy"
-            className="w-12 h-12"
-          />
-          <div className="flex flex-col">
-            <h1 className="md:text-xl text-lg font-semibold">Collective Development Society</h1>
-            <h2 className="md:text-sm text-xs text-gray-500">Smart Mushroom Production Management System</h2>
+      <main className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="sticky top-0 z-20 border-b border-[#dfe7df] bg-white/90 px-4 py-3 shadow-sm backdrop-blur md:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                className="rounded-lg border border-[#d8e3d9] p-2.5 text-[#2f7d46] transition hover:bg-[#eef8f0] md:hidden"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open menu"
+              >
+                <FaBars />
+              </button>
+              <div className="min-w-0">
+                <p className="erp-eyebrow hidden sm:block">Collective Development Society</p>
+                <h1 className="truncate text-base font-extrabold text-[#172017] md:text-xl">Smart Mushroom Production Management System</h1>
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-2 rounded-lg border border-[#dfe7df] bg-[#f8fbf8] px-3 py-2 text-xs font-bold text-[#5f7a64] sm:flex">
+              <span className="h-2 w-2 rounded-full bg-[#2f7d46]" />
+              ERP Online
+            </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
           <Outlet />
         </div>
       </main>
@@ -345,23 +175,21 @@ export default function ControlHomePage() {
   );
 }
 
-/* ───────── COMPONENTS ───────── */
-const SidebarLink = memo(
-({ to, icon, label, onClick, end }) => (
+const SidebarLink = memo(({ to, icon, label, onClick, end }) => (
   <NavLink
     to={to}
     end={end}
     onClick={onClick}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-4 py-2 rounded-lg transition
-      ${
-        isActive
-          ? "bg-orange-200 font-semibold"
-          : "hover:bg-orange-50"
-      }`
+      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition " +
+      (isActive
+        ? "bg-[#e6f4e9] text-[#17361f] shadow-sm"
+        : "text-[#dce8dd] hover:bg-white/10 hover:text-white")
     }
   >
-    <span className="text-orange-500">{icon}</span>
-    {label}
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#9cd2a8] transition group-hover:bg-white/15 group-hover:text-white">
+      {icon}
+    </span>
+    <span className="truncate">{label}</span>
   </NavLink>
 ));

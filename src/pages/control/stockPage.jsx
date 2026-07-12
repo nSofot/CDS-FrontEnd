@@ -134,37 +134,37 @@ export default function StockPage() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col gap-4">
+    <div className="erp-page-shell flex min-h-screen flex-col gap-4">
       {/* HEADER */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-3">
+      <div className="erp-panel">
+        <div className="erp-page-header m-0 p-5">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-orange-600">
-              📦 Product List
+            <h1 className="erp-title">
+              Product List
             </h1>
-            <p className="text-gray-600 text-sm">
+            <p className="erp-subtitle">
               View and manage all registered products
             </p>
           </div>
 
-          <div className="flex flex-row gap-4">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate("/control/add-stock")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+              className="erp-btn erp-btn-secondary"
             >
               + Add Product
             </button>
 
             <button
               onClick={() => navigate("/control/stock-bin-card")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+              className="erp-btn erp-btn-secondary"
             >
               ⌕ Bin Card
             </button>
 
             <button
               onClick={() => navigate("/control")}
-              className="px-6 h-12 rounded-lg border border-orange-400 text-orange-400 font-semibold hover:bg-orange-400 hover:text-white transition"
+              className="erp-btn erp-btn-secondary"
             >
               ← Go Back
             </button>
@@ -180,7 +180,7 @@ export default function StockPage() {
       ) : (
         <>
           {/* 📱 MOBILE VIEW */}
-          <div className="md:hidden space-y-3">
+          <div className="space-y-3 md:hidden">
             {stocks.map((item) => (
               <div
                 key={item._id}
@@ -188,17 +188,17 @@ export default function StockPage() {
                   setActiveRecord(item);
                   setIsModalOpen(true);
                 }}
-                className="border rounded-lg p-3 shadow-sm bg-white cursor-pointer hover:bg-orange-50"
+                className="erp-mobile-card cursor-pointer p-3"
               >
-                <div className="font-bold text-orange-400">
+                <div className="font-extrabold text-[#2f7d46]">
                   {item.stockName}
                 </div>
 
                 <div className="py-2">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                    className={`erp-chip ${getTypeStyle(
                       categoryMap[item.stockCategory]
-                    )}`}
+                    )}` }
                   >
                     {categoryMap[item.stockCategory] || "N/A"}
                   </span>
@@ -242,10 +242,10 @@ export default function StockPage() {
           </div>
 
           {/* 🖥 DESKTOP TABLE */}
-          <div className="hidden md:block bg-white rounded-lg shadow flex-1 overflow-hidden">
+          <div className="erp-table-wrap hidden flex-1 md:block">
             <div className="overflow-x-auto">
-              <table className="min-w-[700px] w-full divide-y divide-orange-200">
-                <thead className="bg-orange-100">
+              <table className="erp-table min-w-[700px]">
+                <thead className="">
                   <tr>
                     <th className="px-3 py-2 text-center">#</th>
                     <th className="px-3 py-2 text-left">ID</th>
@@ -258,7 +258,7 @@ export default function StockPage() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-orange-200">
+                <tbody className="">
                   {stocks.map((item, index) => (
                     <tr
                       key={item._id}
@@ -266,7 +266,7 @@ export default function StockPage() {
                         setActiveRecord(item);
                         setIsModalOpen(true);
                       }}
-                      className="hover:bg-orange-50 cursor-pointer"
+                      className="cursor-pointer"
                     >
                       <td className="px-3 py-2 text-center">{index + 1}</td>
                       <td className="px-3 py-2 text-left">{item.stockId}</td>
@@ -274,9 +274,9 @@ export default function StockPage() {
 
                       <td className="px-3 py-2 text-left">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeStyle(
+                          className={`erp-chip ${getTypeStyle(
                             categoryMap[item.stockCategory]
-                          )}`}
+                          )}` }
                         >
                           {categoryMap[item.stockCategory] || "N/A"}
                         </span>
@@ -331,11 +331,11 @@ export default function StockPage() {
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         overlayClassName="fixed inset-0 bg-black/60 flex items-center justify-center"
-        className="bg-white rounded-xl max-w-lg w-full p-5"
+        className="erp-panel w-full max-w-lg p-5 outline-none"
       >
         {activeRecord && (
           <div>
-            <h2 className="text-xl font-bold text-orange-600 mb-4">
+            <h2 className="mb-4 text-xl font-extrabold text-[#2f7d46]">
               Stock Details
             </h2>
 
@@ -366,7 +366,7 @@ export default function StockPage() {
       {/* FOOTER */}
       <button
         onClick={() => navigate("/control")}
-        className="h-12 rounded-lg bg-orange-100 hover:bg-orange-200 font-semibold"
+        className="erp-btn erp-btn-secondary"
       >
         Close
       </button>
