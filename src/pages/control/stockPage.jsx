@@ -40,6 +40,7 @@ export default function StockPage() {
     "incubating material": "Incubating Material",
     "finished products": "Finished Products",
     "harvested products": "Harvested Products",
+    "other products": "Other Products",
   };
 
   const uomMap = {
@@ -74,6 +75,8 @@ export default function StockPage() {
         return "bg-green-100 text-green-700";
       case "Harvested Products":
         return "bg-red-100 text-red-700";
+      case "Other Products":
+        return "bg-orange-100 text-orange-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
