@@ -171,6 +171,7 @@ export default function AddStockPage() {
               <option value="incubating material">Incubating Material</option>
               <option value="finished products">Finished Products</option>
               <option value="harvested products">Harvested Products</option>
+              <option value="other products">Other Products</option>
             </select>
           </div>
 
