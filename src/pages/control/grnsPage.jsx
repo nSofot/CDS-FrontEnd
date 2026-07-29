@@ -927,13 +927,13 @@ export default function PurchaseEntryPage() {
                               </td>
 
                               <td className="p-2 text-right">
-                                {formatNumber(item.stockPrice)}
+                                {formatNumber(item.stockCost)}
                               </td>
 
                               <td className="p-2 text-right">
                                 {formatNumber(
                                   Number(item.quantity) *
-                                    Number(item.stockPrice)
+                                    Number(item.stockCost)
                                 )}
                               </td>
                             </tr>
