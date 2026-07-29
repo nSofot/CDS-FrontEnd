@@ -235,7 +235,7 @@ export default function PurchaseEntryPage() {
       };
     } else {
       updated[index][field] =
-        value === "" ? "" : Number(value);
+        value === "" ? "" : parseFloat(value);
     }
 
     setForm({ ...form, items: updated });
@@ -720,11 +720,11 @@ export default function PurchaseEntryPage() {
                       type="number"
                       value={item.qty}
                       required
-                      min="0.001"
-                      onChange={(e) =>
-                        updateItem(i, "qty", e.target.value)
-                      }
-                      className="border w-20 p-1 rounded"
+                      min="0"
+                      step="0.001"
+                      inputMode="decimal"
+                      onChange={(e) => updateItem(i, "qty", e.target.value)}
+                      className="border w-24 p-1 rounded"
                     />
                   </td>
 
