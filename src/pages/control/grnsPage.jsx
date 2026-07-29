@@ -720,7 +720,7 @@ export default function PurchaseEntryPage() {
                       type="number"
                       value={item.qty}
                       required
-                      min="1"
+                      min="0.001"
                       onChange={(e) =>
                         updateItem(i, "qty", e.target.value)
                       }
