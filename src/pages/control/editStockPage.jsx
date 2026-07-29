@@ -200,6 +200,7 @@ export default function EditStockPage() {
           <div>
             <label className="text-sm font-medium">Category *</label>
             <select
+              disabled
               value={stockCategory}
               onChange={(e) => setStockCategory(e.target.value)}
               className="w-full p-2 border rounded-lg"
