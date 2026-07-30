@@ -53,7 +53,7 @@ export default function OtherInvoicePage() {
       const accounts = res.data.data || res.data || [];
 
       const filteredAccounts = accounts
-        .filter((acc) => acc.accountType === "Expense")
+        .filter((acc) => acc.accountType === "Expenses")
         .sort((a, b) =>
           (a.accountName || "").localeCompare(b.accountName || "")
         );
