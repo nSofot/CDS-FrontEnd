@@ -8,7 +8,8 @@ import html2pdf from "html2pdf.js";
 
 export default function OtherInvoicePage() {
   const [invoices, setInvoices] = useState([]);
-  const [vendors, setVendors] = useState([]);
+  const [expensesAccounts, setExpensesAccounts] = useState([]);
+  const [accrualAccounts, setAccrualAccounts] = useState([]);
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("list");
@@ -21,20 +22,24 @@ export default function OtherInvoicePage() {
 
   const [form, setForm] = useState({
     referenceId: "",
-    trxType: "Invoice",
+    trxType: "OtherInvoice",
     trxDate: new Date().toISOString().split("T")[0],
-    vendorId: "",
-    vendorName: "",
+    expenseId: "",
+    expenseName: "",
+    accrualId: "",
+    accrualName: "",    
     description: "",
     amount: "",
   });
 
   const initialForm = {  
     referenceId: "",
-    trxType: "Invoice",
+    trxType: "OtherInvoice",
     trxDate: new Date().toISOString().split("T")[0],
-    vendorId: "",
-    vendorName: "",
+    expenseId: "",
+    expenseName: "",
+    accrualId: "",
+    accrualName: "",
     description: "",
     amount: "",
   };
@@ -42,6 +47,36 @@ export default function OtherInvoicePage() {
   const resetForm = () => {
     setForm(initialForm);
   };
+
+
+
+ const fetchInvoices = async () => {  
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`
+      );
+
+      const data = Array.isArray(res.data?.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+
+      const filtered = data.filter(
+          (i) => i.transactionType === "OtherInvoice" && i.isCredit === true
+        )
+        .sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );     
+      setInvoices(filtered);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load invoices");
+      setInvoices([]);
+    }
+  };
+  
+  
 
   // Fetch vendors
   const fetchVendors = async () => {
@@ -57,8 +92,15 @@ export default function OtherInvoicePage() {
         .sort((a, b) =>
           (a.accountName || "").localeCompare(b.accountName || "")
         );
+      setExpensesAccounts(filteredAccounts);
 
-      setVendors(filteredAccounts);
+      const filteredAccrualAccounts = accounts
+        .filter((acc) => acc.accountType === "CurrentLiabilities" && acc.headerAccountId === "502")
+        .sort((a, b) =>
+          (a.accountName || "").localeCompare(b.accountName || "")
+        );
+      setAccrualAccounts(filteredAccrualAccounts);
+
     } catch (err) {
       console.error(err);
       toast.error("Failed to load vendors");
@@ -67,9 +109,14 @@ export default function OtherInvoicePage() {
 
   useEffect(() => {
     fetchVendors();
+    fetchInvoices();
   }, []);
 
-
+  const closeViewModal = () => {
+    setIsViewOpen(false);
+    // setStockTrx(null);
+    setSelected(null);
+  };
 
   /* FILTER */
   const filteredInvoices = useMemo(() => {
@@ -97,66 +144,74 @@ export default function OtherInvoicePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.referenceId || !form.trxDate || !form.vendorId || !form.amount || !form.description) {
+    if (!form.referenceId || !form.trxDate || !form.expenseId || !form.accrualId || !form.amount || !form.description) {
       return toast.error("Please fill required fields");
     }
 
     try {
-      setLIsSubmitting(true);
+      setIsSubmitting(true);
 
       const total = Number(form.amount || 0);
 
       
-      // ================= 1. SAVE VENDOR TRANSACTION =================      
-      const vendorTrxPayload = {
-        referenceId: form.referenceId || "N/A",
-        trxDate: new Date(form.trxDate),
-        trxType: form.trxType,
-        vendorId: form.vendorId,
-        vendorName: form.vendorName,
-        description: form.description || "",
-        isCredit: false,
-        amount: Number(total),
-        dueAmount: Number(total),
-      };
- 
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
-        vendorTrxPayload
-      );      
-
-      // ================= 2. UPDATE VENDOR BALANCE =================      
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/add-due`,
-        {
-          amount: total,
-        }
-      );
-
-      // ================= 5. UPDATE LEDGER ACCOUNT - DEBIT =================
+      // ================= 1. UPDATE EXPENDITURE ACCOUNT - DEBIT =================      
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
         {
           updates: [
             {
-              accountId: form.accountId,
+              accountId: form.expenseId,
               amount: Number(total),
             },
           ],
         }
       );
 
-      // ================= 6. SAVE LEDGER TRANSACTION - DEBIT =================
+      // ================= 2. SAVE EXPENDITURE LEDGER TRANSACTION - DEBIT =================
+      const ledgerDebitTrxPayload = {
+        referenceId: form.referenceId,
+        trxDate: form.trxDate,
+        transactionType: form.trxType,
+        accountId: form.expenseId,
+        accountName: form.expenseName,
+        description: form.description,
+        isCredit: false,
+        trxAmount: total,
+      };
+
+      const ledgerDebitTrxResponse = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        ledgerDebitTrxPayload
+      );
+ 
+
+      const savedTrxId = ledgerDebitTrxResponse.data.transaction.trxId || null;
+
+      // ================= 3. UPDATE ACCRUAL LEDGER ACCOUNT - CREDIT =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
+        {
+          updates: [
+            {
+              accountId: form.accrualId,
+              amount: Number(total),
+            },
+          ],
+        }
+      );
+
+      // ================= 4. SAVE LEDGER ACCRUAL TRANSACTION - CREDIT =================
       const ledgerTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceId,
         trxDate: form.trxDate,
         transactionType: form.trxType,
-        accountId: form.accountId,
-        accountName: form.accountName,
-        description: form.vendorName,
-        isCredit: false,
+        accountId: form.accrualId,
+        accountName: form.accrualName,
+        description: form.description,
+        isCredit: true,
         trxAmount: total,
+        dueAmount: total,
       };
 
       await axios.post(
@@ -164,57 +219,26 @@ export default function OtherInvoicePage() {
         ledgerTrxPayload
       ); 
 
-
-      // ================= 7. UPDATE LEDGER ACCOUNT - CREDIT =================
-      await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
-        {
-          updates: [
-            {
-              accountId: "501-001",
-              amount: Number(total),
-            },
-          ],
-        }
-      );
-
-      // ================= 8. SAVE LEDGER TRANSACTION - CREDIT =================
-      const ledgerCreditTrxPayload = {
-        trxId: savedTrxId,
-        referenceId: form.referenceId,
-        trxDate: form.trxDate,
-        transactionType: form.trxType,
-        accountId: "501-001",
-        accountName: "Supplier Payables",
-        description: form.vendorName,
-        isCredit: true,
-        trxAmount: total,
-      };
-
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
-        ledgerCreditTrxPayload
-      );       
-
-
       setIsSaved(true);
       setIsSubmitting(false);
-      toast.success("Invoice saved successfully");
+      toast.success("Other Invoice saved successfully");
 
       // Reset
       setForm({
         referenceId: "",
-        trxType: "Invoice",
         trxDate: "",
-        vendorId: "",
-        vendorName: "",
+        expenseId: "",
+        expenseName: "",
+        accrualId: "",
+        accrualName: "",
+        amount: "",
         description: "",
-        amount: 0,
       });
+
     } catch (err) {
       setIsSubmitting(false);
       console.error(err);
-      toast.error("Error saving invoice");
+      toast.error("Error saving other invoice");
     }
   };
 
@@ -312,13 +336,13 @@ export default function OtherInvoicePage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-bold text-orange-600">{inv.trxId}</p>
-                        <p className="text-sm text-gray-600">{inv.vendorName}</p>
+                        <p className="text-sm text-gray-600">{inv.description}</p>
                         <p className="text-xs text-gray-400">Ref: {inv.referenceId}</p>
                         <p className="text-xs text-gray-400">{formatDate(inv.trxDate)}</p>
                       </div>
 
                       <p className="text-red-600 font-bold">
-                        {formatNumber(inv.amount)}
+                        {formatNumber(inv.trxAmount)}
                       </p>
                     </div>
 
@@ -357,7 +381,7 @@ export default function OtherInvoicePage() {
                       <th className="p-3">Date</th>
                       <th className="p-3">Invoice No</th>
                       <th className="p-3">Reference</th>                      
-                      <th className="p-3">Supplier</th>
+                      <th className="p-3">Description</th>
                       <th className="p-3 text-right">Amount</th>
                       <th className="p-3 text-center">Actions</th>
                     </tr>
@@ -372,9 +396,9 @@ export default function OtherInvoicePage() {
                           {inv.trxId}
                         </td>
                         <td className="p-3 text-gray-500">{inv.referenceId}</td>
-                        <td className="p-3">{inv.vendorName}</td>
+                        <td className="p-3">{inv.description}</td>
                         <td className="p-3 text-right text-red-600 font-semibold">
-                          {formatNumber(inv.amount)}
+                          {formatNumber(inv.trxAmount)}
                         </td>
 
                         <td className="p-3 text-center flex justify-center gap-3">
@@ -441,23 +465,47 @@ export default function OtherInvoicePage() {
             />
 
             <select
-              value={form.vendorId}
+              value={form.expenseId}
               onChange={(e) => {
-                const selected = vendors.find(
+                const selected = expensesAccounts.find(
                   (v) => v.accountId === e.target.value
                 );
 
                 setForm({
                   ...form,
-                  vendorId: selected?.accountId || "",
-                  vendorName: selected?.accountName || "",
+                  expenseId: selected?.accountId || "",
+                  expenseName: selected?.accountName || "",
                 });
               }}
               className="border p-2 rounded w-full"
               required
             >
-              <option value="">Select Account</option>
-              {vendors.map((v) => (
+              <option value="">Select Expense Account</option>
+              {expensesAccounts.map((v) => (
+                <option key={v.accountId} value={v.accountId}>
+                  {v.accountName}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={form.accrualId}
+              onChange={(e) => {
+                const selected = accrualAccounts.find(
+                  (v) => v.accountId === e.target.value
+                );
+
+                setForm({
+                  ...form,
+                  accrualId: selected?.accountId || "",
+                  accrualName: selected?.accountName || "",
+                });
+              }}
+              className="border p-2 rounded w-full"
+              required
+            >
+              <option value="">Select Accrual Account</option>
+              {accrualAccounts.map((v) => (
                 <option key={v.accountId} value={v.accountId}>
                   {v.accountName}
                 </option>
@@ -508,9 +556,7 @@ export default function OtherInvoicePage() {
 
           {/* Button */}
           <button
-            onClick={() => {
-                handleSubmit();
-            }}
+              type="submit"
             disabled={isSubmitting || isSaved}
             className={`px-4 py-3 rounded-lg w-full font-semibold text-white transition
               ${
@@ -530,6 +576,199 @@ export default function OtherInvoicePage() {
         </form>
       </div>
       )}
+
+
+      {/* VIEW MODAL */}
+      {isViewOpen && selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+
+            {/* Header */}
+            <div className="bg-orange-600 text-white px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold">
+                  Other Invoice
+                </h2>
+
+                <p className="text-xs opacity-90">
+                  Other Invoice Details
+                </p>
+              </div>
+
+              <button
+                onClick={closeViewModal}
+                className="text-white hover:text-gray-200 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+
+              {/* Customer */}
+              <div className="border rounded-xl p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Accrual Account Information
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <span className="font-medium text-gray-500">
+                    Accrual Account
+                  </span>
+
+                  <span className="col-span-2">
+                    {selected.accountId}
+                  </span>
+                </div>
+              </div>
+
+              {/* Invoice */}
+              <div className="border rounded-xl p-4">
+                <h3 className="font-semibold text-gray-700 mb-3">
+                  Other Invoice Information
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2 text-sm mb-4">
+                  <span className="font-medium text-gray-500">
+                    Other Invoice No
+                  </span>
+
+                  <span className="col-span-2 font-semibold text-orange-600">
+                    {selected.trxId}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Date
+                  </span>
+
+                  <span className="col-span-2">
+                    {formatDate(selected.trxDate)}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Reference ID
+                  </span>
+
+                  <span className="col-span-2">
+                    {selected.referenceId}
+                  </span>
+
+                  <span className="font-medium text-gray-500">
+                    Description
+                  </span>
+
+                  <span className="col-span-2">
+                    {selected.description}
+                  </span>
+                </div>
+
+                {/* Loading State */}
+                {/* {loadingTrx ? (
+                  <div className="text-center py-10 text-gray-500">
+                    Loading invoice details...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border rounded-lg overflow-hidden">
+                      <thead>
+                        <tr className="border-b bg-gray-50">
+                          <th className="text-left p-2">Product</th>
+                          <th className="text-center p-2">Qty</th>
+                          <th className="text-right p-2">Rate</th>
+                          <th className="text-right p-2">Amount</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {Array.isArray(stockTrx?.items) &&
+                        stockTrx.items.length > 0 ? (
+                          stockTrx.items.map((item, index) => (
+                            <tr
+                              key={index}
+                              className="border-b last:border-b-0"
+                            >
+                              <td className="p-2">
+                                {item.stockName}
+                              </td>
+
+                              <td className="p-2 text-center">
+                                {item.quantity}
+                              </td>
+
+                              <td className="p-2 text-right">
+                                {formatNumber(item.stockCost)}
+                              </td>
+
+                              <td className="p-2 text-right">
+                                {formatNumber(
+                                  Number(item.quantity) *
+                                    Number(item.stockCost)
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="text-center p-4 text-gray-500"
+                            >
+                              No items found
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+
+                      <tfoot>
+                        <tr className="bg-orange-50 font-semibold border-t">
+                          <td
+                            colSpan="3"
+                            className="p-2 text-right"
+                          >
+                            Total
+                          </td>
+
+                          <td className="p-2 text-right text-orange-600">
+                            {formatNumber(selected.trxAmount)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )} */}
+              </div>
+
+              {/* Amount Summary */}
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">
+                    Amount
+                  </span>
+
+                  <span className="text-2xl font-bold text-orange-600">
+                    Rs. {formatNumber(selected.trxAmount)}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 flex justify-end bg-white">
+              <button
+                onClick={closeViewModal}
+                className="px-5 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

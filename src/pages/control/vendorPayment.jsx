@@ -759,7 +759,7 @@ const normaliseBanks = (raw) => {
       }
 
       await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/subtract-balance`,
         {
           updates: [
             {
