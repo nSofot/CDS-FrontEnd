@@ -177,8 +177,8 @@ export default function LedgerAccountsPage() {
       // running balance
       for (let i = 0; i < enriched.length; i++) {
         balance += enriched[i].isCredit
-          ? enriched[i].trxAmount
-          : -enriched[i].trxAmount;
+          ? -enriched[i].trxAmount
+          : enriched[i].trxAmount;
 
         enriched[i].balance = balance;
       }
