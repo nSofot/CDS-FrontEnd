@@ -258,12 +258,15 @@ const normaliseBanks = (raw) => {
           ]);
 
           // Members
-          const accData = accRes.data.data || accRes.data;
+          const accData = accRes.data.data || accRes.data;       
 
-          const sortedVendors = [...accData].sort((a, b) =>
-            (a.accountName || "").localeCompare(b.accountName || "")
-          );
-          setVendors(sortedVendors);          
+          const filteredAccrualAccounts = accData
+            .filter((acc) => acc.accountType === "CurrentLiabilities" && acc.headerAccountId === "502")
+            .sort((a, b) =>
+              (a.accountName || "").localeCompare(b.accountName || "")
+            );
+          setVendors(filteredAccrualAccounts);
+
 
           // Cash & Bank (301,302)
           setCashAccounts(
@@ -311,7 +314,7 @@ const normaliseBanks = (raw) => {
 
       const filtered = data
         .filter((i) =>
-          i.trxType === "OtherPayment"
+          i.transactionType === "OtherPayment"
         )
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -325,12 +328,13 @@ const normaliseBanks = (raw) => {
     }
   };
 
+
   const fetchOutstandingInvoices = async (vendorId) => {
     const res = await axios.get(
       `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction/due/${vendorId}`,
       { headers }
-    );
-    setDueInvoices(res.data.data || []);
+    );  
+    setDueInvoices(Array.isArray(res.data) ? res.data : res.data.data || []);
   };
 
 
@@ -386,11 +390,11 @@ const normaliseBanks = (raw) => {
   const filteredVendors = useMemo(() => {
     return vendors.filter((c) => {
       const name =
-        `${c.vendorName || ""}`;
+        `${c.accountName || ""}`;
 
       return (
         name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-        String(c.vendorId || "")
+        String(c.accountId || "")
           .toLowerCase()
           .includes(customerSearch.toLowerCase())
       );
@@ -695,53 +699,54 @@ const normaliseBanks = (raw) => {
       setDescription(description);
 
 
-      // ================= 1. SAVE MEMBER TRANSACTION =================            
-      const memberTrxPayload = {
+      // ================= 1. SAVE ACCRUAL TRANSACTION - DEBIT =================            
+      const vendorTrxPayload = {
         referenceId: form.referenceNo,
         trxDate: form.receiptDate,
-        trxType: form.trxType,
-        vendorId: form.vendorId,
-        vendorName: form.vendorName,
+        transactionType: form.trxType,
+        accountId: form.vendorId,
         description: description,
-        isCredit: true,
-        amount: form.receivedAmount,
-        dueAmount: 0,
-      };
-     
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction`,
-        memberTrxPayload
+        isCredit: false,
+        trxAmount: form.receivedAmount,
+      };    
+
+      const vendorRes = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction`,
+        vendorTrxPayload
       );
 
-
-      // ================= 2. GET NEW TRX ID =================
-      const savedTrxId = res.data.data.trxId || res.data.trxId;
+      const savedTrxId = vendorRes.data.transaction.trxId || null;
       setReceiptNumber(savedTrxId);
 
 
-      // ================= 3. SUBSTRACT MEMBER DUE =================
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/vendor/${form.vendorId}/reduce-due`,
+      // ================= 2. SUBSTRACT ACCRUAL DEBIT =================
+      await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
         {
-          amount: form.receivedAmount,
+          updates: [
+            {
+              accountId: form.vendorId,
+              amount: Number(form.receivedAmount || 0),
+            },
+          ],
         }
       );
 
 
-      // ================= 4. CLEAR DUE TRANS =================
+      // ================= 3. CLEAR DUE TRANS =================
       await Promise.all(
         dueInvoices
           .filter((inv) => inv.selected)
           .map((inv) =>
             axios.put(
-              `${import.meta.env.VITE_BACKEND_URL}/api/vendor-transaction/subtract/${inv.trxId}`,
+              `${import.meta.env.VITE_BACKEND_URL}/api/ledger-transaction/subtract/${inv.trxId}`,
               { amount: inv.payAmount }
             )
           )
       );
 
 
-      // ================= 5. UPDATE LEDGER BALANCE - CREDIT ==================
+      // ================= 4. UPDATE LEDGER BALANCE - CREDIT ==================
       let accountId = "";
       let accountName = "";
       if (form.paymentMethod === "Cheque") {
@@ -769,7 +774,7 @@ const normaliseBanks = (raw) => {
         }
       );
 
-      // ================= 6. SAVE LEDGER TRANSACTION - CREDIT =================
+      // ================= 5. SAVE LEDGER TRANSACTION - CREDIT =================
       const ledgerTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceNo,
@@ -777,7 +782,7 @@ const normaliseBanks = (raw) => {
         transactionType: form.trxType,
         accountId: accountId,
         accountName: accountName,
-        description: form.vName + " - " + description,
+        description: description,
         isCredit: true,
         trxAmount: form.receivedAmount,
       };    
@@ -788,7 +793,7 @@ const normaliseBanks = (raw) => {
       );      
 
 
-      // ================= 7. UPDATE LEDGER ACCOUNT - DEBIT =================
+      // ================= 6. UPDATE LEDGER ACCOUNT - DEBIT =================
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/ledger-account/add-balance`,
         {
@@ -801,7 +806,7 @@ const normaliseBanks = (raw) => {
         }
       );
 
-      // ================= 8. SAVE LEDGER TRANSACTION - DEBIT =================
+      // ================= 7. SAVE LEDGER TRANSACTION - DEBIT =================
       const ledgerDrTrxPayload = {
         trxId: savedTrxId,
         referenceId: form.referenceNo,
@@ -809,7 +814,7 @@ const normaliseBanks = (raw) => {
         transactionType: form.trxType,
         accountId: form.vendorId,
         accountName: form.vendorName,
-        description: "",
+        description: description,
         isCredit: false,
         trxAmount: form.receivedAmount,
       };
@@ -821,7 +826,7 @@ const normaliseBanks = (raw) => {
 
 
       try {
-        // ================= 9. SAVE CHEQUE =================
+        // ================= 8. SAVE CHEQUE =================
         if (form.paymentMethod === "Cheque") {
           const chequePayload = {
             voucherId: savedTrxId,
@@ -868,10 +873,10 @@ const normaliseBanks = (raw) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-xl font-bold text-orange-600">
-            🧾 Other Payment
+            🧾 Other Invoice Payment
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Create and manage other payments.
+            Create and manage other invoice payments.
           </p>         
         </div>
 
@@ -954,13 +959,13 @@ const normaliseBanks = (raw) => {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-bold text-orange-600">{inv.trxId}</p>
-                        <p className="text-sm text-gray-600">{inv.accountName}</p>
+                        <p className="text-sm text-gray-600">{inv.description}</p>
                         <p className="text-xs text-gray-400">Ref: {inv.referenceId}</p>
                         <p className="text-xs text-gray-400">{formatDate(inv.trxDate)}</p>
                       </div>
 
                       <p className="text-red-600 font-bold">
-                        {formatNumber(inv.amount)}
+                        {formatNumber(inv.trxAmount)}
                       </p>
                     </div>
 
@@ -999,9 +1004,8 @@ const normaliseBanks = (raw) => {
                       <th className="p-3">Date</th>
                       <th className="p-3">Invoice No</th>
                       <th className="p-3">Reference</th>                      
-                      <th className="p-3">Account</th>
+                      <th className="p-3">Description</th>
                       <th className="p-3 text-right">Amount</th>
-                      <th className="p-3">Due Balance</th>
                       <th className="p-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -1015,14 +1019,9 @@ const normaliseBanks = (raw) => {
                           {inv.trxId}
                         </td>
                         <td className="p-3 text-gray-500">{inv.referenceId}</td>
-                        <td className="p-3">{inv.AccountName}</td>
+                        <td className="p-3">{inv.description}</td>
                         <td className="p-3 text-right text-green-600 font-semibold">
-                          {formatNumber(inv.amount)}
-                        </td>
-                        <td className={`p-3 text-right ${Number(inv.dueAmount) > 0 ? "text-red-600 font-semibold" : "text-gray-300"}`}>
-                          {Number(inv.dueAmount) > 0
-                            ? formatNumber(inv.dueAmount)
-                            : "—"}
+                          {formatNumber(inv.trxAmount)}
                         </td>
                         <td className="p-3 text-center flex justify-center gap-3">
                           <button
@@ -1065,7 +1064,7 @@ const normaliseBanks = (raw) => {
           {/* HEADER */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h2 className="text-xl font-bold text-orange-600">
-              Create Other Payment
+              Create Other Invoice Payment
             </h2>
 
             <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-lg">
@@ -1099,8 +1098,8 @@ const normaliseBanks = (raw) => {
                     className="w-full border rounded-lg px-4 py-2 text-left bg-gray-50"
                   >
                     {selectedVendor
-                      ? `${selectedVendor.vendorName}`
-                      : "Select Account"}                      
+                      ? `${selectedVendor.accountName}`
+                      : "Select Accrual Account"}                      
                   </button>
                 </div>
 
@@ -1164,7 +1163,7 @@ const normaliseBanks = (raw) => {
 
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Amount Received
+                    Amount Paid
                   </label>
                   <input
                     type="number"
@@ -1215,7 +1214,7 @@ const normaliseBanks = (raw) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">   
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Receiving Cash Account
+                      Paid Cash Account
                     </label>
                     <select
                       value={form.accountId}
@@ -1249,7 +1248,7 @@ const normaliseBanks = (raw) => {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Received Bank Account
+                      Paid Bank Account
                     </label>
                     <select
                       value={form.accountId}
@@ -1374,7 +1373,7 @@ const normaliseBanks = (raw) => {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Received Bank Account
+                      Paid Bank Account
                     </label>
                     <select
                       value={form.accountId}
@@ -1727,7 +1726,7 @@ const normaliseBanks = (raw) => {
       >
 
         <h2 className="text-xl font-bold mb-4">
-          Select Account
+          Select Accrual Account
         </h2>
 
         <input
@@ -1752,7 +1751,7 @@ const normaliseBanks = (raw) => {
                   ...prev,
                   vendorId: c.accountId,
                   vendorName: c.accountName,
-                  totalOutstanding: c.accountBalance || 0,
+                  totalOutstanding: Math.abs(c.accountBalance || 0),
                 }));
 
                 setCustomerModal(false);
@@ -1866,7 +1865,7 @@ const normaliseBanks = (raw) => {
                   </span>
 
                   <span className="text-2xl font-bold text-orange-600">
-                    Rs. {formatNumber(selected.amount)}
+                    Rs. {formatNumber(selected.trxAmount)}
                   </span>
                 </div>
               </div>
